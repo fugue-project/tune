@@ -17,7 +17,7 @@ setup(
     author_email="goodwanghan@gmail.com",
     keywords="hyper parameter hyperparameter tuning tune tuner",
     url="http://github.com/fugue-project/tune",
-    install_requires=["pandas", "fugue"],
+    install_requires=["fugue"],
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
