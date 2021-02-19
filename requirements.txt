@@ -1,4 +1,4 @@
-.
+.[all]
 
 # test requirements
 pre-commit

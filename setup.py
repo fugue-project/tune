@@ -1,6 +1,6 @@
-from setuptools import setup, find_packages
-from tune import __version__
+from setuptools import find_packages, setup
 
+from tune_version import __version__
 
 with open("README.md") as f:
     LONG_DESCRIPTION = f.read()
@@ -16,9 +16,14 @@ setup(
     author="Han Wang",
     author_email="goodwanghan@gmail.com",
     keywords="hyper parameter hyperparameter tuning tune tuner",
-    url="http://github.com/goodwanghan/tune",
-    install_requires=["pandas", "fugue"],
-    extras_require={},
+    url="http://github.com/fugue-project/tune",
+    install_requires=["fugue"],
+    extras_require={
+        "hyperopt": ["hyperopt"],
+        "optuna": ["optuna"],
+        "visual": ["matplotlib"],
+        "all": ["hyperopt", "optuna", "matplotlib"],
+    },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
         "Development Status :: 3 - Alpha",
