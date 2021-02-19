@@ -1,6 +1,7 @@
 .
 
 # test requirements
+pytest
 pre-commit
 black
 mypy
