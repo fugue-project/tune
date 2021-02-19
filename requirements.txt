@@ -2,6 +2,7 @@
 
 # test requirements
 pre-commit
+black
 mypy
 flake8
 autopep8
@@ -9,11 +10,13 @@ pylint
 pytest
 pytest-cov
 pytest-mock
-sphinx
+pytest-spark
+sphinx>=2.4.0
 sphinx-rtd-theme
-
-cloudpickle
+sphinx-autodoc-typehints
+flask
 
 # publish to pypi
 wheel
 twine
+
