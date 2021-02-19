@@ -9,9 +9,8 @@ help:
 	@echo "	 test		run all tests with coverage (assumes venv is present)"
 
 devenv:
-	python3 -m venv venv
-	. venv/bin/activate
 	pip3 install -r requirements.txt
+	pre-commit install
 
 dev:
 	pip3 install -r requirements.txt
