@@ -21,7 +21,8 @@ setup(
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
-        "all": ["hyperopt", "optuna"],
+        "visual": ["matplotlib"],
+        "all": ["hyperopt", "optuna", "matplotlib"],
     },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
