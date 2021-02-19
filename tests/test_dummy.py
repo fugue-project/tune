@@ -1,2 +1,5 @@
+from tune.dummy import place_holder
+
+
 def test_dummy():
-    return
+    place_holder()
