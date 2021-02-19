@@ -13,6 +13,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath("../"))
 
 from tune_version import __version__
@@ -31,10 +32,16 @@ author = "Han Wang"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.todo", "sphinx.ext.viewcode", "sphinx.ext.intersphinx",
-              "sphinx.ext.autodoc", "sphinx.ext.autodoc.typehints", "sphinx_rtd_theme"]
+extensions = [
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autodoc.typehints",
+    "sphinx_rtd_theme",
+]
 
-autodoc_typehints = 'description'
+autodoc_typehints = "description"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -64,18 +71,19 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 # html_logo = "_static/logo_doc.svg"
 html_theme_options = {
-    'logo_only': False,
-    'display_version': True,
-    'style_nav_header_background': '#264263'
+    "logo_only": False,
+    "display_version": True,
+    "style_nav_header_background": "#264263",
 }
 
 master_doc = "index"
 
 intersphinx_mapping = {
-    'triad': ('https://triad.readthedocs.io/en/latest', None),
-    'tutorial': ('https://fugue-tutorials.readthedocs.io/en/latest', None),
-    'pa': ('https://arrow.apache.org/docs', None),
-    'fs': ('https://docs.pyfilesystem.org/en/latest', None),
-    'spark': ('https://spark.apache.org/docs/latest/api/python', None),
-    'dask': ('https://docs.dask.org/en/latest', None),
-    }
+    "triad": ("https://triad.readthedocs.io/en/latest", None),
+    "tutorial": ("https://fugue-tutorials.readthedocs.io/en/latest", None),
+    "pa": ("https://arrow.apache.org/docs", None),
+    "fs": ("https://docs.pyfilesystem.org/en/latest", None),
+    "spark": ("https://spark.apache.org/docs/latest/api/python", None),
+    "dask": ("https://docs.dask.org/en/latest", None),
+    "np": ("https://numpy.org/doc/stable", None),
+}

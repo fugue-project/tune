@@ -21,10 +21,42 @@ tune
 
 
 
-tune.dummy
+tune.constants
+--------------
+
+.. automodule:: tune.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.exceptions
+---------------
+
+.. automodule:: tune.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.hyperopt
+-------------
+
+.. automodule:: tune.hyperopt
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.space
 ----------
 
-.. automodule:: tune.dummy
+.. automodule:: tune.space
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.tune
+---------
+
+.. automodule:: tune.tune
    :members:
    :undoc-members:
    :show-inheritance:
