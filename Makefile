@@ -9,9 +9,8 @@ help:
 	@echo "	 test		run all tests with coverage (assumes venv is present)"
 
 devenv:
-	python3 -m venv venv
-	. venv/bin/activate
 	pip3 install -r requirements.txt
+	pre-commit install
 
 dev:
 	pip3 install -r requirements.txt
@@ -29,6 +28,13 @@ package:
 	rm -rf dist/*
 	python3 setup.py sdist
 	python3 setup.py bdist_wheel
+
+jupyter:
+	mkdir -p tmp
+	pip install .
+	jupyter nbextension install --py fugue_notebook
+	jupyter nbextension enable fugue_notebook --py
+	jupyter notebook --port=8888 --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
 
 test:
 	python3 -bb -m pytest tests/
