@@ -30,13 +30,18 @@ class StochasticExpression(object):
         """Compare two ``StochasticExpression``"""
         return isinstance(other, type(self)) and self.jsondict == other.jsondict
 
-    def get(self, seed: Any = None) -> Any:  # pragma: no cover
+    def generate(self, seed: Any = None) -> Any:  # pragma: no cover
         """Return a randomly chosen value.
 
         :param seed: if set, it will be used to call :func:`~np:numpy.random.seed`
           , defaults to None
         """
         raise NotImplementedError
+
+    def generate_many(self, n: int, seed: Any = None) -> List[Any]:
+        if seed is not None:
+            np.random.seed(seed)
+        return [self.generate() for _ in range(n)]
 
 
 class Choice(StochasticExpression):
@@ -57,7 +62,7 @@ class Choice(StochasticExpression):
     def jsondict(self) -> Dict[str, Any]:
         return dict(_expr_="choice", values=self.values)
 
-    def get(self, seed: Any = None) -> Any:
+    def generate(self, seed: Any = None) -> Any:
         if seed is not None:
             np.random.seed(seed)
         return np.random.choice(self._values)
@@ -145,7 +150,7 @@ class Rand(RandBase):
             np.random.seed(seed)
         return np.random.uniform(self.low, self.high)
 
-    def get(self, seed: Any = None) -> float:
+    def generate(self, seed: Any = None) -> float:
         high = self.high
         low = self.low
         while True:
@@ -198,8 +203,8 @@ class RandInt(Rand):
             include_high=self.include_high,
         )
 
-    def get(self, seed: Any = None) -> int:
-        return int(np.round(super().get(seed)))
+    def generate(self, seed: Any = None) -> int:
+        return int(np.round(super().generate(seed)))
 
 
 class NormalRand(RandBase):
@@ -237,7 +242,7 @@ class NormalRand(RandBase):
             res["q"] = self.q
         return res
 
-    def get(self, seed: Any = None) -> float:
+    def generate(self, seed: Any = None) -> float:
         v = self.distribution_func(seed)
         if self.log:
             v = float(np.exp(v))
@@ -278,8 +283,8 @@ class NormalRandInt(NormalRand):
             log=self.log,
         )
 
-    def get(self, seed: Any = None) -> int:
-        return int(np.round(super().get(seed)))
+    def generate(self, seed: Any = None) -> int:
+        return int(np.round(super().generate(seed)))
 
 
 def _decode(value: Any) -> Any:

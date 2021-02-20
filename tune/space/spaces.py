@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Tuple, no_type_check
 
+import numpy as np
 from triad import assert_or_throw
 from tune._utils import dict_product, product
 from tune.space.parameters import Grid, StochasticExpression
@@ -11,6 +12,7 @@ class Space(object):
     def __init__(self, **kwargs: Any):
         self._value = deepcopy(kwargs)
         self._grid: List[List[Tuple[Any, Any, Any]]] = []
+        self._rand: List[Tuple[Any, Any, StochasticExpression]] = []
         for k in self._value.keys():
             self._search(self._value, k)
 
@@ -19,6 +21,31 @@ class Space(object):
             for tp in tps:
                 tp[0][tp[1]] = tp[2]
             yield deepcopy(self._value)
+
+    @property
+    def has_random_parameter(self):
+        return len(self._rand) >= 0
+
+    def sample(self, n: int, seed: Any = None) -> "Space":
+        if n <= 0 or not self.has_random_parameter:
+            return self
+        if seed is not None:
+            np.random.seed(seed)
+        return VerticalSpace(*self._sample_to_spaces(n))
+
+    def _sample_to_spaces(self, n: int) -> List["Space"]:
+        spaces: List["Space"] = []
+        rv = [(x, y, z, z.generate_many(n)) for x, y, z in self._rand]
+        for i in range(n):
+            # overwrite StochasticExpressions with random values
+            for parent, key, _, values in rv:
+                parent[key] = values[i]
+            space = Space(**self._value)
+            # undo the overwrite
+            for parent, key, orig, _ in rv:
+                parent[key] = orig
+            spaces.append(space)
+        return spaces
 
     def encode(self) -> Iterable[Any]:
         for s in self:  # type: ignore
@@ -40,6 +67,8 @@ class Space(object):
         node = parent[key]
         if isinstance(node, Grid):
             self._grid.append(self._grid_wrapper(parent, key))
+        elif isinstance(node, StochasticExpression):
+            self._rand.append((parent, key, node))
         elif isinstance(node, dict):
             for k in node.keys():
                 self._search(node, k)
@@ -64,18 +93,18 @@ class Space(object):
 
 class HorizontalSpace(Space):
     def __init__(self, *args: Any, **kwargs: Any):
-        self._groups: List[VerticalSpace] = []
+        self._spaces: List[VerticalSpace] = []
         for x in args:
             if isinstance(x, HorizontalSpace):
-                self._groups.append(VerticalSpace(x))
+                self._spaces.append(VerticalSpace(x))
             elif isinstance(x, VerticalSpace):
-                self._groups.append(x)
+                self._spaces.append(x)
             elif isinstance(x, Space):
-                self._groups.append(VerticalSpace(x))
+                self._spaces.append(VerticalSpace(x))
             elif isinstance(x, dict):
-                self._groups.append(VerticalSpace(HorizontalSpace(**x)))
+                self._spaces.append(VerticalSpace(HorizontalSpace(**x)))
             elif isinstance(x, list):
-                self._groups.append(VerticalSpace(*x))
+                self._spaces.append(VerticalSpace(*x))
             else:
                 raise ValueError(f"{x} is invalid")
         self._dict = {k: _SpaceValue(v) for k, v in kwargs.items()}
@@ -84,13 +113,21 @@ class HorizontalSpace(Space):
     def __iter__(self) -> Iterable[Dict[str, Any]]:
         dicts = list(dict_product(self._dict, safe=True))
         for spaces in product(
-            [g.spaces for g in self._groups], safe=True, remove_empty=True
+            [g.spaces for g in self._spaces], safe=True, remove_empty=True
         ):
             for comb in product(list(spaces) + [dicts], safe=True, remove_empty=True):
                 res: Dict[str, Any] = {}
                 for d in comb:
                     res.update(d)
                 yield res
+
+    @property
+    def has_random_parameter(self):
+        return any(x.has_random_parameter for x in self._spaces)
+
+    def _sample_to_spaces(self, n: int) -> List[Space]:
+        lists = [s._sample_to_spaces(n) for s in self._spaces]
+        return [HorizontalSpace(*args) for args in zip(*lists)]
 
 
 class VerticalSpace(Space):
@@ -113,6 +150,14 @@ class VerticalSpace(Space):
     def __iter__(self) -> Iterable[Dict[str, Any]]:
         for space in self._spaces:
             yield from space  # type: ignore
+
+    @property
+    def has_random_parameter(self):
+        return any(x.has_random_parameter for x in self._spaces)
+
+    def _sample_to_spaces(self, n: int) -> List[Space]:
+        lists = [s._sample_to_spaces(n) for s in self._spaces]
+        return [VerticalSpace(*args) for args in zip(*lists)]
 
 
 class _SpaceValue(object):
