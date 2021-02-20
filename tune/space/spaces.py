@@ -17,6 +17,9 @@ class Space(object):
             self._search(self._value, k)
 
     def __iter__(self) -> Iterable[Dict[str, Any]]:
+        if len(self._grid) == 0:
+            yield deepcopy(self._value)
+            return
         rv = [[(x, y, z, v) for v in z] for x, y, z in self._grid]  # type: ignore
         for tps in product(rv, safe=True, remove_empty=True):  # type: ignore
             # overwrite Grid with one value
