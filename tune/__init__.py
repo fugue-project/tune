@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from tune.space import Choice, Grid, Rand, RandInt, Space, decode
+from tune.space import Choice, Grid, Rand, RandInt, Space
 from tune.tune import (
     ObjectiveRunner,
     SimpleTunable,

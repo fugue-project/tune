@@ -2,7 +2,7 @@ import json
 
 from pytest import raises
 
-from tune import Choice, Grid, Rand, RandInt, Space, decode
+from tune import Choice, Grid, Rand, RandInt, Space
 from tune.space import HorizontalSpace, VerticalSpace
 
 
@@ -150,18 +150,3 @@ def test_operators():
         == list(sum([s1, s2, s3]))
         == list(sum([s1, s2, s3], None))
     )
-
-
-def test_encode_decode():
-    s1 = Space(
-        a=Grid(1, 2),
-        b=Rand(0, 1.0, 0.2, log=True),
-        c=Choice(1, 2, 3),
-        d=[Grid(1, 2), Rand(0, 2.0)],
-        e={"x": "xx", "y": Choice("a", "b")},
-        f=RandInt(0, 10, log=False),
-    )
-    actual = [decode(x) for x in s1.encode()]
-    assert list(s1) == actual
-    for x in s1.encode():
-        print(json.dumps(x, indent=2))

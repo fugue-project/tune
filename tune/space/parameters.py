@@ -1,6 +1,8 @@
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
+from math import floor
+from triad import assert_or_throw
 
 
 class Grid(object):
@@ -75,18 +77,12 @@ class RandBase(StochasticExpression):
         q: Optional[float] = None,
         log: bool = False,
     ):
+        if q is not None:
+            assert_or_throw(q > 0, f"{q} <= 0")
         self.q = q
         self.log = log
 
-    def get(self, seed: Any = None) -> float:
-        v = self.distribution_func(seed)
-        if self.log:
-            v = float(np.exp(v))
-        if self.q is not None:
-            v = np.round(v / self.q) * self.q
-        return float(v)
-
-    def distribution_func(self, seed: Any) -> float:
+    def distribution_func(self, seed: Any) -> float:  # pragma: no cover
         """The distribution function generating a random variable.
         Override this method in derived classes
 
@@ -114,9 +110,15 @@ class Rand(RandBase):
         high: float,
         q: Optional[float] = None,
         log: bool = False,
+        include_high: bool = True,
     ):
+        if include_high:
+            assert_or_throw(high >= low, f"{high} < {low}")
+        else:
+            assert_or_throw(high > low, f"{high} <= {low}")
         self.low = low
         self.high = high
+        self.include_high = include_high
         super().__init__(q, log)
 
     @property
@@ -126,6 +128,7 @@ class Rand(RandBase):
             low=self.low,
             high=self.high,
             log=self.log,
+            include_high=self.include_high,
         )
         if self.q is not None:
             res["q"] = self.q
@@ -133,10 +136,38 @@ class Rand(RandBase):
 
     def distribution_func(self, seed: Any) -> float:
         if self.low == self.high:
+            assert_or_throw(
+                self.include_high,
+                f"high {self.high} equals low but include_high = False",
+            )
             return self.low
         if seed is not None:
             np.random.seed(seed)
         return np.random.uniform(self.low, self.high)
+
+    def get(self, seed: Any = None) -> float:
+        high = self.high
+        low = self.low
+        while True:
+            v = self.distribution_func(seed)
+            if self.log:
+                v = float(np.exp(v))
+                low = np.exp(self.low)
+                high = np.exp(self.high) + 0.0000001
+            if low == high:
+                return low
+            if self.q is not None:
+                v = low + self._round((v - low) / self.q) * self.q
+            v = float(v)
+            if (self.include_high and v <= high) or (
+                not self.include_high and v < high
+            ):
+                return v
+
+    def _round(self, v: Any) -> Any:
+        if self.include_high:
+            return np.round(v)
+        return floor(v)
 
 
 class RandInt(Rand):
@@ -153,8 +184,9 @@ class RandInt(Rand):
         low: int,
         high: int,
         log: bool = False,
+        include_high: bool = True,
     ):
-        super().__init__(low, high, q=1, log=log)
+        super().__init__(low, high, q=1, log=log, include_high=include_high)
 
     @property
     def jsondict(self) -> Dict[str, Any]:
@@ -163,10 +195,11 @@ class RandInt(Rand):
             low=self.low,
             high=self.high,
             log=self.log,
+            include_high=self.include_high,
         )
 
     def get(self, seed: Any = None) -> int:
-        return int(super().get(seed))
+        return int(np.round(super().get(seed)))
 
 
 class NormalRand(RandBase):
@@ -187,6 +220,7 @@ class NormalRand(RandBase):
         q: Optional[float] = None,
         log: bool = False,
     ):
+        assert_or_throw(scale > 0, f"{scale}<=0")
         self.loc = loc
         self.scale = scale
         super().__init__(q, log)
@@ -202,6 +236,15 @@ class NormalRand(RandBase):
         if self.q is not None:
             res["q"] = self.q
         return res
+
+    def get(self, seed: Any = None) -> float:
+        v = self.distribution_func(seed)
+        if self.log:
+            v = float(np.exp(v))
+        if self.q is not None:
+            v = self.loc + np.round((v - self.loc) / self.q) * self.q
+        v = float(v)
+        return v
 
     def distribution_func(self, seed: Any) -> float:
         if seed is not None:
@@ -221,7 +264,7 @@ class NormalRandInt(NormalRand):
     def __init__(
         self,
         loc: int,
-        scale: int,
+        scale: float,
         log: bool = False,
     ):
         super().__init__(loc, scale, q=1, log=log)
@@ -236,14 +279,14 @@ class NormalRandInt(NormalRand):
         )
 
     def get(self, seed: Any = None) -> int:
-        return int(super().get(seed))
+        return int(np.round(super().get(seed)))
 
 
-def decode(value: Any) -> Any:
+def _decode(value: Any) -> Any:
     if isinstance(value, str):
         return value
     elif isinstance(value, list):
-        return [decode(v) for v in value]
+        return [_decode(v) for v in value]
     elif isinstance(value, dict):
         if "_expr_" in value:
             e = value.pop("_expr_")
@@ -259,6 +302,6 @@ def decode(value: Any) -> Any:
                 return NormalRandInt(**value)
             raise ValueError(e)  # pragma: no cover
         else:
-            return {k: decode(v) for k, v in value.items()}
+            return {k: _decode(v) for k, v in value.items()}
     else:
         return value

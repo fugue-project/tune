@@ -1,13 +1,12 @@
 # flake8: noqa
 
 from tune.space.parameters import (
-    Grid,
     Choice,
-    Rand,
-    RandInt,
+    Grid,
     NormalRand,
     NormalRandInt,
-    decode,
+    Rand,
+    RandInt,
+    StochasticExpression,
 )
-
-from tune.space.spaces import Space
+from tune.space.spaces import HorizontalSpace, Space, VerticalSpace
