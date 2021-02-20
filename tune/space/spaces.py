@@ -7,7 +7,6 @@ from tune._utils import dict_product, product
 from tune.space.parameters import Grid, StochasticExpression
 
 
-# TODO: make this inherit from iterable?
 class Space(object):
     def __init__(self, **kwargs: Any):
         self._value = deepcopy(kwargs)

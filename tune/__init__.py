@@ -1,5 +1,8 @@
 # flake8: noqa
 
+from tune_version import __version__
+
+from tune.checkpoint import Checkpoint
 from tune.space import Choice, Grid, Rand, RandInt, Space
 from tune.tune import (
     ObjectiveRunner,
@@ -12,4 +15,3 @@ from tune.tune import (
     tune,
     visualize_top_n,
 )
-from tune_version import __version__
