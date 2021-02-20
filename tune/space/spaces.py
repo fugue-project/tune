@@ -11,20 +11,26 @@ from tune.space.parameters import Grid, StochasticExpression
 class Space(object):
     def __init__(self, **kwargs: Any):
         self._value = deepcopy(kwargs)
-        self._grid: List[List[Tuple[Any, Any, Any]]] = []
+        self._grid: List[Tuple[Any, Any, Grid]] = []
         self._rand: List[Tuple[Any, Any, StochasticExpression]] = []
         for k in self._value.keys():
             self._search(self._value, k)
 
     def __iter__(self) -> Iterable[Dict[str, Any]]:
-        for tps in product(self._grid, safe=True, remove_empty=True):  # type: ignore
-            for tp in tps:
-                tp[0][tp[1]] = tp[2]
-            yield deepcopy(self._value)
+        rv = [[(x, y, z, v) for v in z] for x, y, z in self._grid]  # type: ignore
+        for tps in product(rv, safe=True, remove_empty=True):  # type: ignore
+            # overwrite Grid with one value
+            for parent, key, _, v in tps:
+                parent[key] = v
+            res = deepcopy(self._value)
+            # undo the overwrite
+            for parent, key, orig, _ in tps:
+                parent[key] = orig
+            yield res
 
     @property
     def has_random_parameter(self):
-        return len(self._rand) >= 0
+        return len(self._rand) > 0
 
     def sample(self, n: int, seed: Any = None) -> "Space":
         if n <= 0 or not self.has_random_parameter:
@@ -66,7 +72,7 @@ class Space(object):
     def _search(self, parent: Any, key: Any) -> None:
         node = parent[key]
         if isinstance(node, Grid):
-            self._grid.append(self._grid_wrapper(parent, key))
+            self._grid.append((parent, key, node))
         elif isinstance(node, StochasticExpression):
             self._rand.append((parent, key, node))
         elif isinstance(node, dict):
@@ -75,9 +81,6 @@ class Space(object):
         elif isinstance(node, list):
             for i in range(len(node)):
                 self._search(node, i)
-
-    def _grid_wrapper(self, parent: Any, key: Any) -> List[Tuple[Any, Any, Any]]:
-        return [(parent, key, x) for x in parent[key]]
 
     def _encode_value(self, value: Any) -> Any:
         if isinstance(value, StochasticExpression):
