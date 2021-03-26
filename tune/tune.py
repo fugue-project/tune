@@ -29,7 +29,7 @@ from fugue._utils.interfaceless import (
 from triad import ParamDict, assert_or_throw
 from triad.utils.convert import get_caller_global_local_vars, to_function
 
-from tune.constants import tune_TEMP_PATH
+from tune.constants import TUNE_TEMP_PATH
 from tune.exceptions import TuneCompileError, TuneRuntimeError
 from tune.space import Space
 from tune.space.parameters import _decode
@@ -360,7 +360,7 @@ def serialize_df(df: WorkflowDataFrame, name: str, path: str = "") -> WorkflowDa
     def _get_temp_path(p: str, conf: ParamDict) -> str:
         if p is not None and p != "":
             return p
-        return conf.get_or_throw(tune_TEMP_PATH, str)  # TODO: remove hard code
+        return conf.get_or_throw(TUNE_TEMP_PATH, str)  # TODO: remove hard code
 
     if len(pre_partition.partition_by) == 0:
 

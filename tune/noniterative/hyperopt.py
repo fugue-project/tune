@@ -1,56 +1,36 @@
 from typing import Any, Dict, Tuple
 
 import numpy as np
-from triad import assert_or_throw
 from tune.space.parameters import Choice, Rand, RandInt, StochasticExpression
-from tune.trial.objective import ObjectiveRunner, Objective
-from tune.trial.trial import ReportHandler, Trial
+from tune.noniterative.objective import (
+    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveFunc,
+)
+from tune.trial import Trial, TrialReport
 
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
 
-class HyperoptRunner(ObjectiveRunner):
-    class Handler(ReportHandler):
-        def __init__(self, data: Dict[str, Any]):
-            self._data = data
-
-        def __call__(
-            self,
-            trial: Trial,
-            params: Dict[str, Any],
-            metric: float,
-            metadata: Dict[str, Any],
-        ):
-            assert_or_throw("loss" not in self._data, "can't report multiple times")
-            self._data["loss"] = metric
-            self._data["status"] = STATUS_OK
-            self._data["metric"] = metric
-            self._data["static_params"] = params
-            self._data["metadata"] = metadata
-
+class HyperoptRunner(NonIterativeObjectiveRunner):
     def __init__(self, max_iter: int, seed: int = 0):
         self._max_iter = max_iter
         self._seed = seed
 
-    def run(self, objective: Objective, trial: Trial) -> None:
+    def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
         static_params, stochastic_params = self._split(trial.params)
         stochastic_keys = list(stochastic_params.keys())
         if len(stochastic_keys) == 0:
-            return super().run(objective, trial)
+            return func.run(trial)
 
         def obj(args) -> Dict[str, Any]:
             params = {k: v for k, v in zip(stochastic_keys, args)}
             params.update(static_params)
-            result: Dict[str, Any] = {}
-            handler = HyperoptRunner.Handler(result)
-            static_trial = (
-                trial.with_params(params)
-                .with_checkpoint_basedir_fs(None)
-                .with_report_handler(handler)
-            )
-            objective(static_trial)
-            assert_or_throw("loss" in result, "must report once and only once")
-            return result
+            report = func.run(trial.with_params(params))
+            return {
+                "loss": report.metric,
+                "status": STATUS_OK,
+                "report": report,
+            }
 
         trials = Trials()
         fmin(
@@ -62,12 +42,7 @@ class HyperoptRunner(ObjectiveRunner):
             show_progressbar=False,
             rstate=np.random.RandomState(self._seed),
         )
-
-        trial.report(
-            metric=trials.best_trial["result"]["metric"],
-            params=trials.best_trial["result"]["static_params"],
-            metadata=trials.best_trial["result"]["metadata"],
-        )
+        return trials.best_trial["result"]["report"]
 
     def _split(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         static_params: Dict[str, Any] = {}

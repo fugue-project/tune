@@ -1,12 +1,5 @@
-tune 
-=====
-
-.. toctree::
-   :maxdepth: 4
-
-   tune.space
-   tune.trial
-   tune.tunable
+tune.trial 
+===========
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -28,42 +21,26 @@ tune
 
 
 
-tune.checkpoint
----------------
+tune.trial.hyperopt
+-------------------
 
-.. automodule:: tune.checkpoint
+.. automodule:: tune.trial.hyperopt
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.constants
---------------
+tune.trial.objective
+--------------------
 
-.. automodule:: tune.constants
+.. automodule:: tune.trial.objective
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.exceptions
----------------
+tune.trial.trial
+----------------
 
-.. automodule:: tune.exceptions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.hyperopt
--------------
-
-.. automodule:: tune.hyperopt
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.tune
----------
-
-.. automodule:: tune.tune
+.. automodule:: tune.trial.trial
    :members:
    :undoc-members:
    :show-inheritance:

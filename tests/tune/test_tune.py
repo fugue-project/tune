@@ -22,7 +22,7 @@ from tune import (
     tune,
     visualize_top_n,
 )
-from tune.constants import tune_TEMP_PATH
+from tune.constants import TUNE_TEMP_PATH
 from tune.exceptions import TuneCompileError
 
 
@@ -90,7 +90,7 @@ def test_tune_df(tmpdir):
     def t1(a: int, df: pd.DataFrame, b: int) -> float:
         return float(a + b + df["y"].sum())
 
-    e = make_execution_engine(None, {tune_TEMP_PATH: str(tmpdir)})
+    e = make_execution_engine(None, {TUNE_TEMP_PATH: str(tmpdir)})
 
     for distributable in [True, False, None]:
         with FugueWorkflow(e) as dag:
@@ -132,7 +132,7 @@ def test_select_best(tmpdir):
             "metadata": {"a": a},
         }
 
-    e = NativeExecutionEngine(conf={tune_TEMP_PATH: str(tmpdir)})
+    e = NativeExecutionEngine(conf={TUNE_TEMP_PATH: str(tmpdir)})
     with FugueWorkflow(e) as dag:
         df1 = dag.df([[0, 1], [1, 2], [0, 2]], "x:int,y:int").partition(by=["x"])
         df2 = dag.df([[0, 10], [1, 20]], "x:int,y:int").partition(by=["x"])
@@ -155,7 +155,7 @@ def test_visualize_top_n(tmpdir):
             "metadata": {"a": a},
         }
 
-    e = NativeExecutionEngine(conf={tune_TEMP_PATH: str(tmpdir)})
+    e = NativeExecutionEngine(conf={TUNE_TEMP_PATH: str(tmpdir)})
     with FugueWorkflow(e) as dag:
         df1 = dag.df([[0, 1], [1, 2], [0, 2]], "x:int,y:int").partition(by=["x"])
         df2 = dag.df([[0, 10], [1, 20]], "x:int,y:int").partition(by=["x"])
