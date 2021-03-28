@@ -12,6 +12,7 @@ def test_to_noniterative_objective():
         return a - b
 
     func = to_noniterative_objective(f1)
+    assert func.min_better
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
     report = func.run(trial)
     assert report.trial is trial
@@ -19,7 +20,8 @@ def test_to_noniterative_objective():
     assert report.params == trial.params
     assert report.metadata == {}
 
-    func = to_noniterative_objective("f1")
+    func = to_noniterative_objective("f1", min_better=False)
+    assert not func.min_better
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
     report = func.run(trial)
     assert report.trial is trial
@@ -87,8 +89,9 @@ def test_noniterative_objective():
     assert report.params == trial.params
     assert report.metadata == {}
 
-    @noniterative_objective()
+    @noniterative_objective(min_better=False)
     def f2(a, b: int) -> float:
         return a - b
 
     assert isinstance(f2, NonIterativeObjectiveFunc)
+    assert not f2.min_better

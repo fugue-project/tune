@@ -1,7 +1,8 @@
 import json
 import os
+import pickle
 import random
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 from fugue import (
@@ -15,15 +16,36 @@ from fugue import (
     WorkflowDataFrame,
     WorkflowDataFrames,
 )
-from triad import ParamDict, assert_or_throw
+from triad import ParamDict, assert_or_throw, to_uuid
 
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
+    TUNE_DATASET_TRIALS,
     TUNE_TEMP_PATH,
 )
 from tune.exceptions import TuneCompileError
 from tune.space import Space
+from tune.trial import Trial
+
+
+class TuneDataset:
+    def __init__(self, data: WorkflowDataFrame, dfs: List[str], keys: List[str]):
+        self._data = data.persist()
+        self._dfs = dfs
+        self._keys = keys
+
+    @property
+    def data(self) -> WorkflowDataFrame:
+        return self._data
+
+    @property
+    def dfs(self) -> List[str]:
+        return self._dfs
+
+    @property
+    def keys(self) -> List[str]:
+        return self._keys
 
 
 class TuneDatasetBuilder:
@@ -32,7 +54,9 @@ class TuneDatasetBuilder:
         self._space = space
         self._path = path
 
-    def add_df(self, name: str, df: WorkflowDataFrame, how: str = "") -> None:
+    def add_df(
+        self, name: str, df: WorkflowDataFrame, how: str = ""
+    ) -> "TuneDatasetBuilder":
         assert_or_throw(
             not any(r[0] == name for r in self._dfs_spec),
             TuneCompileError(name + " already exists"),
@@ -47,23 +71,41 @@ class TuneDatasetBuilder:
                 TuneCompileError("must specify how to join after first dataframe"),
             )
         self._dfs_spec.append((name, df, how))
+        return self
 
-    def add_dfs(self, dfs: WorkflowDataFrames, how: str = "") -> None:
+    def add_dfs(self, dfs: WorkflowDataFrames, how: str = "") -> "TuneDatasetBuilder":
         assert_or_throw(dfs.has_key, "all datarames must be named")
         for k, v in dfs.items():
             if len(self._dfs_spec) == 0:
                 self.add_df(k, v)
             else:
                 self.add_df(k, v, how=how)
+        return self
 
     def build(
-        self, wf: FugueWorkflow, batch_size: int = 1, shuffle: bool = True
-    ) -> WorkflowDataFrame:
+        self,
+        wf: FugueWorkflow,
+        batch_size: int = 1,
+        shuffle: bool = True,
+        trial_metadata: Optional[Dict[str, Any]] = None,
+    ) -> TuneDataset:
         space = self._space_to_df(wf=wf, batch_size=batch_size, shuffle=shuffle)
         if len(self._dfs_spec) == 0:
-            return space
+            res = space
+            keys: List[str] = []
         else:
-            return self._serialize_dfs().cross_join(space)
+            dfs, keys = self._serialize_dfs()
+            res = dfs.cross_join(space)
+
+        def postprocess(df: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+            for row in df:
+                yield _to_trail_row(row, trial_metadata or {})
+
+        data = res.transform(
+            postprocess,
+            schema=f"*,{TUNE_DATASET_TRIALS}:str-{TUNE_DATASET_PARAMS_PREFIX}",
+        )
+        return TuneDataset(data, [x[0] for x in self._dfs_spec], keys)
 
     def _serialize_df(self, df: WorkflowDataFrame, name: str) -> WorkflowDataFrame:
         pre_partition = df.partition_spec
@@ -100,18 +142,23 @@ class TuneDatasetBuilder:
 
             return df.transform(SavePartition, params={"path": path, "name": name})
 
-    def _serialize_dfs(self) -> WorkflowDataFrame:
+    def _serialize_dfs(self) -> Tuple[WorkflowDataFrame, List[str]]:
         df = self._serialize_df(self._dfs_spec[0][1], self._dfs_spec[0][0])
+        keys = list(self._dfs_spec[0][1].partition_spec.partition_by)
         for i in range(1, len(self._dfs_spec)):
+            how = self._dfs_spec[i][2]
+            new_keys = set(self._dfs_spec[i][1].partition_spec.partition_by)
             next_df = self._serialize_df(self._dfs_spec[i][1], self._dfs_spec[i][0])
-            df = df.join(next_df, how=self._dfs_spec[i][2])
-        return df
+            df = df.join(next_df, how=how)
+            if how != "cross":
+                keys = [k for k in keys if k in new_keys]
+        return df, keys
 
     def _space_to_df(
         self, wf: FugueWorkflow, batch_size: int = 1, shuffle: bool = True
     ) -> WorkflowDataFrame:
         def get_data() -> Iterable[List[Any]]:
-            it = list(self._space.encode())  # type: ignore
+            it = list(self._space)  # type: ignore
             if shuffle:
                 random.seed(0)
                 random.shuffle(it)
@@ -119,9 +166,29 @@ class TuneDatasetBuilder:
             for a in it:
                 res.append(a)
                 if batch_size == len(res):
-                    yield [json.dumps(res)]
+                    yield [pickle.dumps(res)]
                     res = []
             if len(res) > 0:
-                yield [json.dumps(res)]
+                yield [pickle.dumps(res)]
 
-        return wf.df(IterableDataFrame(get_data(), f"{TUNE_DATASET_PARAMS_PREFIX}:str"))
+        return wf.df(
+            IterableDataFrame(get_data(), f"{TUNE_DATASET_PARAMS_PREFIX}:binary")
+        )
+
+
+def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
+    key_names = sorted(
+        k
+        for k in data.keys()
+        if not k.startswith(TUNE_DATASET_DF_PREFIX)
+        and not k.startswith(TUNE_DATASET_PARAMS_PREFIX)
+    )
+    keys = [data[k] for k in key_names]
+    trials: Dict[str, Dict[str, Any]] = {}
+    for param in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
+        p = ParamDict(sorted(((k, v) for k, v in param.items()), key=lambda x: x[0]))
+        tid = to_uuid(keys, p)
+        trials[tid] = Trial(trial_id=tid, params=p, metadata=metadata).jsondict
+    data[TUNE_DATASET_TRIALS] = json.dumps(list(trials.values()))
+    del data[TUNE_DATASET_PARAMS_PREFIX]
+    return data

@@ -1,5 +1,9 @@
-from tune.trial import Trial, TrialDecision, TrialReport
 import numpy as np
+
+from tune.space import Rand
+from tune.trial import Trial, TrialDecision, TrialReport
+import pandas as pd
+import copy
 
 
 def test_trial():
@@ -14,16 +18,54 @@ def test_trial():
     assert {"b": 2} == t2.metadata
 
 
+def test_copy():
+    trial = Trial("abc", {"a": 1})
+    t1 = trial.with_dfs({"c": pd.DataFrame([[0]])})
+
+    t2 = copy.copy(t1)
+    t3 = copy.deepcopy(t1)
+    assert trial.trial_id == t2.trial_id == t3.trial_id
+    assert t1.dfs is t2.dfs is t3.dfs
+    assert 0 == len(trial.dfs)
+    assert 1 == len(t1.dfs)
+
+
+def test_encode_decode():
+    p = {"a": 1, "b": Rand(1, 2)}
+    trial = Trial("abc", p, {})
+    d = trial.jsondict
+    assert isinstance(d["params"]["b"], dict)
+    t = Trial.from_jsondict(d)
+    assert isinstance(t.params["b"], Rand)
+
+
 def test_trial_report():
-    trial = Trial("abc", {"a": 1}, {"b": 2})
-    report = TrialReport(
-        trial, metric=np.float(0.1), params={"c": 3}, metadata={"d": 4}
+    trial = Trial("abc", {"a": Rand(3, 4)}, {"b": 2})
+    report = copy.copy(
+        TrialReport(
+            trial, metric=np.float(0.1), params={"c": Rand(1, 2)}, metadata={"d": 4}
+        )
     )
     assert trial is report.trial
     assert 0.1 == report.metric
     assert type(report.metric) == float
-    assert {"c": 3} == report.params
+    assert {"c": Rand(1, 2)} == report.params
     assert {"d": 4} == report.metadata
+
+    report = copy.deepcopy(TrialReport(trial, metric=np.float(0.1)))
+    assert trial is report.trial
+    assert 0.1 == report.metric
+    assert type(report.metric) == float
+    assert {"a": Rand(3, 4)} == report.params
+    assert {} == report.metadata
+
+    report = TrialReport.from_jsondict(report.jsondict)
+    assert trial.trial_id == report.trial.trial_id
+    assert 0.1 == report.metric
+    assert type(report.metric) == float
+    assert {"a": Rand(3, 4)} == report.params
+    assert {} == report.metadata
+
 
 
 def test_trial_decision():

@@ -1,8 +1,8 @@
+from math import floor
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
-from math import floor
-from triad import assert_or_throw
+from triad import assert_or_throw, to_uuid
 
 
 class Grid(object):
@@ -16,6 +16,13 @@ class Grid(object):
 
     def __iter__(self) -> Iterable[Any]:
         yield from self._values
+
+    def __eq__(self, other: Any):
+        """Compare two ``Grid``"""
+        return isinstance(other, type(self)) and self._values == other._values
+
+    def __uuid__(self) -> str:
+        return to_uuid("grid", self._values)
 
 
 class StochasticExpression(object):
@@ -42,6 +49,9 @@ class StochasticExpression(object):
         if seed is not None:
             np.random.seed(seed)
         return [self.generate() for _ in range(n)]
+
+    def __uuid__(self) -> str:
+        return to_uuid(self.jsondict)
 
 
 class Choice(StochasticExpression):
@@ -287,11 +297,23 @@ class NormalRandInt(NormalRand):
         return int(np.round(super().generate(seed)))
 
 
-def _decode(value: Any) -> Any:
+def encode_params(value: Any):
+    if isinstance(value, StochasticExpression):
+        return value.jsondict
+    elif isinstance(value, str):
+        return value
+    elif isinstance(value, list):
+        return [encode_params(v) for v in value]
+    elif isinstance(value, dict):
+        return {k: encode_params(v) for k, v in value.items()}
+    return value
+
+
+def decode_params(value: Any) -> Any:
     if isinstance(value, str):
         return value
     elif isinstance(value, list):
-        return [_decode(v) for v in value]
+        return [decode_params(v) for v in value]
     elif isinstance(value, dict):
         if "_expr_" in value:
             e = value.pop("_expr_")
@@ -307,6 +329,6 @@ def _decode(value: Any) -> Any:
                 return NormalRandInt(**value)
             raise ValueError(e)  # pragma: no cover
         else:
-            return {k: _decode(v) for k, v in value.items()}
+            return {k: decode_params(v) for k, v in value.items()}
     else:
         return value

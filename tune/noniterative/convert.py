@@ -16,7 +16,7 @@ from tune.trial import Trial, TrialReport
 
 
 def noniterative_objective(
-    func: Optional[Callable] = None,
+    func: Optional[Callable] = None, min_better: bool = True
 ) -> Callable[[Any], NonIterativeObjectiveFunc]:
     def deco(func: Callable) -> NonIterativeObjectiveFunc:
         assert_or_throw(
@@ -25,7 +25,7 @@ def noniterative_objective(
                 "non_iterative_objective decorator can't be used on class methods"
             ),
         )
-        return _NonIterativeObjectiveFuncWrapper.from_func(func)
+        return _NonIterativeObjectiveFuncWrapper.from_func(func, min_better)
 
     if func is None:
         return deco
@@ -35,6 +35,7 @@ def noniterative_objective(
 
 def to_noniterative_objective(
     obj: Any,
+    min_better: bool = True,
     global_vars: Optional[Dict[str, Any]] = None,
     local_vars: Optional[Dict[str, Any]] = None,
 ) -> NonIterativeObjectiveFunc:
@@ -47,19 +48,26 @@ def to_noniterative_objective(
         if isinstance(f, NonIterativeObjectiveFunc):
             return copy.copy(f)
         # this is for functions without decorator
-        return _NonIterativeObjectiveFuncWrapper.from_func(f)
+        return _NonIterativeObjectiveFuncWrapper.from_func(f, min_better)
     except Exception as e:
         exp = e
     raise TuneCompileError(f"{obj} is not a valid tunable function", exp)
 
 
 class _NonIterativeObjectiveFuncWrapper(NonIterativeObjectiveFunc):
+    def __init__(self, min_better: bool):
+        self._min_better = min_better
+
+    @property
+    def min_better(self) -> bool:
+        return self._min_better
+
     @no_type_check
     def run(self, trial: Trial) -> TrialReport:
         if self._orig_input:
             result = self._func(trial)
         else:
-            result = self._func(**trial.params)
+            result = self._func(**trial.params, **trial.dfs)
         return self._output_f(result, trial)
 
     @no_type_check
@@ -68,8 +76,10 @@ class _NonIterativeObjectiveFuncWrapper(NonIterativeObjectiveFunc):
 
     @no_type_check
     @staticmethod
-    def from_func(func: Callable) -> "_NonIterativeObjectiveFuncWrapper":
-        f = _NonIterativeObjectiveFuncWrapper()
+    def from_func(
+        func: Callable, min_better: bool
+    ) -> "_NonIterativeObjectiveFuncWrapper":
+        f = _NonIterativeObjectiveFuncWrapper(min_better=min_better)
         w = _NonIterativeObjectiveWrapper(func)
         f._func = w._func
         f._orig_input = w._orig_input

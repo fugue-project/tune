@@ -32,7 +32,7 @@ from triad.utils.convert import get_caller_global_local_vars, to_function
 from tune.constants import TUNE_TEMP_PATH
 from tune.exceptions import TuneCompileError, TuneRuntimeError
 from tune.space import Space
-from tune.space.parameters import _decode
+from tune.space.parameters import decode_params
 
 
 class Tunable(object):
@@ -324,7 +324,7 @@ def tune(  # noqa: C901
                         dfs[key] = pd.read_parquet(v)
                     dfs_keys.add(key)
             for params in json.loads(row["__fmin_params__"]):
-                p = _decode(params)
+                p = decode_params(params)
                 best = objective_runner.run(  # type: ignore
                     t, dict(**dfs, **p), set(p.keys())
                 )

@@ -1,14 +1,19 @@
 import json
 
-from tune.space import Choice, Grid, NormalRand, NormalRandInt, Rand, RandInt, Space
-from tune.space.parameters import _decode
 import numpy as np
 from pytest import raises
+from triad import to_uuid
+from tune.space import Choice, Grid, NormalRand, NormalRandInt, Rand, RandInt, Space
+from tune.space.parameters import decode_params
 
 
 def test_grid():
     v = Grid("a", "b")
     assert ["a", "b"] == list(v)
+
+    v2 = Grid("b", "a")
+    assert v == v and v != v2
+    assert to_uuid(v) != to_uuid(v2)
 
 
 def test_choice():
@@ -19,6 +24,9 @@ def test_choice():
     assert v.generate_many(20, 0) != v.generate_many(20, 1)
     actual = set(v.generate_many(20, 0))
     assert set(["a", "b", "c"]) == actual
+
+    assert to_uuid(v) != to_uuid(Grid("a", "b", "c"))
+    assert v != Grid("a", "b", "c")
 
 
 def test_rand():
@@ -125,7 +133,7 @@ def test_normal_randint():
         assert x in actual
 
 
-def test_encode_decode():
+def test_encode_decode_params():
     s1 = Space(
         a=Grid(1, 2),
         b=Rand(0, 1.0, 0.2, log=True),
@@ -136,7 +144,7 @@ def test_encode_decode():
         g=NormalRand(0.1, 1.0, q=0.1, log=False),
         h=NormalRandInt(0.1, 1.0, log=False),
     )
-    actual = [_decode(x) for x in s1.encode()]
+    actual = [decode_params(x) for x in s1.encode()]
     assert list(s1) == actual
     for x in s1.encode():
         print(json.dumps(x, indent=2))

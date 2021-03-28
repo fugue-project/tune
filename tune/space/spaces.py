@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Tuple, no_type_check
 import numpy as np
 from triad import assert_or_throw
 from tune._utils import dict_product, product
-from tune.space.parameters import Grid, StochasticExpression
+from tune.space.parameters import Grid, StochasticExpression, encode_params
 
 
 class Space(object):
@@ -57,7 +57,7 @@ class Space(object):
 
     def encode(self) -> Iterable[Any]:
         for s in self:  # type: ignore
-            yield self._encode_value(s)
+            yield encode_params(s)
 
     def __mul__(self, other: Any) -> "HorizontalSpace":
         return HorizontalSpace(self, other)
@@ -83,17 +83,6 @@ class Space(object):
         elif isinstance(node, list):
             for i in range(len(node)):
                 self._search(node, i)
-
-    def _encode_value(self, value: Any) -> Any:
-        if isinstance(value, StochasticExpression):
-            return value.jsondict
-        elif isinstance(value, str):
-            return value
-        elif isinstance(value, list):
-            return [self._encode_value(v) for v in value]
-        elif isinstance(value, dict):
-            return {k: self._encode_value(v) for k, v in value.items()}
-        return value
 
 
 class HorizontalSpace(Space):
