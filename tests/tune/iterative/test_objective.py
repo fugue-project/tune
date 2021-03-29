@@ -1,22 +1,32 @@
-from tune.iterative.objective import IterativeObjectiveFunc, IterativeObjectiveRunner
-from tune.iterative.trial import IterativeTrial, TrialJudge
-from tune.trial import TrialDecision, TrialReport, Trial
+from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.checkpoint import Checkpoint
+from tune.iterative.objective import (
+    IterativeObjectiveRunner,
+    MultiIterationObjectiveFunc,
+)
+from tune.iterative.trial import TrialJudge
+from tune.trial import Trial, TrialDecision, TrialReport
 
 
-class F(IterativeObjectiveFunc):
-    def run(self, trial: IterativeTrial) -> None:
-        v = 0
-        if trial.iteration > 0:
-            v = int(trial.checkpoint.latest.readtext("x"))
-        while True:
-            v += 1
-            res = trial.report(
-                v, metadata={"d": 4}, save_checkpoint=lambda f: f.writetext("x", str(v))
-            )
-            if res.should_stop:
-                return
+class F(MultiIterationObjectiveFunc):
+    def __init__(self):
+        self.v = -10
+
+    def preprocess(self) -> None:
+        self.v = 0
+
+    def postprocess(self) -> None:
+        self.v = -10
+
+    def load_checkpoint(self, fs: FSBase) -> None:
+        self.v = int(fs.readtext("x"))
+
+    def save_checkpoint(self, fs: FSBase) -> None:
+        fs.writetext("x", str(self.v))
+
+    def run_single_iteration(self, trial: Trial) -> TrialReport:
+        self.v += 1
+        return TrialReport(trial, self.v, metadata={"d": 4})
 
 
 class J(TrialJudge):
@@ -24,8 +34,8 @@ class J(TrialJudge):
         self.report = report
         return TrialDecision(
             report,
-            should_stop=int(report.metric) % 3 == 0,
-            should_checkpoint=int(report.metric) % 2 == 1,
+            should_stop=int(report.metric) in [3, 6, 9],
+            should_checkpoint=int(report.metric) in [2, 3, 6],
             metadata={"x": 1},
         )
 
@@ -35,6 +45,11 @@ def test_objective_runner(tmpdir):
     j = J()
     runner = IterativeObjectiveRunner(j, fs)
     f = F()
-    runner.run(f, Trial("abc", {"a": 1}, {"b": 2}))
-    runner.run(f, Trial("abc", {"a": 1}, {"b": 2}))
+    runner.run(f, Trial("abc", {"a": 1}), 100)
+    assert -10 == f.v
+    runner.run(f, Trial("abc", {"a": 1}), 100)
+    assert -10 == f.v
     assert 6.0 == j.report.metric
+    runner.run(f, Trial("abc", {"a": 1}), 2)
+    assert -10 == f.v
+    assert 8.0 == j.report.metric

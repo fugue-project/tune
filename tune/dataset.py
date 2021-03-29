@@ -2,9 +2,10 @@ import json
 import os
 import pickle
 import random
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 from uuid import uuid4
 
+import pandas as pd
 from fugue import (
     ArrayDataFrame,
     DataFrame,
@@ -22,6 +23,7 @@ from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
     TUNE_DATASET_TRIALS,
+    TUNE_REPORT_METRIC,
     TUNE_TEMP_PATH,
 )
 from tune.exceptions import TuneCompileError
@@ -46,6 +48,19 @@ class TuneDataset:
     @property
     def keys(self) -> List[str]:
         return self._keys
+
+
+def get_trials_from_row(row: Dict[str, Any]) -> Iterable[Trial]:
+    dfs: Dict[str, Any] = {}
+    dfs_keys: Set[str] = set()
+    for k, v in row.items():
+        if k.startswith(TUNE_DATASET_DF_PREFIX):
+            key = k[len(TUNE_DATASET_DF_PREFIX) :]
+            if v is not None:
+                dfs[key] = pd.read_parquet(v)
+            dfs_keys.add(key)
+    for params in json.loads(row[TUNE_DATASET_TRIALS]):
+        yield Trial.from_jsondict(params).with_dfs(dfs)
 
 
 class TuneDatasetBuilder:
@@ -174,6 +189,29 @@ class TuneDatasetBuilder:
         return wf.df(
             IterableDataFrame(get_data(), f"{TUNE_DATASET_PARAMS_PREFIX}:binary")
         )
+
+
+class StudyResult:
+    def __init__(
+        self, dataset: TuneDataset, result: WorkflowDataFrame, min_better: bool
+    ):
+        self._dataset = dataset
+        self._result = result.persist()
+        self._min_better = min_better
+
+    def result(self, best_n: int = 0) -> WorkflowDataFrame:
+        if best_n <= 0:
+            return self._result
+        if self._min_better:
+            presort = TUNE_REPORT_METRIC
+        else:
+            presort = TUNE_REPORT_METRIC + " desc"
+        if len(self._dataset.keys) == 0:
+            return self._result.take(n=best_n, presort=presort)
+        else:
+            return self._result.partition(by=self._dataset.keys, presort=presort).take(
+                best_n
+            )
 
 
 def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:

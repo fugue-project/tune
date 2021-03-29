@@ -78,10 +78,12 @@ class TrialReport:
         metric: Any,
         params: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        cost: float = 1.0,
         raw: bool = False,
     ):
         self._trial = trial
         self._metric = float(metric)
+        self._cost = float(cost)
         if params is None:
             self._params = trial.params
         else:
@@ -94,6 +96,7 @@ class TrialReport:
             metric=self.metric,
             params=self._params,
             metadata=self._metadata,
+            cost=self._cost,
             raw=True,
         )
 
@@ -108,8 +111,16 @@ class TrialReport:
         return self._trial
 
     @property
+    def trial_id(self) -> str:
+        return self.trial.trial_id
+
+    @property
     def metric(self) -> float:
         return self._metric
+
+    @property
+    def cost(self) -> float:
+        return self._cost
 
     @property
     def params(self) -> Dict[str, Any]:
@@ -126,6 +137,7 @@ class TrialReport:
             "metric": self.metric,
             "params": encode_params(self.params),
             "metadata": self.metadata,
+            "cost": self.cost,
         }
 
     @staticmethod
@@ -147,6 +159,12 @@ class TrialDecision:
         self._should_checkpoint = should_checkpoint
         self._metadata = metadata or {}
 
+    def __copy__(self) -> "TrialDecision":
+        return self
+
+    def __deepcopy__(self, memo: Any) -> "TrialDecision":
+        return self
+
     @property
     def report(self) -> TrialReport:
         return self._report
@@ -154,6 +172,10 @@ class TrialDecision:
     @property
     def trial(self) -> Trial:
         return self.report.trial
+
+    @property
+    def trial_id(self) -> str:
+        return self.trial.trial_id
 
     @property
     def should_stop(self) -> bool:
@@ -166,3 +188,17 @@ class TrialDecision:
     @property
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
+
+    @property
+    def jsondict(self) -> Dict[str, Any]:
+        return {
+            "report": self.report.jsondict,
+            "should_stop": self.should_stop,
+            "should_checkpoint": self.should_checkpoint,
+            "metadata": self.metadata,
+        }
+
+    @staticmethod
+    def from_jsondict(data: Dict[str, Any]) -> "TrialDecision":
+        report = TrialReport.from_jsondict(data.pop("report"))
+        return TrialDecision(report=report, **data)
