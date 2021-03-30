@@ -1,19 +1,21 @@
-from fugue.workflow.workflow import FugueWorkflow
-from tune.trial import Trial, TrialDecision, TrialReport
-from tune.iterative.trial import IterativeTrial, TrialJudge
-from tune.iterative.objective import MultiIterationObjectiveFunc
-from tune.iterative.study import IterativeStudy
-from tune.dataset import TuneDatasetBuilder
-from tune.space import Space, Grid
-from collections import defaultdict
+from typing import Any, Dict, Iterable
+
 import numpy as np
+from fugue.workflow.workflow import FugueWorkflow
+from tune.constants import TUNE_REPORT_METRIC
+from tune.dataset import TuneDatasetBuilder
+from tune.iterative.objective import MultiRungObjectiveFunc
+from tune.iterative.study import IterativeStudy
+from tune.iterative.trial import IterativeTrial, TrialJudge
+from tune.space import Grid, Space
+from tune.trial import Trial, TrialDecision, TrialReport
 
 
 def f(x, a, b):
     return -np.log(x + 0.01) * a + b
 
 
-class F(MultiIterationObjectiveFunc):
+class F(MultiRungObjectiveFunc):
     def __init__(self) -> None:
         self.step = 0
         super().__init__()
@@ -32,21 +34,26 @@ class F(MultiIterationObjectiveFunc):
 
 
 class J(TrialJudge):
-    def __init__(self, n):
-        self.n = n
-        self.ct = defaultdict(int)
+    def __init__(self, schedule):
+        self.schedule = schedule
+
+    def get_budget(self, trial: Trial, rung: int) -> float:
+        return float(self.schedule[rung]) if rung < len(self.schedule) else 0.0
 
     def judge(self, report: TrialReport) -> TrialDecision:
-        self.ct[report.trial_id] += 1
         return TrialDecision(
             report,
-            should_stop=self.ct[report.trial_id] == self.n,
+            budget=self.get_budget(report.trial, report.rung + 1),
             should_checkpoint=False,
             metadata={},
         )
 
 
 def test_iterative_study(tmpdir):
+    def assert_metric(df: Iterable[Dict[str, Any]], metric: float) -> None:
+        for row in df:
+            assert row[TUNE_REPORT_METRIC] < metric
+
     study = IterativeStudy(F(), str(tmpdir))
     space = sum(
         Space(a=a, b=b)
@@ -54,7 +61,11 @@ def test_iterative_study(tmpdir):
     )
     dag = FugueWorkflow()
     dataset = TuneDatasetBuilder(space, str(tmpdir)).build(dag)
-    result = study.optimize(dataset, J(10))
+    result = study.optimize(
+        dataset,
+        J([1, 2, 3, 4]),
+    )
     result.result(1).show()
+    result.result(1).output(assert_metric, params=dict(metric=-2.8))
 
     dag.run()

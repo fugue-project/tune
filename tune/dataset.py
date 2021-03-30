@@ -2,7 +2,7 @@ import json
 import os
 import pickle
 import random
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 import pandas as pd
@@ -23,6 +23,7 @@ from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
     TUNE_DATASET_TRIALS,
+    TUNE_PREFIX,
     TUNE_REPORT_METRIC,
     TUNE_TEMP_PATH,
 )
@@ -52,13 +53,11 @@ class TuneDataset:
 
 def get_trials_from_row(row: Dict[str, Any]) -> Iterable[Trial]:
     dfs: Dict[str, Any] = {}
-    dfs_keys: Set[str] = set()
     for k, v in row.items():
         if k.startswith(TUNE_DATASET_DF_PREFIX):
             key = k[len(TUNE_DATASET_DF_PREFIX) :]
             if v is not None:
                 dfs[key] = pd.read_parquet(v)
-            dfs_keys.add(key)
     for params in json.loads(row[TUNE_DATASET_TRIALS]):
         yield Trial.from_jsondict(params).with_dfs(dfs)
 
@@ -215,18 +214,15 @@ class StudyResult:
 
 
 def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
-    key_names = sorted(
-        k
-        for k in data.keys()
-        if not k.startswith(TUNE_DATASET_DF_PREFIX)
-        and not k.startswith(TUNE_DATASET_PARAMS_PREFIX)
-    )
+    key_names = sorted(k for k in data.keys() if not k.startswith(TUNE_PREFIX))
     keys = [data[k] for k in key_names]
     trials: Dict[str, Dict[str, Any]] = {}
     for param in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
         p = ParamDict(sorted(((k, v) for k, v in param.items()), key=lambda x: x[0]))
         tid = to_uuid(keys, p)
-        trials[tid] = Trial(trial_id=tid, params=p, metadata=metadata).jsondict
+        trials[tid] = Trial(
+            trial_id=tid, params=p, metadata=metadata, keys=keys
+        ).jsondict
     data[TUNE_DATASET_TRIALS] = json.dumps(list(trials.values()))
     del data[TUNE_DATASET_PARAMS_PREFIX]
     return data

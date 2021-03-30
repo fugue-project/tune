@@ -1,4 +1,5 @@
 from tune.iterative.trial import IterativeTrial, TrialJudge, TrialReport, TrialDecision
+from tune.trial import Trial
 from triad import FileSystem
 from pytest import raises
 
@@ -9,14 +10,16 @@ def test_iterative_trial(tmpdir):
             self.report = report
             return TrialDecision(report, False, True, metadata={})
 
-    t1 = IterativeTrial("abc", {"a": 1}, {"b": 2}, TrialJudge())
+    tr = Trial("abc", {"a": 1}, {"b": 2}, keys=["a", "b"])
+    t1 = IterativeTrial(tr, TrialJudge())
     assert "abc" == t1.trial_id
     assert {"a": 1} == t1.params
     assert {"b": 2} == t1.metadata
     assert not t1.has_checkpoint
     raises(AssertionError, lambda: t1.checkpoint)
     assert 0 == t1.iteration
-    decision = t1.report(1.1, {"c": 3}, metadata={"d": 4})
+    report = TrialReport(t1, 1.1, {"c": 3}, metadata={"d": 4})
+    decision = t1.judge.judge(report)
     assert 1.1 == decision.report.metric
     assert {"c": 3} == decision.report.params
     assert {"d": 4} == decision.report.metadata
@@ -30,11 +33,11 @@ def test_iterative_trial(tmpdir):
     assert {"a": 1} == t2.params
     assert {"b": 2} == t2.metadata
     assert t2.has_checkpoint
-    decision = t2.report(
-        1.2, {"c": 30}, metadata={"d": 40}, save_checkpoint=lambda f: f.touch("x")
-    )
+    report = TrialReport(t2, 1.2, {"c": 30}, metadata={"d": 40})
+    decision = t2.judge.judge(report)
+    with t2.checkpoint.create() as ffs:
+        ffs.touch("x")
     assert 1.2 == decision.report.metric
     assert {"c": 30} == decision.report.params
     assert {"d": 40} == decision.report.metadata
-    assert t2.checkpoint.latest.exists("x")
     assert 1 == t2.iteration

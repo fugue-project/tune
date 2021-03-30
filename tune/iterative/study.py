@@ -2,16 +2,10 @@ import json
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from triad.collections.fs import FileSystem
-from tune.constants import (
-    TUNE_REPORT,
-    TUNE_REPORT_METRIC,
-)
+from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
-from tune.iterative.objective import (
-    IterativeObjectiveFunc,
-    IterativeObjectiveRunner,
-    TrialJudge,
-)
+from tune.iterative.objective import IterativeObjectiveFunc
+from tune.iterative.trial import IterativeTrial, Trial, TrialJudge
 from tune.trial import TrialDecision, TrialReport
 
 
@@ -21,11 +15,12 @@ class TrialCallback:
 
     def entrypoint(self, name, kwargs: Dict[str, Any]) -> Any:
         if name == "judge":
-            return self.run_judge(kwargs)
+            return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
+        if name == "get_budget":
+            return self._judge.get_budget(
+                Trial.from_jsondict(kwargs["trial"]), kwargs["rung"]
+            )
         raise NotImplementedError  # pragma: no cover
-
-    def run_judge(self, kwargs: Dict[str, Any]):
-        return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
 
 
 class RemoteTrialJudge(TrialJudge):
@@ -41,6 +36,9 @@ class RemoteTrialJudge(TrialJudge):
         self._report = report
         return TrialDecision.from_jsondict(self._entrypoint("judge", report.jsondict))
 
+    def get_budget(self, trial: Trial, rung: int) -> float:
+        return self._entrypoint("get_budget", dict(trial=trial.jsondict, rung=rung))
+
 
 class IterativeStudy:
     def __init__(self, objective: IterativeObjectiveFunc, checkpoint_path: str):
@@ -54,7 +52,6 @@ class IterativeStudy:
         res = dataset.data.per_row().transform(
             self._compute,
             schema=f"*,{add_schema}",
-            params=dict(per_config_budget=100.0),
             callback=callback.entrypoint,
         )
 
@@ -66,14 +63,12 @@ class IterativeStudy:
         self,
         df: Iterable[Dict[str, Any]],
         entrypoint: Callable[[str, Dict[str, Any]], Any],
-        per_config_budget: float,
     ) -> Iterable[Dict[str, Any]]:
         ck_fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
         for row in df:
             for trial in get_trials_from_row(row):
                 rjudge = RemoteTrialJudge(entrypoint)
-                runner = IterativeObjectiveRunner(rjudge, ck_fs)
-                runner.run(self._objective.copy(), trial, budget=per_config_budget)
+                self._objective.copy().run(IterativeTrial(trial, rjudge, ck_fs))
                 if rjudge.report is not None:
                     res = dict(row)
                     res[TUNE_REPORT_METRIC] = rjudge.report.metric

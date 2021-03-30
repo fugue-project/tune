@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from tune.space.parameters import decode_params, encode_params
 
@@ -9,12 +9,14 @@ class Trial:
         trial_id: str,
         params: Dict[str, Any],
         metadata: Optional[Dict[str, Any]] = None,
+        keys: Optional[List[str]] = None,
         dfs: Optional[Dict[str, Any]] = None,
         raw: bool = False,
     ):
         self._trial_id = trial_id
         self._params = params if raw else decode_params(params)
         self._metadata = metadata or {}
+        self._keys = keys or []
         self._dfs = dfs or {}
 
     def copy(self) -> "Trial":
@@ -22,6 +24,7 @@ class Trial:
             trial_id=self._trial_id,
             params=self._params,
             metadata=self._metadata,
+            keys=self._keys,
             dfs=self._dfs,
             raw=True,
         )
@@ -39,6 +42,10 @@ class Trial:
     @property
     def params(self) -> Dict[str, Any]:
         return self._params
+
+    @property
+    def keys(self) -> List[str]:
+        return self._keys
 
     @property
     def dfs(self) -> Dict[str, Any]:
@@ -64,6 +71,7 @@ class Trial:
             "trial_id": self.trial_id,
             "params": encode_params(self.params),
             "metadata": self.metadata,
+            "keys": self.keys,
         }
 
     @staticmethod
@@ -79,11 +87,13 @@ class TrialReport:
         params: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         cost: float = 1.0,
+        rung: int = 0,
         raw: bool = False,
     ):
         self._trial = trial
         self._metric = float(metric)
         self._cost = float(cost)
+        self._rung = rung
         if params is None:
             self._params = trial.params
         else:
@@ -97,6 +107,7 @@ class TrialReport:
             params=self._params,
             metadata=self._metadata,
             cost=self._cost,
+            rung=self._rung,
             raw=True,
         )
 
@@ -123,12 +134,26 @@ class TrialReport:
         return self._cost
 
     @property
+    def rung(self) -> int:
+        return self._rung
+
+    @property
     def params(self) -> Dict[str, Any]:
         return self._params
 
     @property
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
+
+    def with_cost(self, cost: float) -> "TrialReport":
+        t = self.copy()
+        t._cost = cost
+        return t
+
+    def with_rung(self, rung: int) -> "TrialReport":
+        t = self.copy()
+        t._rung = rung
+        return t
 
     @property
     def jsondict(self) -> Dict[str, Any]:
@@ -138,6 +163,7 @@ class TrialReport:
             "params": encode_params(self.params),
             "metadata": self.metadata,
             "cost": self.cost,
+            "rung": self.rung,
         }
 
     @staticmethod
@@ -150,12 +176,12 @@ class TrialDecision:
     def __init__(
         self,
         report: TrialReport,
-        should_stop: bool,
+        budget: float,
         should_checkpoint: bool,
         metadata: Optional[Dict[str, Any]] = None,
     ):
         self._report = report
-        self._should_stop = should_stop
+        self._budget = budget
         self._should_checkpoint = should_checkpoint
         self._metadata = metadata or {}
 
@@ -178,8 +204,12 @@ class TrialDecision:
         return self.trial.trial_id
 
     @property
+    def budget(self) -> float:
+        return self._budget
+
+    @property
     def should_stop(self) -> bool:
-        return self._should_stop
+        return self.budget <= 0
 
     @property
     def should_checkpoint(self) -> bool:
@@ -193,7 +223,7 @@ class TrialDecision:
     def jsondict(self) -> Dict[str, Any]:
         return {
             "report": self.report.jsondict,
-            "should_stop": self.should_stop,
+            "budget": self.budget,
             "should_checkpoint": self.should_checkpoint,
             "metadata": self.metadata,
         }

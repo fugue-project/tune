@@ -1,16 +1,17 @@
 from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.iterative.objective import (
-    IterativeObjectiveRunner,
-    MultiIterationObjectiveFunc,
-)
-from tune.iterative.trial import TrialJudge
+from tune.iterative.objective import MultiRungObjectiveFunc
+from tune.iterative.trial import IterativeTrial, TrialJudge
 from tune.trial import Trial, TrialDecision, TrialReport
 
 
-class F(MultiIterationObjectiveFunc):
+class F(MultiRungObjectiveFunc):
     def __init__(self):
         self.v = -10
+        super().__init__()
+
+    def copy(self) -> "F":
+        return F()
 
     def preprocess(self) -> None:
         self.v = 0
@@ -30,26 +31,32 @@ class F(MultiIterationObjectiveFunc):
 
 
 class J(TrialJudge):
+    def __init__(self, schedule):
+        self.schedule = schedule
+
+    def get_budget(self, trial: Trial, rung: int) -> float:
+        return float(self.schedule[rung]) if rung < len(self.schedule) else 0.0
+
     def judge(self, report: TrialReport) -> TrialDecision:
         self.report = report
         return TrialDecision(
             report,
-            should_stop=int(report.metric) in [3, 6, 9],
-            should_checkpoint=int(report.metric) in [2, 3, 6],
+            budget=0,  # stop at each rung
+            should_checkpoint=True,
             metadata={"x": 1},
         )
 
 
 def test_objective_runner(tmpdir):
     fs = FileSystem().opendir(str(tmpdir))
-    j = J()
-    runner = IterativeObjectiveRunner(j, fs)
-    f = F()
-    runner.run(f, Trial("abc", {"a": 1}), 100)
+    j = J([3, 3, 2])
+    f = F().copy()
+    it = IterativeTrial(Trial("abc", {"a": 1}), judge=j, checkpoint_basedir_fs=fs)
+    f.run(it)
     assert -10 == f.v
-    runner.run(f, Trial("abc", {"a": 1}), 100)
+    f.run(it)
     assert -10 == f.v
     assert 6.0 == j.report.metric
-    runner.run(f, Trial("abc", {"a": 1}), 2)
+    f.run(it)
     assert -10 == f.v
     assert 8.0 == j.report.metric
