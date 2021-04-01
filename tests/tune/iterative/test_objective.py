@@ -29,6 +29,9 @@ class F(MultiRungObjectiveFunc):
         self.v += 1
         return TrialReport(trial, self.v, metadata={"d": 4})
 
+    def generate_sort_metric(self, value: float) -> float:
+        return -value
+
 
 class J(TrialJudge):
     def __init__(self, schedule):
@@ -57,6 +60,8 @@ def test_objective_runner(tmpdir):
     f.run(it)
     assert -10 == f.v
     assert 6.0 == j.report.metric
+    assert -6.0 == j.report.sort_metric
     f.run(it)
     assert -10 == f.v
     assert 8.0 == j.report.metric
+    assert -8.0 == j.report.sort_metric

@@ -55,9 +55,7 @@ class IterativeStudy:
             callback=callback.entrypoint,
         )
 
-        return StudyResult(
-            dataset=dataset, result=res, min_better=self._objective.min_better
-        )
+        return StudyResult(dataset=dataset, result=res, min_better=True)
 
     def _compute(
         self,
@@ -71,6 +69,6 @@ class IterativeStudy:
                 self._objective.copy().run(IterativeTrial(trial, rjudge, ck_fs))
                 if rjudge.report is not None:
                     res = dict(row)
-                    res[TUNE_REPORT_METRIC] = rjudge.report.metric
+                    res[TUNE_REPORT_METRIC] = rjudge.report.sort_metric
                     res[TUNE_REPORT] = json.dumps(rjudge.report.jsondict)
                     yield res

@@ -4,9 +4,8 @@ from tune.trial import Trial, TrialReport
 
 
 class IterativeObjectiveFunc:
-    @property
-    def min_better(self) -> bool:
-        return True  # pragma: no cover
+    def generate_sort_metric(self, value: float) -> float:
+        return value
 
     def run(self, trial: IterativeTrial) -> None:
         raise NotImplementedError  # pragma: no cover
@@ -44,7 +43,13 @@ class MultiRungObjectiveFunc(IterativeObjectiveFunc):
             current_report = self.run_single_iteration(trial)
             used += current_report.cost
             if used >= budget:
-                return current_report.with_cost(used).with_rung(self.rung)
+                return (
+                    current_report.with_cost(used)
+                    .with_rung(self.rung)
+                    .with_sort_metric(
+                        self.generate_sort_metric(current_report.sort_metric)
+                    )
+                )
 
     def run(self, trial: IterativeTrial) -> None:
         self.preprocess()

@@ -1,4 +1,5 @@
-from typing import Any, Dict, Optional, List
+import heapq
+from typing import Any, Dict, List, Optional, Set
 
 from tune.space.parameters import decode_params, encode_params
 
@@ -88,12 +89,14 @@ class TrialReport:
         metadata: Optional[Dict[str, Any]] = None,
         cost: float = 1.0,
         rung: int = 0,
+        sort_metric: Any = None,
         raw: bool = False,
     ):
         self._trial = trial
         self._metric = float(metric)
         self._cost = float(cost)
         self._rung = rung
+        self._sort_metric = self._metric if sort_metric is None else float(sort_metric)
         if params is None:
             self._params = trial.params
         else:
@@ -108,6 +111,7 @@ class TrialReport:
             metadata=self._metadata,
             cost=self._cost,
             rung=self._rung,
+            sort_metric=self._sort_metric,
             raw=True,
         )
 
@@ -128,6 +132,10 @@ class TrialReport:
     @property
     def metric(self) -> float:
         return self._metric
+
+    @property
+    def sort_metric(self) -> float:
+        return self._sort_metric
 
     @property
     def cost(self) -> float:
@@ -155,6 +163,18 @@ class TrialReport:
         t._rung = rung
         return t
 
+    def with_sort_metric(self, sort_metric: Any) -> "TrialReport":
+        t = self.copy()
+        t._sort_metric = float(sort_metric)
+        return t
+
+    def generate_sort_metric(self, min_better: bool, digits: int) -> "TrialReport":
+        t = self.copy()
+        t._sort_metric = (
+            round(self.metric, digits) if min_better else -round(self.metric, digits)
+        )
+        return t
+
     @property
     def jsondict(self) -> Dict[str, Any]:
         return {
@@ -164,12 +184,54 @@ class TrialReport:
             "metadata": self.metadata,
             "cost": self.cost,
             "rung": self.rung,
+            "sort_metric": self.sort_metric,
         }
 
     @staticmethod
     def from_jsondict(data: Dict[str, Any]) -> "TrialReport":
         trial = Trial.from_jsondict(data.pop("trial"))
         return TrialReport(trial=trial, **data)
+
+
+class TrialReportHeap:
+    class _Wrapper:
+        def __init__(self, report: TrialReport, min_heap: bool):
+            self.report = report
+            self.min_heap = min_heap
+
+        def __lt__(self, other: "TrialReportHeap._Wrapper") -> bool:
+            k1 = (self.report.metric, self.report.cost, self.report.rung)
+            k2 = (other.report.metric, other.report.cost, other.report.rung)
+            return k1 < k2 if self.min_heap else k2 < k1
+
+        @property
+        def trial_id(self) -> str:
+            return self.report.trial_id
+
+    def __init__(self, min_heap: bool):
+        self._data: List[TrialReportHeap._Wrapper] = []
+        self._ids: Set[str] = set()
+        self._min_heap = min_heap
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __contains__(self, tid: str) -> bool:
+        return tid in self._ids
+
+    def push(self, report: TrialReport) -> None:
+        w = TrialReportHeap._Wrapper(report, self._min_heap)
+        if w.trial_id in self._ids:
+            self._data = [x if x.trial_id != w.trial_id else w for x in self._data]
+            heapq.heapify(self._data)
+        else:
+            self._ids.add(w.trial_id)
+            heapq.heappush(self._data, w)
+
+    def pop(self) -> TrialReport:
+        w = heapq.heappop(self._data)
+        self._ids.remove(w.trial_id)
+        return w.report
 
 
 class TrialDecision:

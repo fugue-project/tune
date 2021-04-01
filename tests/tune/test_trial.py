@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tune.space import Rand
-from tune.trial import Trial, TrialDecision, TrialReport
+from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
 
 
 def test_trial():
@@ -63,19 +63,30 @@ def test_trial_report():
     assert {"d": 4} == report.metadata
     assert 2.0 == report.cost
     assert 0 == report.rung
+    assert 0.1 == report.sort_metric
 
-    report = copy.deepcopy(TrialReport(trial, metric=np.float(0.1), cost=2.0, rung=4))
+    report = copy.deepcopy(
+        TrialReport(trial, metric=np.float(0.111), cost=2.0, rung=4, sort_metric=1.23)
+    )
     assert trial is report.trial
-    assert 0.1 == report.metric
+    assert 0.111 == report.metric
     assert type(report.metric) == float
     assert {"a": Rand(3, 4)} == report.params
     assert {} == report.metadata
     assert 2.0 == report.cost
     assert 4 == report.rung
 
+    r1 = report.generate_sort_metric(True, 2)
+    r2 = report.generate_sort_metric(False, 1)
+    r3 = report.with_sort_metric(0.234)
+    assert 1.23 == report.sort_metric
+    assert 0.11 == r1.sort_metric
+    assert -0.1 == r2.sort_metric
+    assert 0.234 == r3.sort_metric
+
     report = TrialReport.from_jsondict(report.jsondict)
     assert trial.trial_id == report.trial_id
-    assert 0.1 == report.metric
+    assert 0.111 == report.metric
     assert type(report.metric) == float
     assert {"a": Rand(3, 4)} == report.params
     assert {} == report.metadata
@@ -83,6 +94,54 @@ def test_trial_report():
 
     assert 3.0 == report.with_cost(3.0).cost
     assert 5 == report.with_rung(5).rung
+
+
+def test_trial_report_heap():
+    t1 = Trial("a", {})
+    r1 = TrialReport(t1, 0.1)
+    t2 = Trial("b", {})
+    r2 = TrialReport(t2, 0.2)
+    t3 = Trial("c", {})
+    r3 = TrialReport(t3, 0.3)
+    r4 = TrialReport(t3, -0.3)
+    h = TrialReportHeap(min_heap=True)
+    for r in [r1, r2, r3, r4]:
+        h.push(r)
+    assert "a" in h
+    assert "x" not in h
+    for r in [r4, r1, r2]:
+        assert h.pop() is r
+    assert 0 == len(h)
+
+    h = TrialReportHeap(min_heap=False)
+    for r in [r1, r2, r3, r4]:
+        h.push(r)
+    for r in [r2, r1, r4]:
+        assert h.pop() is r
+    assert 0 == len(h)
+
+    # test __lt__
+    r5 = TrialReport(t1, metric=0.1, cost=0.2, rung=5)
+    r6 = TrialReport(t2, metric=0.1, cost=0.3, rung=5)
+    r7 = TrialReport(t3, metric=0.1, cost=0.3, rung=6)
+
+    h = TrialReportHeap(min_heap=True)
+    for r in [r7, r6, r5]:
+        h.push(r)
+    for r in [r5, r6, r7]:
+        assert h.pop() is r
+    assert 0 == len(h)
+
+    # equal case
+    r8 = TrialReport(t1, metric=0.1, cost=0.3, rung=6)
+    r9 = TrialReport(t2, metric=0.1, cost=0.3, rung=6)
+
+    h = TrialReportHeap(min_heap=False)
+    for r in [r8, r9]:
+        h.push(r)
+    for r in [r8, r9]:
+        assert h.pop() is r
+    assert 0 == len(h)
 
 
 def test_trial_decision():
