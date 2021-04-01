@@ -11,7 +11,7 @@ class RungHeap:
         self._lock = RLock()
         self._n = n
         self._heap = TrialReportHeap(min_heap=False)
-        self._best = float("nan")
+        self._bests: List[float] = []
 
     def __len__(self) -> int:
         with self._lock:
@@ -24,7 +24,12 @@ class RungHeap:
     @property
     def best(self) -> float:
         with self._lock:
-            return self._best
+            return self._bests[-1] if len(self._bests) > 0 else float("nan")
+
+    @property
+    def bests(self) -> List[float]:
+        with self._lock:
+            return self._bests
 
     @property
     def full(self) -> bool:
@@ -37,9 +42,12 @@ class RungHeap:
 
     def push(self, report: TrialReport) -> bool:
         with self._lock:
-            if len(self) == 0 or report.sort_metric < self._best:
-                self._best = report.sort_metric
+            if len(self) == 0:
+                best = report.sort_metric
+            else:
+                best = min(self.best, report.sort_metric)
             self._heap.push(report)
+            self._bests.append(best)
             return (
                 len(self._heap) <= self._n
                 or self._heap.pop().trial_id != report.trial_id

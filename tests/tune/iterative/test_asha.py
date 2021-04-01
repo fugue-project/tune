@@ -9,6 +9,7 @@ def test_run_heap():
     assert not h.full
     assert math.isnan(h.best)
     assert 0 == len(h)
+    assert [] == h.bests
     assert h.push(rp("a", 1))
     assert h.push(rp("b", 0.1))
     assert h.push(rp("a", 2))
@@ -21,6 +22,10 @@ def test_run_heap():
     assert "d" not in h
     assert "b" in h
     assert "c" in h
+    assert [1.0, 0.1, 0.1, 0.1, 0.1] == h.bests
+
+
+# TODO: test multiple partitions
 
 
 def test_asha_judge_simple_happy_path():
