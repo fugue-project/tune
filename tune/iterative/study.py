@@ -25,6 +25,7 @@ class TrialCallback:
 
 class RemoteTrialJudge(TrialJudge):
     def __init__(self, entrypoint: Callable[[str, Dict[str, Any]], Any]):
+        super().__init__()
         self._entrypoint = entrypoint
         self._report: Optional[TrialReport] = None
 

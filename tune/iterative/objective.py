@@ -43,13 +43,7 @@ class MultiRungObjectiveFunc(IterativeObjectiveFunc):
             current_report = self.run_single_iteration(trial)
             used += current_report.cost
             if used >= budget:
-                return (
-                    current_report.with_cost(used)
-                    .with_rung(self.rung)
-                    .with_sort_metric(
-                        self.generate_sort_metric(current_report.sort_metric)
-                    )
-                )
+                return current_report.with_cost(used)
 
     def run(self, trial: IterativeTrial) -> None:
         self.preprocess()
@@ -59,6 +53,9 @@ class MultiRungObjectiveFunc(IterativeObjectiveFunc):
         budget = trial.judge.get_budget(trial, self.rung)
         while budget > 0:
             report = self.run_single_rung(trial, budget)
+            report = report.with_rung(self.rung).with_sort_metric(
+                self.generate_sort_metric(report.metric)
+            )
             decision = trial.judge.judge(report)
             if decision.should_checkpoint and trial.has_checkpoint:
                 with trial.checkpoint.create() as fs:

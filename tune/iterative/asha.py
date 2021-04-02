@@ -1,8 +1,8 @@
 from threading import RLock
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from triad import to_uuid
-from tune.iterative.trial import TrialJudge
+from tune.iterative.trial import TrialJudge, TrialJudgeMonitor
 from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
 
 
@@ -61,11 +61,17 @@ class PerTrialJudge(TrialJudge):
         self._parent = parent
 
     def get_budget(self, trial: Trial, rung: int) -> float:
-        if rung >= len(self._parent._parent.schedule) or self._parent.should_stop:
-            return 0.0
-        return self._parent._parent.schedule[rung][0]
+        def _get():
+            if rung >= len(self._parent._parent.schedule) or self._parent.should_stop:
+                return 0.0
+            return self._parent._parent.schedule[rung][0]
+
+        res = _get()
+        self._parent._parent.monitor.on_get_budget(trial, rung, res)
+        return res
 
     def judge(self, report: TrialReport) -> TrialDecision:
+        self._parent._parent.monitor.on_report(report)
         self._history.append(report)
         should_stop = self._parent._parent._trial_should_stop_func(
             self._history, self._parent._rungs[: report.rung]
@@ -74,12 +80,14 @@ class PerTrialJudge(TrialJudge):
         if not promoted or report.rung >= len(self._parent._parent.schedule) - 1:
             return TrialDecision(report, budget=0, should_checkpoint=True)
         next_budget = self.get_budget(report.trial, report.rung + 1)
-        return TrialDecision(
+        decision = TrialDecision(
             report,
             budget=next_budget,
             should_checkpoint=next_budget <= 0
             or self._parent._parent.always_checkpoint,
         )
+        self._parent._parent.monitor.on_judge(decision)
+        return decision
 
 
 class PerPartitionASHAJudge(TrialJudge):
@@ -130,8 +138,9 @@ class ASHAJudge(TrialJudge):
         trial_should_stop_func: Callable[
             [List[TrialReport], List[RungHeap]], bool
         ] = default_trial_should_stop,
+        monitor: Optional[TrialJudgeMonitor] = None,
     ):
-        super().__init__()
+        super().__init__(monitor=monitor)
         self._lock = RLock()
         self._data: Dict[str, PerPartitionASHAJudge] = {}
         self._schedule = schedule

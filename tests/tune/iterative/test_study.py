@@ -35,6 +35,7 @@ class F(MultiRungObjectiveFunc):
 
 class J(TrialJudge):
     def __init__(self, schedule):
+        super().__init__()
         self.schedule = schedule
 
     def get_budget(self, trial: Trial, rung: int) -> float:
