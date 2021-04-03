@@ -34,7 +34,7 @@ class RungHeap:
     @property
     def full(self) -> bool:
         with self._lock:
-            return self._n == len(self)
+            return self.capacity <= len(self)
 
     def __contains__(self, tid: str) -> bool:
         with self._lock:
@@ -54,51 +54,44 @@ class RungHeap:
             )
 
 
-class PerTrialJudge(TrialJudge):
-    def __init__(self, parent: "PerPartitionASHAJudge") -> None:
-        super().__init__()
+class _PerTrial:
+    def __init__(self, parent: "_PerPartition") -> None:
         self._history: List[TrialReport] = []
         self._parent = parent
+        self._active = True
 
-    def get_budget(self, trial: Trial, rung: int) -> float:
-        def _get():
-            if rung >= len(
-                self._parent._parent.schedule
-            ) or not self._parent.can_accept(trial):
-                return 0.0
-            return self._parent._parent.schedule[rung][0]
-
-        res = _get()
-        self._parent._parent.monitor.on_get_budget(trial, rung, res)
-        return res
+    def can_promote(self, report: TrialReport) -> bool:
+        if self._active:
+            self._active = self._parent.can_accept(
+                report.trial
+            ) and not self._parent._parent._trial_should_stop_func(
+                report, self._history, self._parent._rungs
+            )
+        if self._active:
+            self._history.append(report)
+            return self._parent._rungs[report.rung].push(report)
+        return False
 
     def judge(self, report: TrialReport) -> TrialDecision:
-        self._parent._parent.monitor.on_report(report)
-        self._history.append(report)
-        trial_should_stop = self._parent._parent._trial_should_stop_func(
-            self._history, self._parent._rungs[: report.rung]
-        )
-        promoted = not trial_should_stop and self._parent._rungs[report.rung].push(
-            report
-        )
-        if not promoted or report.rung >= len(self._parent._parent.schedule) - 1:
+        if report.rung >= len(self._parent._parent.schedule) - 1:
+            self._history.append(report)
+            self._parent._rungs[report.rung].push(report)
             return TrialDecision(report, budget=0, should_checkpoint=True)
-        next_budget = self.get_budget(report.trial, report.rung + 1)
-        decision = TrialDecision(
+        if not self.can_promote(report):
+            return TrialDecision(report, budget=0, should_checkpoint=True)
+        next_budget = self._parent.get_budget(report.trial, report.rung + 1)
+        return TrialDecision(
             report,
             budget=next_budget,
             should_checkpoint=next_budget <= 0
             or self._parent._parent.always_checkpoint,
         )
-        self._parent._parent.monitor.on_judge(decision)
-        return decision
 
 
-class PerPartitionASHAJudge(TrialJudge):
+class _PerPartition:
     def __init__(self, parent: "ASHAJudge", keys: List[Any]):
-        super().__init__()
         self._keys = keys
-        self._data: Dict[str, PerTrialJudge] = {}
+        self._data: Dict[str, _PerTrial] = {}
         self._lock = RLock()
         self._parent = parent
         self._rungs: List[RungHeap] = [RungHeap(x[1]) for x in self._parent.schedule]
@@ -106,26 +99,30 @@ class PerPartitionASHAJudge(TrialJudge):
         self._accepted_ids: Set[str] = set()
 
     def can_accept(self, trial: Trial) -> bool:
-        if self._active:
-            self._active = not self._parent._should_deactivate_func(
-                self._keys, self._rungs
-            )
+        with self._lock:
             if self._active:
-                self._accepted_ids.add(trial.trial_id)
-                return True
-        return trial.trial_id in self._accepted_ids
+                self._active = not self._parent._should_stop_func(
+                    self._keys, self._rungs
+                )
+                if self._active:
+                    self._accepted_ids.add(trial.trial_id)
+                    return True
+            # if not active, can only accept existing trials
+            return trial.trial_id in self._accepted_ids
 
     def get_budget(self, trial: Trial, rung: int) -> float:
-        return self._get_judge(trial).get_budget(trial, rung)
+        if rung >= len(self._parent.schedule) or not self.can_accept(trial):
+            return 0.0
+        return self._parent.schedule[rung][0]
 
     def judge(self, report: TrialReport) -> TrialDecision:
         return self._get_judge(report.trial).judge(report)
 
-    def _get_judge(self, trial: Trial) -> "PerTrialJudge":
-        key = to_uuid(trial.keys)
+    def _get_judge(self, trial: Trial) -> _PerTrial:
+        key = trial.trial_id
         with self._lock:
             if key not in self._data:
-                self._data[key] = PerTrialJudge(self)
+                self._data[key] = _PerTrial(self)
             return self._data[key]
 
 
@@ -134,7 +131,7 @@ def default_should_deactivate(keys: List[Any], rungs: List[RungHeap]) -> bool:
 
 
 def default_trial_should_stop(
-    reports: List[TrialReport], rungs: List[RungHeap]
+    report: TrialReport, reports: List[TrialReport], rungs: List[RungHeap]
 ) -> bool:
     return False
 
@@ -144,20 +141,20 @@ class ASHAJudge(TrialJudge):
         self,
         schedule: List[Tuple[float, int]],
         always_checkpoint: bool = False,
-        should_deactivate_func: Callable[
+        should_stop_func: Callable[
             [List[Any], List[RungHeap]], bool
         ] = default_should_deactivate,
         trial_should_stop_func: Callable[
-            [List[TrialReport], List[RungHeap]], bool
+            [TrialReport, List[TrialReport], List[RungHeap]], bool
         ] = default_trial_should_stop,
         monitor: Optional[TrialJudgeMonitor] = None,
     ):
         super().__init__(monitor=monitor)
         self._lock = RLock()
-        self._data: Dict[str, PerPartitionASHAJudge] = {}
+        self._data: Dict[str, _PerPartition] = {}
         self._schedule = schedule
         self._always_checkpoint = always_checkpoint
-        self._should_deactivate_func = should_deactivate_func
+        self._should_stop_func = should_stop_func
         self._trial_should_stop_func = trial_should_stop_func
 
     @property
@@ -172,14 +169,19 @@ class ASHAJudge(TrialJudge):
         return self._get_judge(trial).can_accept(trial)
 
     def get_budget(self, trial: Trial, rung: int) -> float:
-        return self._get_judge(trial).get_budget(trial, rung)
+        budget = self._get_judge(trial).get_budget(trial, rung)
+        self.monitor.on_get_budget(trial, rung, budget)
+        return budget
 
     def judge(self, report: TrialReport) -> TrialDecision:
-        return self._get_judge(report.trial).judge(report)
+        self.monitor.on_report(report)
+        decision = self._get_judge(report.trial).judge(report)
+        self.monitor.on_judge(decision)
+        return decision
 
-    def _get_judge(self, trial: Trial) -> PerPartitionASHAJudge:
+    def _get_judge(self, trial: Trial) -> _PerPartition:
         key = to_uuid(trial.keys)
         with self._lock:
             if key not in self._data:
-                self._data[key] = PerPartitionASHAJudge(self, trial.keys)
+                self._data[key] = _PerPartition(self, trial.keys)
             return self._data[key]

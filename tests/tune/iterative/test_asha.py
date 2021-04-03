@@ -61,7 +61,7 @@ def test_asha_stop():
     j = ASHAJudge(
         schedule=[(1.0, 2), (2.0, 2), (3.0, 1)],
         always_checkpoint=True,
-        should_deactivate_func=should_stop,
+        should_stop_func=should_stop,
     )
     d = j.judge(rp("a", 0.6, 0))
     assert 2.0 == d.budget
@@ -81,7 +81,7 @@ def test_asha_stop():
     d = j.judge(rp("x", 0.45, 0))
     # rungs[1] and rungs[0] diff so somall
     # no longer accept new trials
-    assert 0.0 == d.budget 
+    assert 0.0 == d.budget
     assert d.should_checkpoint
     d = j.judge(rp("b", 0.45, 1))
     assert 3.0 == d.budget  # existed ids can still be accepted
@@ -92,11 +92,8 @@ def test_asha_stop():
 
 
 def test_trial_stop():
-    def should_stop(history, rungs):
-        if len(history) == 0:
-            return False
-        tid = history[-1].trial_id
-        return not all(tid in x for x in rungs)
+    def should_stop(report, history, rungs):
+        return not all(report.trial_id in x for x in rungs[: report.rung])
 
     j = ASHAJudge(
         schedule=[(1.0, 2), (2.0, 2), (3.0, 1)],

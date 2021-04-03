@@ -24,6 +24,7 @@ from tune.constants import (
     TUNE_DATASET_PARAMS_PREFIX,
     TUNE_DATASET_TRIALS,
     TUNE_PREFIX,
+    TUNE_REPORT,
     TUNE_REPORT_METRIC,
     TUNE_TEMP_PATH,
 )
@@ -211,6 +212,12 @@ class StudyResult:
             return self._result.partition(by=self._dataset.keys, presort=presort).take(
                 best_n
             )
+
+    def next_tune_dataset(self, best_n: int = 0) -> TuneDataset:
+        data = self.result(best_n).drop(
+            [TUNE_REPORT_METRIC, TUNE_REPORT], if_exists=True
+        )
+        return TuneDataset(data, dfs=self._dataset.dfs, keys=self._dataset.keys)
 
 
 def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
