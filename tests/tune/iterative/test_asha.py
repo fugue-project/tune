@@ -72,11 +72,19 @@ def test_asha_stop():
     d = j.judge(rp("c", 0.4, 0))
     assert 2.0 == d.budget
     assert d.should_checkpoint
-    d = j.judge(rp("a", 0.5, 1))
+    d = j.judge(rp("b", 0.45, 1))
     assert 3.0 == d.budget
     assert d.should_checkpoint
+    d = j.judge(rp("c", 0.39, 1))
+    assert 3.0 == d.budget
+    assert d.should_checkpoint
+    d = j.judge(rp("x", 0.45, 0))
+    # rungs[1] and rungs[0] diff so somall
+    # no longer accept new trials
+    assert 0.0 == d.budget 
+    assert d.should_checkpoint
     d = j.judge(rp("b", 0.45, 1))
-    assert 0.0 == d.budget  # rungs[1] and rungs[0] diff so somall
+    assert 3.0 == d.budget  # existed ids can still be accepted
     assert d.should_checkpoint
     d = j.judge(rp("a", 0.44, 2))
     assert 0.0 == d.budget  # already stopped

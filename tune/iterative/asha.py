@@ -1,5 +1,5 @@
 from threading import RLock
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Set
 
 from triad import to_uuid
 from tune.iterative.trial import TrialJudge, TrialJudgeMonitor
@@ -103,12 +103,17 @@ class PerPartitionASHAJudge(TrialJudge):
         self._parent = parent
         self._rungs: List[RungHeap] = [RungHeap(x[1]) for x in self._parent.schedule]
         self._active = True
+        self._accepted_ids: Set[str] = set()
 
     def can_accept(self, trial: Trial) -> bool:
-        if not self._active:
-            return False
-        self._active = not self._parent._should_deactivate_func(self._keys, self._rungs)
-        return self._active
+        if self._active:
+            self._active = not self._parent._should_deactivate_func(
+                self._keys, self._rungs
+            )
+            if self._active:
+                self._accepted_ids.add(trial.trial_id)
+                return True
+        return trial.trial_id in self._accepted_ids
 
     def get_budget(self, trial: Trial, rung: int) -> float:
         return self._get_judge(trial).get_budget(trial, rung)
