@@ -61,7 +61,7 @@ def test_asha_stop():
     j = ASHAJudge(
         schedule=[(1.0, 2), (2.0, 2), (3.0, 1)],
         always_checkpoint=True,
-        asha_should_stop_func=should_stop,
+        should_deactivate_func=should_stop,
     )
     d = j.judge(rp("a", 0.6, 0))
     assert 2.0 == d.budget

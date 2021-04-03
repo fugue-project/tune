@@ -46,6 +46,8 @@ class MultiRungObjectiveFunc(IterativeObjectiveFunc):
                 return current_report.with_cost(used)
 
     def run(self, trial: IterativeTrial) -> None:
+        if not trial.judge.can_accept(trial):
+            return
         self.preprocess()
         if trial.iteration > 0:
             self._rung = int(trial.checkpoint.latest.readtext("__RUNG__")) + 1

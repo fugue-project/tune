@@ -62,7 +62,9 @@ class PerTrialJudge(TrialJudge):
 
     def get_budget(self, trial: Trial, rung: int) -> float:
         def _get():
-            if rung >= len(self._parent._parent.schedule) or self._parent.should_stop:
+            if rung >= len(
+                self._parent._parent.schedule
+            ) or not self._parent.can_accept(trial):
                 return 0.0
             return self._parent._parent.schedule[rung][0]
 
@@ -73,10 +75,12 @@ class PerTrialJudge(TrialJudge):
     def judge(self, report: TrialReport) -> TrialDecision:
         self._parent._parent.monitor.on_report(report)
         self._history.append(report)
-        should_stop = self._parent._parent._trial_should_stop_func(
+        trial_should_stop = self._parent._parent._trial_should_stop_func(
             self._history, self._parent._rungs[: report.rung]
         )
-        promoted = not should_stop and self._parent._rungs[report.rung].push(report)
+        promoted = not trial_should_stop and self._parent._rungs[report.rung].push(
+            report
+        )
         if not promoted or report.rung >= len(self._parent._parent.schedule) - 1:
             return TrialDecision(report, budget=0, should_checkpoint=True)
         next_budget = self.get_budget(report.trial, report.rung + 1)
@@ -98,16 +102,19 @@ class PerPartitionASHAJudge(TrialJudge):
         self._lock = RLock()
         self._parent = parent
         self._rungs: List[RungHeap] = [RungHeap(x[1]) for x in self._parent.schedule]
+        self._active = True
+
+    def can_accept(self, trial: Trial) -> bool:
+        if not self._active:
+            return False
+        self._active = not self._parent._should_deactivate_func(self._keys, self._rungs)
+        return self._active
 
     def get_budget(self, trial: Trial, rung: int) -> float:
         return self._get_judge(trial).get_budget(trial, rung)
 
     def judge(self, report: TrialReport) -> TrialDecision:
         return self._get_judge(report.trial).judge(report)
-
-    @property
-    def should_stop(self) -> bool:
-        return self._parent._asha_should_stop_func(self._keys, self._rungs)
 
     def _get_judge(self, trial: Trial) -> "PerTrialJudge":
         key = to_uuid(trial.keys)
@@ -117,8 +124,8 @@ class PerPartitionASHAJudge(TrialJudge):
             return self._data[key]
 
 
-def default_asha_should_stop(keys: List[Any], rungs: List[RungHeap]) -> bool:
-    return rungs[-1].full
+def default_should_deactivate(keys: List[Any], rungs: List[RungHeap]) -> bool:
+    return all(r.full for r in rungs)
 
 
 def default_trial_should_stop(
@@ -132,9 +139,9 @@ class ASHAJudge(TrialJudge):
         self,
         schedule: List[Tuple[float, int]],
         always_checkpoint: bool = False,
-        asha_should_stop_func: Callable[
+        should_deactivate_func: Callable[
             [List[Any], List[RungHeap]], bool
-        ] = default_asha_should_stop,
+        ] = default_should_deactivate,
         trial_should_stop_func: Callable[
             [List[TrialReport], List[RungHeap]], bool
         ] = default_trial_should_stop,
@@ -145,7 +152,7 @@ class ASHAJudge(TrialJudge):
         self._data: Dict[str, PerPartitionASHAJudge] = {}
         self._schedule = schedule
         self._always_checkpoint = always_checkpoint
-        self._asha_should_stop_func = asha_should_stop_func
+        self._should_deactivate_func = should_deactivate_func
         self._trial_should_stop_func = trial_should_stop_func
 
     @property
@@ -155,6 +162,9 @@ class ASHAJudge(TrialJudge):
     @property
     def always_checkpoint(self) -> bool:
         return self._always_checkpoint
+
+    def can_accept(self, trial: Trial) -> bool:
+        return self._get_judge(trial).can_accept(trial)
 
     def get_budget(self, trial: Trial, rung: int) -> float:
         return self._get_judge(trial).get_budget(trial, rung)

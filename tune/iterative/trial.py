@@ -16,6 +16,9 @@ class TrialJudge(object):
         assert self._trial_judge_monitor is not None
         return self._trial_judge_monitor
 
+    def can_accept(self, trial: Trial) -> bool:
+        return True
+
     def get_budget(self, trial: Trial, rung: int) -> float:  # pragma: no cover
         return 0.0
 
