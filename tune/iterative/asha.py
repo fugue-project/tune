@@ -1,9 +1,35 @@
 from threading import RLock
+from tune.iterative.study import IterativeStudy
+from tune.dataset import StudyResult, TuneDataset
+from tune.iterative.objective import IterativeObjectiveFunc
 from typing import Any, Callable, Dict, List, Optional, Tuple, Set
 
 from triad import to_uuid
 from tune.iterative.trial import TrialJudge, TrialJudgeMonitor
 from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
+
+
+def run_continuous_asha(
+    objective: IterativeObjectiveFunc,
+    dataset: TuneDataset,
+    plan: List[Tuple[float, int]],
+    checkpoint_path: str,
+    always_checkpoint: bool = False,
+    study_early_stop: Optional[Callable[[List[Any], List["RungHeap"]], bool]] = None,
+    trial_early_stop: Optional[
+        Callable[[TrialReport, List[TrialReport], List["RungHeap"]], bool]
+    ] = None,
+    monitor: Optional[TrialJudgeMonitor] = None,
+) -> StudyResult:
+    judge = ASHAJudge(
+        schedule=plan,
+        always_checkpoint=always_checkpoint,
+        study_early_stop=study_early_stop,
+        trial_early_stop=trial_early_stop,
+        monitor=monitor,
+    )
+    study = IterativeStudy(objective, checkpoint_path=checkpoint_path)
+    return study.optimize(dataset, judge=judge)
 
 
 class RungHeap:
@@ -64,7 +90,7 @@ class _PerTrial:
         if self._active:
             self._active = self._parent.can_accept(
                 report.trial
-            ) and not self._parent._parent._trial_should_stop_func(
+            ) and not self._parent._parent._trial_early_stop(
                 report, self._history, self._parent._rungs
             )
         if self._active:
@@ -101,7 +127,7 @@ class _PerPartition:
     def can_accept(self, trial: Trial) -> bool:
         with self._lock:
             if self._active:
-                self._active = not self._parent._should_stop_func(
+                self._active = not self._parent._study_early_stop(
                     self._keys, self._rungs
                 )
                 if self._active:
@@ -126,27 +152,15 @@ class _PerPartition:
             return self._data[key]
 
 
-def default_should_deactivate(keys: List[Any], rungs: List[RungHeap]) -> bool:
-    return all(r.full for r in rungs)
-
-
-def default_trial_should_stop(
-    report: TrialReport, reports: List[TrialReport], rungs: List[RungHeap]
-) -> bool:
-    return False
-
-
 class ASHAJudge(TrialJudge):
     def __init__(
         self,
         schedule: List[Tuple[float, int]],
         always_checkpoint: bool = False,
-        should_stop_func: Callable[
-            [List[Any], List[RungHeap]], bool
-        ] = default_should_deactivate,
-        trial_should_stop_func: Callable[
-            [TrialReport, List[TrialReport], List[RungHeap]], bool
-        ] = default_trial_should_stop,
+        study_early_stop: Optional[Callable[[List[Any], List[RungHeap]], bool]] = None,
+        trial_early_stop: Optional[
+            Callable[[TrialReport, List[TrialReport], List[RungHeap]], bool]
+        ] = None,
         monitor: Optional[TrialJudgeMonitor] = None,
     ):
         super().__init__(monitor=monitor)
@@ -154,8 +168,8 @@ class ASHAJudge(TrialJudge):
         self._data: Dict[str, _PerPartition] = {}
         self._schedule = schedule
         self._always_checkpoint = always_checkpoint
-        self._should_stop_func = should_stop_func
-        self._trial_should_stop_func = trial_should_stop_func
+        self._study_early_stop = study_early_stop or _default_study_early_stop
+        self._trial_early_stop = trial_early_stop or _default_trial_early_stop
 
     @property
     def schedule(self) -> List[Tuple[float, int]]:
@@ -185,3 +199,13 @@ class ASHAJudge(TrialJudge):
             if key not in self._data:
                 self._data[key] = _PerPartition(self, trial.keys)
             return self._data[key]
+
+
+def _default_study_early_stop(keys: List[Any], rungs: List["RungHeap"]) -> bool:
+    return all(r.full for r in rungs)
+
+
+def _default_trial_early_stop(
+    report: TrialReport, reports: List[TrialReport], rungs: List["RungHeap"]
+) -> bool:
+    return False
