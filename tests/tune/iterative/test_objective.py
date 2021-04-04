@@ -1,11 +1,11 @@
 from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.iterative.objective import MultiRungObjectiveFunc
-from tune.iterative.trial import IterativeTrial, TrialJudge
+from tune.iterative.objective import IterativeObjectiveFunc
+from tune.iterative.trial import TrialJudge
 from tune.trial import Trial, TrialDecision, TrialReport
 
 
-class F(MultiRungObjectiveFunc):
+class F(IterativeObjectiveFunc):
     def __init__(self):
         self.v = -10
         super().__init__()
@@ -55,14 +55,14 @@ def test_objective_runner(tmpdir):
     fs = FileSystem().opendir(str(tmpdir))
     j = J([3, 3, 2])
     f = F().copy()
-    it = IterativeTrial(Trial("abc", {"a": 1}), judge=j, checkpoint_basedir_fs=fs)
-    f.run(it)
+    t = Trial("abc", {"a": 1})
+    f.run(t, judge=j, checkpoint_basedir_fs=fs)
     assert -10 == f.v
-    f.run(it)
+    f.run(t, judge=j, checkpoint_basedir_fs=fs)
     assert -10 == f.v
     assert 6.0 == j.report.metric
     assert -6.0 == j.report.sort_metric
-    f.run(it)
+    f.run(t, judge=j, checkpoint_basedir_fs=fs)
     assert -10 == f.v
     assert 8.0 == j.report.metric
     assert -8.0 == j.report.sort_metric

@@ -5,7 +5,7 @@ from triad.collections.fs import FileSystem
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.trial import IterativeTrial, Trial, TrialJudge
+from tune.iterative.trial import Trial, TrialJudge
 from tune.trial import TrialDecision, TrialReport
 
 
@@ -67,7 +67,7 @@ class IterativeStudy:
         for row in df:
             for trial in get_trials_from_row(row):
                 rjudge = RemoteTrialJudge(entrypoint)
-                self._objective.copy().run(IterativeTrial(trial, rjudge, ck_fs))
+                self._objective.copy().run(trial, rjudge, ck_fs)
                 if rjudge.report is not None:
                     res = dict(row)
                     res[TUNE_REPORT_METRIC] = rjudge.report.sort_metric

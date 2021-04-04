@@ -4,9 +4,9 @@ import numpy as np
 from fugue.workflow.workflow import FugueWorkflow
 from tune.constants import TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
-from tune.iterative.objective import MultiRungObjectiveFunc
+from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.iterative.trial import IterativeTrial, TrialJudge
+from tune.iterative.trial import TrialJudge
 from tune.space import Grid, Space
 from tune.trial import Trial, TrialDecision, TrialReport
 
@@ -15,7 +15,7 @@ def f(x, a, b):
     return -np.log(x + 0.01) * a + b
 
 
-class F(MultiRungObjectiveFunc):
+class F(IterativeObjectiveFunc):
     def __init__(self) -> None:
         self.step = 0
         super().__init__()
