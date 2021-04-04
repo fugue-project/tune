@@ -1,11 +1,11 @@
 from typing import List, Optional, Tuple
 
-from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.dataset import TuneDataset
+from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.trial import TrialDecision, TrialJudge
 from tune.noniterative.objective import NonIterativeObjectiveFunc
+from tune.noniterative.study import run_noniterative_study
 from tune.trial import Trial, TrialReport
 
 
@@ -14,20 +14,15 @@ def run_sha(
     dataset: TuneDataset,
     plan: List[Tuple[float, int]],
     checkpoint_path: str,
-) -> None:
-    obj = _to_noniterative_objective(
-        objective, checkpoint_path=checkpoint_path, plan=plan
-    )
-    print(obj)
-    # run_noniterative_study()
-
-
-def _to_noniterative_objective(
-    func: IterativeObjectiveFunc,
-    checkpoint_path: FSBase,
-    plan: List[Tuple[float, int]],
-) -> NonIterativeObjectiveFunc:
-    return _NonIterativeObjectiveWrapper(func, checkpoint_path, plan)
+    distributed: Optional[bool] = None,
+) -> StudyResult:
+    for budget, keep in plan:
+        obj = _NonIterativeObjectiveWrapper(
+            objective, checkpoint_path=checkpoint_path, budget=budget
+        )
+        result = run_noniterative_study(obj, dataset, distributed=distributed)
+        dataset = result.next_tune_dataset(keep)
+    return result
 
 
 class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
@@ -35,10 +30,10 @@ class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
         self,
         func: IterativeObjectiveFunc,
         checkpoint_path: str,
-        plan: List[Tuple[float, int]],
+        budget: float,
     ):
         super().__init__()
-        self._plan = plan
+        self._budget = budget
         self._func = func
         self._checkpoint_path = checkpoint_path
 
@@ -46,17 +41,17 @@ class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
         return self._func.generate_sort_metric(value)
 
     def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
-        judge = _NonIterativeJudgeWrapper(self._plan)
+        judge = _NonIterativeJudgeWrapper(self._budget)
         fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
-        self._func.run(trial, judge=judge, checkpoint_basedir_fs=fs)
+        self._func.copy().run(trial, judge=judge, checkpoint_basedir_fs=fs)
         return judge.report
 
 
 class _NonIterativeJudgeWrapper(TrialJudge):
-    def __init__(self, plan: List[Tuple[float, int]]):
+    def __init__(self, budget: float):
         super().__init__()
         self._report: Optional[TrialReport] = None
-        self._plan = plan
+        self._budget = budget
 
     @property
     def report(self) -> TrialReport:
@@ -64,9 +59,7 @@ class _NonIterativeJudgeWrapper(TrialJudge):
         return self._report
 
     def get_budget(self, trial: Trial, rung: int):
-        if rung >= len(self._plan):
-            return 0
-        return self._plan[rung][0]
+        return self._budget
 
     def judge(self, report: TrialReport) -> TrialDecision:
         self._report = report
