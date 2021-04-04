@@ -27,7 +27,7 @@ class HyperoptRunner(NonIterativeObjectiveRunner):
             params.update(static_params)
             report = func.run(trial.with_params(params))
             return {
-                "loss": report.metric if func.min_better else -report.metric,
+                "loss": report.sort_metric,
                 "status": STATUS_OK,
                 "report": report,
             }

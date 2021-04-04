@@ -51,7 +51,7 @@ class J(TrialJudge):
         )
 
 
-def test_objective_runner(tmpdir):
+def test_objective_func(tmpdir):
     fs = FileSystem().opendir(str(tmpdir))
     j = J([3, 3, 2])
     f = F().copy()
