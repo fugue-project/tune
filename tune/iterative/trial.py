@@ -13,14 +13,14 @@ class TrialJudge(object):
         assert self._trial_judge_monitor is not None
         return self._trial_judge_monitor
 
-    def can_accept(self, trial: Trial) -> bool:
-        return True
+    def can_accept(self, trial: Trial) -> bool:  # pragma: no cover
+        raise NotImplementedError
 
     def get_budget(self, trial: Trial, rung: int) -> float:  # pragma: no cover
-        return 0.0
+        raise NotImplementedError
 
-    def judge(self, report: TrialReport) -> TrialDecision:
-        return TrialDecision(report, budget=0.0, should_checkpoint=False, metadata={})
+    def judge(self, report: TrialReport) -> TrialDecision:  # pragma: no cover
+        raise NotImplementedError
 
 
 class TrialJudgeMonitor:

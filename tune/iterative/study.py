@@ -13,6 +13,8 @@ class TrialCallback:
         self._judge = judge
 
     def entrypoint(self, name, kwargs: Dict[str, Any]) -> Any:
+        if name == "can_accept":
+            return self._judge.can_accept(Trial.from_jsondict(kwargs["trial"]))
         if name == "judge":
             return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
         if name == "get_budget":
@@ -31,6 +33,9 @@ class RemoteTrialJudge(TrialJudge):
     @property
     def report(self) -> Optional[TrialReport]:
         return self._report
+
+    def can_accept(self, trial: Trial) -> bool:
+        return self._entrypoint("can_accept", dict(trial=trial.jsondict))
 
     def judge(self, report: TrialReport) -> TrialDecision:
         self._report = report

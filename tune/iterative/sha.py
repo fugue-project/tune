@@ -1,4 +1,6 @@
+import os
 from typing import List, Optional, Tuple
+from uuid import uuid4
 
 from triad import FileSystem
 from tune.dataset import StudyResult, TuneDataset
@@ -16,9 +18,10 @@ def run_sha(
     checkpoint_path: str,
     distributed: Optional[bool] = None,
 ) -> StudyResult:
+    path = os.path.join(checkpoint_path, str(uuid4()))
     for budget, keep in plan:
         obj = _NonIterativeObjectiveWrapper(
-            objective, checkpoint_path=checkpoint_path, budget=budget
+            objective, checkpoint_path=path, budget=budget
         )
         result = run_noniterative_study(obj, dataset, distributed=distributed)
         dataset = result.next_tune_dataset(keep)
@@ -57,6 +60,9 @@ class _NonIterativeJudgeWrapper(TrialJudge):
     def report(self) -> TrialReport:
         assert self._report is not None
         return self._report
+
+    def can_accept(self, trial: Trial) -> bool:
+        return True
 
     def get_budget(self, trial: Trial, rung: int):
         return self._budget

@@ -38,6 +38,9 @@ class J(TrialJudge):
         super().__init__()
         self.schedule = schedule
 
+    def can_accept(self, trial: Trial) -> bool:
+        return True
+
     def get_budget(self, trial: Trial, rung: int) -> float:
         return float(self.schedule[rung]) if rung < len(self.schedule) else 0.0
 

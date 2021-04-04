@@ -1,6 +1,9 @@
 from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.iterative.objective import IterativeObjectiveFunc
+from tune.iterative.objective import (
+    IterativeObjectiveFunc,
+    validate_iterative_objective,
+)
 from tune.iterative.trial import TrialJudge
 from tune.trial import Trial, TrialDecision, TrialReport
 
@@ -38,6 +41,9 @@ class J(TrialJudge):
         super().__init__()
         self.schedule = schedule
 
+    def can_accept(self, trial: Trial) -> bool:
+        return True
+
     def get_budget(self, trial: Trial, rung: int) -> float:
         return float(self.schedule[rung]) if rung < len(self.schedule) else 0.0
 
@@ -66,3 +72,14 @@ def test_objective_func(tmpdir):
     assert -10 == f.v
     assert 8.0 == j.report.metric
     assert -8.0 == j.report.sort_metric
+
+
+def test_validator():
+    for cont in [True, False]:
+        validate_iterative_objective(
+            F(),
+            Trial("abc", {"a": 1}),
+            [3, 3, 2],
+            lambda reports: [-3.0, -6.0, -8.0] == [x.sort_metric for x in reports],
+            continuous=cont,
+        )

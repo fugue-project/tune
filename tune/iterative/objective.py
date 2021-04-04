@@ -1,7 +1,14 @@
+import os
+import tempfile
+from typing import Callable, List
+from uuid import uuid4
+
+from cloudpickle import pickle
 from fs.base import FS as FSBase
+from triad.collections.fs import FileSystem
 from tune.checkpoint import Checkpoint
 from tune.iterative.trial import TrialJudge
-from tune.trial import Trial, TrialReport
+from tune.trial import Trial, TrialDecision, TrialReport
 
 
 class IterativeObjectiveFunc:
@@ -70,3 +77,54 @@ class IterativeObjectiveFunc:
             budget = decision.budget
             self._rung += 1
         self.postprocess()
+
+
+def validate_iterative_objective(
+    func: IterativeObjectiveFunc,
+    trial: Trial,
+    budgets: List[float],
+    validator: Callable[[List[TrialReport]], None],
+    continuous: bool = False,
+    checkpoint_path: str = "",
+) -> None:
+    path = checkpoint_path if checkpoint_path != "" else tempfile.gettempdir()
+    basefs = FileSystem().makedirs(os.path.join(path, str(uuid4)), recreate=True)
+    j = _Validator(budgets, continuous=continuous)
+    if continuous:
+        f = pickle.loads(pickle.dumps(func)).copy()
+        f.run(trial, j, checkpoint_basedir_fs=basefs)
+    else:
+        for _ in budgets:
+            f = pickle.loads(pickle.dumps(func)).copy()
+            f.run(trial, j, checkpoint_basedir_fs=basefs)
+    validator(j.reports)
+
+
+class _Validator(TrialJudge):
+    def __init__(self, budgets: List[float], continuous: bool):
+        super().__init__()
+        self._budgets = budgets
+        self._continuous = continuous
+        self._reports: List[TrialReport] = []
+
+    @property
+    def reports(self) -> List[TrialReport]:
+        return self._reports
+
+    def can_accept(self, trial: Trial) -> bool:
+        return True
+
+    def get_budget(self, trial: Trial, rung: int) -> float:
+        return self._budgets[rung] if rung < len(self._budgets) else 0.0
+
+    def judge(self, report: TrialReport) -> TrialDecision:
+        self._reports.append(report)
+        return TrialDecision(
+            report,
+            budget=self.get_budget(report.trial, report.rung + 1)
+            if self._continuous
+            else 0.0,
+            should_checkpoint=report.rung >= len(self._budgets)
+            if self._continuous
+            else True,
+        )

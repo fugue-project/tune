@@ -1,10 +1,12 @@
+import os
 from threading import RLock
-from tune.iterative.study import IterativeStudy
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from uuid import uuid4
+
+from triad import FileSystem, to_uuid
 from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Set
-
-from triad import to_uuid
+from tune.iterative.study import IterativeStudy
 from tune.iterative.trial import TrialJudge, TrialJudgeMonitor
 from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
 
@@ -28,7 +30,9 @@ def run_continuous_asha(
         trial_early_stop=trial_early_stop,
         monitor=monitor,
     )
-    study = IterativeStudy(objective, checkpoint_path=checkpoint_path)
+    path = os.path.join(checkpoint_path, str(uuid4()))
+    FileSystem().makedirs(path, recreate=True)
+    study = IterativeStudy(objective, checkpoint_path=path)
     return study.optimize(dataset, judge=judge)
 
 

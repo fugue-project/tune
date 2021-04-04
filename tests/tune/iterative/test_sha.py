@@ -47,13 +47,13 @@ def test_sha(tmpdir):
     dag = FugueWorkflow()
     dataset = TuneDatasetBuilder(space, str(tmpdir)).build(dag)
     obj = F()
-    # res = run_sha(
-    #     obj,
-    #     dataset,
-    #     plan=[[1.0, 3], [1.0, 2], [1.0, 1], [1.0, 1]],
-    #     checkpoint_path=str(tmpdir),
-    # )
-    # res.result().output(assert_metric, dict(metric=4.0, ct=1))
+    res = run_sha(
+        obj,
+        dataset,
+        plan=[[1.0, 3], [1.0, 2], [1.0, 1], [1.0, 1]],
+        checkpoint_path=str(tmpdir),
+    )
+    res.result().output(assert_metric, dict(metric=4.0, ct=1))
 
     res = run_sha(
         obj,
