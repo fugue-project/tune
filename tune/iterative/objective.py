@@ -1,9 +1,6 @@
-from typing import Optional
-
 from fs.base import FS as FSBase
 from tune.checkpoint import Checkpoint
-from tune.iterative.trial import TrialDecision, TrialJudge
-from tune.noniterative.objective import NonIterativeObjectiveFunc
+from tune.iterative.trial import TrialJudge
 from tune.trial import Trial, TrialReport
 
 
@@ -11,8 +8,8 @@ class IterativeObjectiveFunc:
     def __init__(self):
         self._rung = 0
 
-    def copy(self) -> "IterativeObjectiveFunc":
-        return IterativeObjectiveFunc()
+    def copy(self) -> "IterativeObjectiveFunc":  # pragma: no cover
+        raise NotImplementedError
 
     @property
     def rung(self) -> int:
@@ -73,40 +70,3 @@ class IterativeObjectiveFunc:
             budget = decision.budget
             self._rung += 1
         self.postprocess()
-
-    def to_noniterative_objective(
-        self, checkpoint_basedir_fs: FSBase
-    ) -> NonIterativeObjectiveFunc:
-        return _NonIterativeObjectiveWrapper(self, checkpoint_basedir_fs)
-
-
-class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
-    def __init__(self, func: IterativeObjectiveFunc, checkpoint_basedir_fs: FSBase):
-        super().__init__()
-        self._func = func
-        self._checkpoint_basedir_fs = checkpoint_basedir_fs
-
-    def generate_sort_metric(self, value: float) -> float:
-        return self._func.generate_sort_metric(value)
-
-    def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
-        judge = _NonIterativeJudgeWrapper()
-        self._func.run(
-            trial, judge=judge, checkpoint_basedir_fs=self._checkpoint_basedir_fs
-        )
-        return judge.report
-
-
-class _NonIterativeJudgeWrapper(TrialJudge):
-    def __init__(self):
-        super().__init__()
-        self._report: Optional[TrialReport] = None
-
-    @property
-    def report(self) -> TrialReport:
-        assert self._report is not None
-        return self._report
-
-    def judge(self, report: TrialReport) -> TrialDecision:
-        self._report = report
-        return TrialDecision(report, budget=0.0, should_checkpoint=True, metadata={})

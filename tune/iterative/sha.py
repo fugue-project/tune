@@ -1,45 +1,73 @@
 from typing import List, Optional, Tuple
 
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
-from tune.dataset import StudyResult, TuneDataset
-from tune.iterative.asha import ASHAJudge
+from fs.base import FS as FSBase
+from triad import FileSystem
+from tune.dataset import TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.study import IterativeStudy, TrialCallback
-from tune.iterative.trial import TrialJudgeMonitor
+from tune.iterative.trial import TrialDecision, TrialJudge
+from tune.noniterative.objective import NonIterativeObjectiveFunc
+from tune.trial import Trial, TrialReport
 
 
-class SHAStudy(IterativeStudy):
+def run_sha(
+    objective: IterativeObjectiveFunc,
+    dataset: TuneDataset,
+    plan: List[Tuple[float, int]],
+    checkpoint_path: str,
+) -> None:
+    obj = _to_noniterative_objective(
+        objective, checkpoint_path=checkpoint_path, plan=plan
+    )
+    print(obj)
+    # run_noniterative_study()
+
+
+def _to_noniterative_objective(
+    func: IterativeObjectiveFunc,
+    checkpoint_path: FSBase,
+    plan: List[Tuple[float, int]],
+) -> NonIterativeObjectiveFunc:
+    return _NonIterativeObjectiveWrapper(func, checkpoint_path, plan)
+
+
+class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
     def __init__(
         self,
-        objective: IterativeObjectiveFunc,
+        func: IterativeObjectiveFunc,
         checkpoint_path: str,
-    ):
-        super().__init__(objective, checkpoint_path)
-
-    def sha(
-        self,
-        dataset: TuneDataset,
         plan: List[Tuple[float, int]],
-        monitor: Optional[TrialJudgeMonitor] = None,
-    ) -> StudyResult:
-        add_schema = f"{TUNE_REPORT_METRIC}:double,{TUNE_REPORT}:str"
+    ):
+        super().__init__()
+        self._plan = plan
+        self._func = func
+        self._checkpoint_path = checkpoint_path
 
-        for budget, keep in plan:
-            judge = ASHAJudge(
-                [(budget, keep)],
-                always_checkpoint=True,
-                should_stop_func=lambda *ars, **kwargs: False,
-                trial_should_stop_func=lambda *args, **kwargs: False,
-                monitor=monitor,
-            )
-            callback = TrialCallback(judge)
+    def generate_sort_metric(self, value: float) -> float:
+        return self._func.generate_sort_metric(value)
 
-            res = dataset.data.per_row().transform(
-                self._compute,
-                schema=f"*,{add_schema}",
-                callback=callback.entrypoint,
-            )
-            study_res = StudyResult(dataset=dataset, result=res)
-            dataset = study_res.next_tune_dataset(keep)
+    def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
+        judge = _NonIterativeJudgeWrapper(self._plan)
+        fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
+        self._func.run(trial, judge=judge, checkpoint_basedir_fs=fs)
+        return judge.report
 
-        return study_res
+
+class _NonIterativeJudgeWrapper(TrialJudge):
+    def __init__(self, plan: List[Tuple[float, int]]):
+        super().__init__()
+        self._report: Optional[TrialReport] = None
+        self._plan = plan
+
+    @property
+    def report(self) -> TrialReport:
+        assert self._report is not None
+        return self._report
+
+    def get_budget(self, trial: Trial, rung: int):
+        if rung >= len(self._plan):
+            return 0
+        return self._plan[rung][0]
+
+    def judge(self, report: TrialReport) -> TrialDecision:
+        self._report = report
+        return TrialDecision(report, budget=0.0, should_checkpoint=True, metadata={})
