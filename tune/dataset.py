@@ -192,26 +192,19 @@ class TuneDatasetBuilder:
 
 
 class StudyResult:
-    def __init__(
-        self, dataset: TuneDataset, result: WorkflowDataFrame, min_better: bool
-    ):
+    def __init__(self, dataset: TuneDataset, result: WorkflowDataFrame):
         self._dataset = dataset
         self._result = result.persist()
-        self._min_better = min_better
 
     def result(self, best_n: int = 0) -> WorkflowDataFrame:
         if best_n <= 0:
             return self._result
-        if self._min_better:
-            presort = TUNE_REPORT_METRIC
-        else:
-            presort = TUNE_REPORT_METRIC + " desc"
         if len(self._dataset.keys) == 0:
-            return self._result.take(n=best_n, presort=presort)
+            return self._result.take(n=best_n, presort=TUNE_REPORT_METRIC)
         else:
-            return self._result.partition(by=self._dataset.keys, presort=presort).take(
-                best_n
-            )
+            return self._result.partition(
+                by=self._dataset.keys, presort=TUNE_REPORT_METRIC
+            ).take(best_n)
 
     def next_tune_dataset(self, best_n: int = 0) -> TuneDataset:
         data = self.result(best_n).drop(

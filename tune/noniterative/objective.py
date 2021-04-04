@@ -2,12 +2,11 @@ from tune.trial import Trial, TrialReport
 
 
 class NonIterativeObjectiveFunc:
-    @property
-    def min_better(self) -> bool:
-        return True  # pragma: no cover
+    def generate_sort_metric(self, value: float) -> float:  # pragma: no cover
+        return value
 
-    def run(self, trial: Trial) -> TrialReport:
-        raise NotImplementedError  # pragma: no cover
+    def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
+        raise NotImplementedError
 
 
 class NonIterativeObjectiveRunner:

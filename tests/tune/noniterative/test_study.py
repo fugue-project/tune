@@ -17,9 +17,16 @@ def objective2(a: float, b: pd.DataFrame) -> float:
     return -(a ** 2 + b.shape[0])
 
 
-def assert_metric(df: pd.DataFrame, metrics: List[float]) -> None:
+def assert_metric(
+    df: pd.DataFrame, metrics: List[float], min_better: bool = True
+) -> None:
     assert len(metrics) == df.shape[0]
-    assert set(metrics) == set(df[TUNE_REPORT_METRIC].tolist())
+    x = 1.0 if min_better else -1.0
+    assert set(m * x for m in metrics) == set(df[TUNE_REPORT_METRIC].tolist())
+
+
+def assert_metric_max(df: pd.DataFrame, metrics: List[float]) -> None:
+    assert_metric(df, metrics, False)
 
 
 def test_study(tmpdir):
@@ -50,10 +57,10 @@ def test_study(tmpdir):
         # min_better = False
         result = study2.optimize(dataset, distributed=distributed)
         result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
-            assert_metric, params=dict(metrics=[-3.0, -4.0, -7.0])
+            assert_metric_max, params=dict(metrics=[-3.0, -4.0, -7.0])
         )
         result.result(2)[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
-            assert_metric, params=dict(metrics=[-3.0, -4.0])
+            assert_metric_max, params=dict(metrics=[-3.0, -4.0])
         )
 
     # with data partition

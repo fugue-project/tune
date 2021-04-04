@@ -12,6 +12,16 @@ from tune.noniterative.objective import (
 )
 
 
+def run_noniterative_study(
+    objective: NonIterativeObjectiveFunc,
+    dataset: TuneDataset,
+    runner: Optional[NonIterativeObjectiveRunner] = None,
+    distributed: Optional[bool] = None,
+) -> StudyResult:
+    study = NonIterativeStudy(objective, runner or NonIterativeObjectiveRunner())
+    return study.optimize(dataset, distributed=distributed)
+
+
 class NonIterativeStudy:
     def __init__(
         self, objective: NonIterativeObjectiveFunc, runner: NonIterativeObjectiveRunner
@@ -31,8 +41,11 @@ class NonIterativeStudy:
             for row in df:
                 for trial in get_trials_from_row(row):
                     report = self._runner.run(self._objective, trial)
+                    report = report.with_sort_metric(
+                        self._objective.generate_sort_metric(report.metric)
+                    )
                     res = dict(row)
-                    res[TUNE_REPORT_METRIC] = report.metric
+                    res[TUNE_REPORT_METRIC] = report.sort_metric
                     res[TUNE_REPORT] = json.dumps(report.jsondict)
                     yield res
 
@@ -54,9 +67,7 @@ class NonIterativeStudy:
                 compute_transformer, schema=f"*,{add_schema}"
             )
 
-        return StudyResult(
-            dataset=dataset, result=res, min_better=self._objective.min_better
-        )
+        return StudyResult(dataset=dataset, result=res)
 
     def _get_distributed(self, distributed: Optional[bool]) -> bool:
         if distributed is None:

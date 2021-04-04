@@ -56,7 +56,7 @@ class IterativeStudy:
             callback=callback.entrypoint,
         )
 
-        return StudyResult(dataset=dataset, result=res, min_better=True)
+        return StudyResult(dataset=dataset, result=res)
 
     def _compute(
         self,

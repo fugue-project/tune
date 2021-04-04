@@ -62,6 +62,9 @@ class _NonIterativeObjectiveFuncWrapper(NonIterativeObjectiveFunc):
     def min_better(self) -> bool:
         return self._min_better
 
+    def generate_sort_metric(self, value: float) -> float:
+        return float(value) if self._min_better else -float(value)
+
     @no_type_check
     def run(self, trial: Trial) -> TrialReport:
         if self._orig_input:
