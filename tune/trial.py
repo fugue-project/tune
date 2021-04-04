@@ -1,6 +1,8 @@
 import heapq
+import json
 from typing import Any, Dict, List, Optional, Set
 
+from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 from tune.space.parameters import decode_params, encode_params
 
 
@@ -191,6 +193,12 @@ class TrialReport:
     def from_jsondict(data: Dict[str, Any]) -> "TrialReport":
         trial = Trial.from_jsondict(data.pop("trial"))
         return TrialReport(trial=trial, **data)
+
+    def fill_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data[TUNE_REPORT_ID] = self.trial_id
+        data[TUNE_REPORT_METRIC] = self.sort_metric
+        data[TUNE_REPORT] = json.dumps(self.jsondict)
+        return data
 
 
 class TrialReportHeap:

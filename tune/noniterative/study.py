@@ -1,9 +1,8 @@
-import json
 from typing import Any, Dict, Iterable, Optional
 
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
 from triad import assert_or_throw
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
+from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.exceptions import TuneCompileError
 from tune.noniterative.objective import (
@@ -33,7 +32,6 @@ class NonIterativeStudy:
         self, dataset: TuneDataset, distributed: Optional[bool] = None
     ) -> StudyResult:
         _dist = self._get_distributed(distributed)
-        add_schema = f"{TUNE_REPORT_METRIC}:double,{TUNE_REPORT}:str"
 
         def compute_transformer(
             df: Iterable[Dict[str, Any]]
@@ -44,13 +42,10 @@ class NonIterativeStudy:
                     report = report.with_sort_metric(
                         self._objective.generate_sort_metric(report.metric)
                     )
-                    res = dict(row)
-                    res[TUNE_REPORT_METRIC] = report.sort_metric
-                    res[TUNE_REPORT] = json.dumps(report.jsondict)
-                    yield res
+                    yield report.fill_dict(dict(row))
 
         def compute_processor(engine: ExecutionEngine, df: DataFrame) -> DataFrame:
-            out_schema = df.schema + add_schema
+            out_schema = df.schema + TUNE_REPORT_ADD_SCHEMA
 
             def get_rows() -> Iterable[Any]:
                 for row in compute_transformer(df.as_local().as_dict_iterable()):
@@ -64,7 +59,7 @@ class NonIterativeStudy:
             res = dataset.data.process(compute_processor)
         else:
             res = dataset.data.per_row().transform(
-                compute_transformer, schema=f"*,{add_schema}"
+                compute_transformer, schema=f"*,{TUNE_REPORT_ADD_SCHEMA}"
             )
 
         return StudyResult(dataset=dataset, result=res)

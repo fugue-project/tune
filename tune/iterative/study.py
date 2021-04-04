@@ -1,8 +1,7 @@
-import json
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from triad.collections.fs import FileSystem
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
+from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.trial import Trial, TrialJudge
@@ -47,12 +46,11 @@ class IterativeStudy:
         self._checkpoint_path = checkpoint_path
 
     def optimize(self, dataset: TuneDataset, judge: TrialJudge) -> StudyResult:
-        add_schema = f"{TUNE_REPORT_METRIC}:double,{TUNE_REPORT}:str"
         callback = TrialCallback(judge)
 
         res = dataset.data.per_row().transform(
             self._compute,
-            schema=f"*,{add_schema}",
+            schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
             callback=callback.entrypoint,
         )
 
@@ -69,7 +67,4 @@ class IterativeStudy:
                 rjudge = RemoteTrialJudge(entrypoint)
                 self._objective.copy().run(trial, rjudge, ck_fs)
                 if rjudge.report is not None:
-                    res = dict(row)
-                    res[TUNE_REPORT_METRIC] = rjudge.report.sort_metric
-                    res[TUNE_REPORT] = json.dumps(rjudge.report.jsondict)
-                    yield res
+                    yield rjudge.report.fill_dict(dict(row))

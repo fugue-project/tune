@@ -18,13 +18,13 @@ from fugue import (
     WorkflowDataFrames,
 )
 from triad import ParamDict, assert_or_throw, to_uuid
-
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
     TUNE_DATASET_TRIALS,
     TUNE_PREFIX,
     TUNE_REPORT,
+    TUNE_REPORT_ID,
     TUNE_REPORT_METRIC,
     TUNE_TEMP_PATH,
 )
@@ -194,7 +194,12 @@ class TuneDatasetBuilder:
 class StudyResult:
     def __init__(self, dataset: TuneDataset, result: WorkflowDataFrame):
         self._dataset = dataset
-        self._result = result.persist()
+        self._result = (
+            result.persist()
+            .partition_by(TUNE_REPORT_ID, presort=TUNE_REPORT_METRIC)
+            .take(1)
+            .persist()
+        )
 
     def result(self, best_n: int = 0) -> WorkflowDataFrame:
         if best_n <= 0:
@@ -208,7 +213,7 @@ class StudyResult:
 
     def next_tune_dataset(self, best_n: int = 0) -> TuneDataset:
         data = self.result(best_n).drop(
-            [TUNE_REPORT_METRIC, TUNE_REPORT], if_exists=True
+            [TUNE_REPORT_ID, TUNE_REPORT_METRIC, TUNE_REPORT], if_exists=True
         )
         return TuneDataset(data, dfs=self._dataset.dfs, keys=self._dataset.keys)
 
