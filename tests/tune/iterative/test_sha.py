@@ -20,10 +20,10 @@ class F(IterativeObjectiveFunc):
             [7, 4, 3, 4],
         ]
 
-    def save_checkpoint(self, fs):
+    def save_checkpoint(self, fs, trial):
         fs.writetext("x", str(self._it))
 
-    def load_checkpoint(self, fs):
+    def load_checkpoint(self, fs, trial):
         self._it = int(fs.readtext("x"))
 
     def run_single_iteration(self, trial):

@@ -22,10 +22,10 @@ class F(IterativeObjectiveFunc):
     def postprocess(self) -> None:
         self.v = -10
 
-    def load_checkpoint(self, fs: FSBase) -> None:
+    def load_checkpoint(self, fs: FSBase, trial:Trial) -> None:
         self.v = int(fs.readtext("x"))
 
-    def save_checkpoint(self, fs: FSBase) -> None:
+    def save_checkpoint(self, fs: FSBase, trial:Trial) -> None:
         fs.writetext("x", str(self.v))
 
     def run_single_iteration(self, trial: Trial) -> TrialReport:

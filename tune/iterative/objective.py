@@ -25,10 +25,10 @@ class IterativeObjectiveFunc:
     def generate_sort_metric(self, value: float) -> float:
         return value
 
-    def load_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
+    def load_checkpoint(self, fs: FSBase, trial: Trial) -> None:  # pragma: no cover
         return
 
-    def save_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
+    def save_checkpoint(self, fs: FSBase, trial: Trial) -> None:  # pragma: no cover
         return
 
     def preprocess(self) -> None:  # pragma: no cover
@@ -62,7 +62,7 @@ class IterativeObjectiveFunc:
         self.preprocess()
         if len(checkpoint) > 0:
             self._rung = int(checkpoint.latest.readtext("__RUNG__")) + 1
-            self.load_checkpoint(checkpoint.latest)
+            self.load_checkpoint(checkpoint.latest, trial)
         budget = judge.get_budget(trial, self.rung)
         while budget > 0:
             report = self.run_single_rung(trial, budget)
@@ -73,7 +73,7 @@ class IterativeObjectiveFunc:
             if decision.should_checkpoint:
                 with checkpoint.create() as fs:
                     fs.writetext("__RUNG__", str(self.rung))
-                    self.save_checkpoint(fs)
+                    self.save_checkpoint(fs, trial)
             budget = decision.budget
             self._rung += 1
         self.postprocess()
