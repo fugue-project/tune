@@ -4,8 +4,7 @@ from triad.collections.fs import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.trial import Trial, TrialJudge
-from tune.trial import TrialDecision, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class TrialCallback:

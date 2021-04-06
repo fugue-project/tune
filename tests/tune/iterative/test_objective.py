@@ -4,8 +4,7 @@ from tune.iterative.objective import (
     IterativeObjectiveFunc,
     validate_iterative_objective,
 )
-from tune.iterative.trial import TrialJudge
-from tune.trial import Trial, TrialDecision, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class F(IterativeObjectiveFunc):
@@ -22,10 +21,10 @@ class F(IterativeObjectiveFunc):
     def postprocess(self) -> None:
         self.v = -10
 
-    def load_checkpoint(self, fs: FSBase, trial:Trial) -> None:
+    def load_checkpoint(self, fs: FSBase, trial: Trial) -> None:
         self.v = int(fs.readtext("x"))
 
-    def save_checkpoint(self, fs: FSBase, trial:Trial) -> None:
+    def save_checkpoint(self, fs: FSBase, trial: Trial) -> None:
         fs.writetext("x", str(self.v))
 
     def run_single_iteration(self, trial: Trial) -> TrialReport:

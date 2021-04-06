@@ -1,12 +1,13 @@
+from typing import List
+
 import pandas as pd
 from fugue import FugueWorkflow
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
 from tune.noniterative.convert import to_noniterative_objective
-from tune.noniterative.objective import NonIterativeObjectiveRunner
-from tune.noniterative.study import NonIterativeStudy, run_noniterative_study
+from tune.noniterative.study import run_noniterative_study
 from tune.space import Grid, Space
-from typing import List
+from tune.trial import Monitor
 
 
 def objective(a: float, b: pd.DataFrame) -> float:
@@ -22,10 +23,20 @@ def assert_metric(df: pd.DataFrame, metrics: List[float]) -> None:
     assert set(metrics) == set(df[TUNE_REPORT_METRIC].tolist())
 
 
+class M(Monitor):
+    def __init__(self):
+        super().__init__()
+        self._reports = []
+
+    def on_report(self, report) -> None:
+        self._reports.append(report)
+
+
 def test_study(tmpdir):
     space = Space(a=Grid(-2, 0, 1))
     input_df = pd.DataFrame([[0, 1], [1, 1], [0, 2]], columns=["a", "b"])
     dag = FugueWorkflow()
+    monitor = M()
 
     # no data partition
     builder = TuneDatasetBuilder(space, str(tmpdir)).add_df("b", dag.df(input_df))
@@ -67,6 +78,7 @@ def test_study(tmpdir):
             objective=to_noniterative_objective(objective),
             dataset=dataset,
             distributed=distributed,
+            monitor=monitor,
         )
         result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
             assert_metric, params=dict(metrics=[2.0, 3.0, 6.0, 1.0, 2.0, 5.0])
@@ -76,3 +88,5 @@ def test_study(tmpdir):
         )
 
     dag.run()
+
+    assert 3 * 3 * 2 == len(monitor._reports)

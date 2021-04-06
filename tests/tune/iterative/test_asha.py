@@ -6,9 +6,8 @@ from tune.constants import TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
 from tune.iterative.asha import ASHAJudge, RungHeap, run_continuous_asha
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.trial import TrialJudgeMonitor
 from tune.space import Grid, Space
-from tune.trial import Trial, TrialReport
+from tune.trial import Monitor, Trial, TrialReport
 
 
 def test_run_heap():
@@ -123,7 +122,7 @@ def test_trial_stop():
 
 
 def test_run_asha(tmpdir):
-    class M(TrialJudgeMonitor):
+    class M(Monitor):
         def on_report(self, report: TrialReport) -> None:
             print(report.jsondict)
 

@@ -7,8 +7,7 @@ from cloudpickle import pickle
 from fs.base import FS as FSBase
 from triad.collections.fs import FileSystem
 from tune.checkpoint import Checkpoint
-from tune.iterative.trial import TrialJudge
-from tune.trial import Trial, TrialDecision, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class IterativeObjectiveFunc:

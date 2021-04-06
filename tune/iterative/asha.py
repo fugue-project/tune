@@ -7,7 +7,7 @@ from triad import FileSystem, to_uuid
 from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.iterative.trial import TrialJudge, TrialJudgeMonitor
+from tune.trial import TrialJudge, Monitor
 from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
 
 
@@ -21,7 +21,7 @@ def run_continuous_asha(
     trial_early_stop: Optional[
         Callable[[TrialReport, List[TrialReport], List["RungHeap"]], bool]
     ] = None,
-    monitor: Optional[TrialJudgeMonitor] = None,
+    monitor: Optional[Monitor] = None,
 ) -> StudyResult:
     judge = ASHAJudge(
         schedule=plan,
@@ -165,7 +165,7 @@ class ASHAJudge(TrialJudge):
         trial_early_stop: Optional[
             Callable[[TrialReport, List[TrialReport], List[RungHeap]], bool]
         ] = None,
-        monitor: Optional[TrialJudgeMonitor] = None,
+        monitor: Optional[Monitor] = None,
     ):
         super().__init__(monitor=monitor)
         self._lock = RLock()

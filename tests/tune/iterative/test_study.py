@@ -6,9 +6,8 @@ from tune.constants import TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.iterative.trial import TrialJudge
 from tune.space import Grid, Space
-from tune.trial import Trial, TrialDecision, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 def f(x, a, b):

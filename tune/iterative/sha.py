@@ -5,10 +5,9 @@ from uuid import uuid4
 from triad import FileSystem
 from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.trial import TrialDecision, TrialJudge
 from tune.noniterative.objective import NonIterativeObjectiveFunc
 from tune.noniterative.study import run_noniterative_study
-from tune.trial import Trial, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 def run_sha(
