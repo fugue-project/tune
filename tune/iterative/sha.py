@@ -7,7 +7,7 @@ from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.noniterative.objective import NonIterativeObjectiveFunc
 from tune.noniterative.study import run_noniterative_study
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.trial import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 
 
 def run_sha(
@@ -16,13 +16,16 @@ def run_sha(
     plan: List[Tuple[float, int]],
     checkpoint_path: str,
     distributed: Optional[bool] = None,
+    monitor: Optional[Monitor] = None,
 ) -> StudyResult:
     path = os.path.join(checkpoint_path, str(uuid4()))
     for budget, keep in plan:
         obj = _NonIterativeObjectiveWrapper(
             objective, checkpoint_path=path, budget=budget
         )
-        result = run_noniterative_study(obj, dataset, distributed=distributed)
+        result = run_noniterative_study(
+            obj, dataset, distributed=distributed, monitor=monitor
+        )
         dataset = result.next_tune_dataset(keep)
     return result
 
