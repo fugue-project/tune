@@ -1,13 +1,13 @@
 import os
 import tempfile
-from typing import Callable, List
+from typing import Callable, List, Optional
 from uuid import uuid4
 
 from cloudpickle import pickle
 from fs.base import FS as FSBase
 from triad.collections.fs import FileSystem
 from tune.checkpoint import Checkpoint
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.trial import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class IterativeObjectiveFunc:
@@ -85,10 +85,11 @@ def validate_iterative_objective(
     validator: Callable[[List[TrialReport]], None],
     continuous: bool = False,
     checkpoint_path: str = "",
+    monitor: Optional[Monitor] = None,
 ) -> None:
     path = checkpoint_path if checkpoint_path != "" else tempfile.gettempdir()
     basefs = FileSystem().makedirs(os.path.join(path, str(uuid4())), recreate=True)
-    j = _Validator(budgets, continuous=continuous)
+    j = _Validator(monitor, budgets, continuous=continuous)
     if continuous:
         f = pickle.loads(pickle.dumps(func)).copy()
         f.run(trial, j, checkpoint_basedir_fs=basefs)
@@ -100,8 +101,10 @@ def validate_iterative_objective(
 
 
 class _Validator(TrialJudge):
-    def __init__(self, budgets: List[float], continuous: bool):
-        super().__init__()
+    def __init__(
+        self, monitor: Optional[Monitor], budgets: List[float], continuous: bool
+    ):
+        super().__init__(monitor)
         self._budgets = budgets
         self._continuous = continuous
         self._reports: List[TrialReport] = []
@@ -111,14 +114,18 @@ class _Validator(TrialJudge):
         return self._reports
 
     def can_accept(self, trial: Trial) -> bool:
+
         return True
 
     def get_budget(self, trial: Trial, rung: int) -> float:
-        return self._budgets[rung] if rung < len(self._budgets) else 0.0
+        budget = self._budgets[rung] if rung < len(self._budgets) else 0.0
+        self.monitor.on_get_budget(trial, rung, budget)
+        return budget
 
     def judge(self, report: TrialReport) -> TrialDecision:
+        self.monitor.on_report(report)
         self._reports.append(report)
-        return TrialDecision(
+        decision = TrialDecision(
             report,
             budget=self.get_budget(report.trial, report.rung + 1)
             if self._continuous
@@ -127,3 +134,5 @@ class _Validator(TrialJudge):
             if self._continuous
             else True,
         )
+        self.monitor.on_judge(decision)
+        return decision

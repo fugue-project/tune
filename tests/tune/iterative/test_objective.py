@@ -4,7 +4,7 @@ from tune.iterative.objective import (
     IterativeObjectiveFunc,
     validate_iterative_objective,
 )
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport, Monitor
 
 
 class F(IterativeObjectiveFunc):
@@ -56,6 +56,14 @@ class J(TrialJudge):
         )
 
 
+class M(Monitor):
+    def __init__(self):
+        self._reports = []
+
+    def on_report(self, report: TrialReport) -> None:
+        return self._reports.append(report)
+
+
 def test_objective_func(tmpdir):
     fs = FileSystem().opendir(str(tmpdir))
     j = J([3, 3, 2])
@@ -74,6 +82,7 @@ def test_objective_func(tmpdir):
 
 
 def test_validator():
+    m = M()
     for cont in [True, False]:
         validate_iterative_objective(
             F(),
@@ -81,4 +90,6 @@ def test_validator():
             [3, 3, 2],
             lambda reports: [-3.0, -6.0, -8.0] == [x.sort_metric for x in reports],
             continuous=cont,
+            monitor=m,
         )
+    assert 6 == len(m._reports)
