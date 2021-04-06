@@ -22,7 +22,8 @@ setup(
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
         "visual": ["matplotlib"],
-        "all": ["hyperopt", "optuna", "matplotlib"],
+        "tensorflow": ["tensorflow"],
+        "all": ["hyperopt", "optuna", "matplotlib", "tensorflow"],
     },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
