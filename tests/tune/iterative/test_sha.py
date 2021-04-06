@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable
 from fugue import FugueWorkflow
 from tune.dataset import TuneDatasetBuilder
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.sha import run_sha
+from tune import optimize_by_sha
 from tune.space import Grid, Space
 from tune.trial import TrialReport
 from tune.constants import TUNE_REPORT_METRIC
@@ -48,7 +48,7 @@ def test_sha(tmpdir):
     dag = FugueWorkflow()
     dataset = TuneDatasetBuilder(space, str(tmpdir)).build(dag)
     obj = F()
-    res = run_sha(
+    res = optimize_by_sha(
         obj,
         dataset,
         plan=[[1.0, 3], [1.0, 2], [1.0, 1], [1.0, 1]],
@@ -56,7 +56,7 @@ def test_sha(tmpdir):
     )
     res.result().output(assert_metric, dict(metric=4.0, ct=1))
 
-    res = run_sha(
+    res = optimize_by_sha(
         obj,
         dataset,
         plan=[[2.0, 2], [1.0, 1], [1.0, 1]],

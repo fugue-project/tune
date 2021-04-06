@@ -12,17 +12,6 @@ from tune.noniterative.objective import (
 from tune.trial import Monitor, TrialReport
 
 
-def run_noniterative_study(
-    objective: NonIterativeObjectiveFunc,
-    dataset: TuneDataset,
-    runner: Optional[NonIterativeObjectiveRunner] = None,
-    distributed: Optional[bool] = None,
-    monitor: Optional[Monitor] = None,
-) -> StudyResult:
-    study = NonIterativeStudy(objective, runner or NonIterativeObjectiveRunner())
-    return study.optimize(dataset, distributed=distributed, monitor=monitor)
-
-
 class NonIterativeStudy:
     def __init__(
         self, objective: NonIterativeObjectiveFunc, runner: NonIterativeObjectiveRunner

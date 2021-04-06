@@ -2,9 +2,10 @@ import math
 from typing import Any, Dict, Iterable
 
 from fugue import FugueWorkflow
+from tune import optimize_by_continuous_asha
 from tune.constants import TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
-from tune.iterative.asha import ASHAJudge, RungHeap, run_continuous_asha
+from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.space import Grid, Space
 from tune.trial import Monitor, Trial, TrialReport
@@ -145,7 +146,7 @@ def test_run_asha(tmpdir):
     dag = FugueWorkflow()
     dataset = TuneDatasetBuilder(space, str(tmpdir)).build(dag, shuffle=False)
     obj = F()
-    res = run_continuous_asha(
+    res = optimize_by_continuous_asha(
         obj,
         dataset,
         plan=[[1.0, 3], [1.0, 2], [1.0, 1], [1.0, 1]],
@@ -153,7 +154,7 @@ def test_run_asha(tmpdir):
     )
     res.result(1).output(assert_metric, dict(metric=1.0, ct=1))
 
-    res = run_continuous_asha(
+    res = optimize_by_continuous_asha(
         obj,
         dataset,
         plan=[[2.0, 2], [1.0, 1], [1.0, 1]],

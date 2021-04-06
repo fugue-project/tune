@@ -1,12 +1,7 @@
-import os
 from threading import RLock
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
-from uuid import uuid4
 
-from triad import FileSystem, to_uuid
-from tune.dataset import StudyResult, TuneDataset
-from tune.iterative.objective import IterativeObjectiveFunc
-from tune.iterative.study import IterativeStudy
+from triad import to_uuid
 from tune.trial import (
     Monitor,
     Trial,
@@ -15,31 +10,6 @@ from tune.trial import (
     TrialReport,
     TrialReportHeap,
 )
-
-
-def run_continuous_asha(
-    objective: IterativeObjectiveFunc,
-    dataset: TuneDataset,
-    plan: List[Tuple[float, int]],
-    checkpoint_path: str,
-    always_checkpoint: bool = False,
-    study_early_stop: Optional[Callable[[List[Any], List["RungHeap"]], bool]] = None,
-    trial_early_stop: Optional[
-        Callable[[TrialReport, List[TrialReport], List["RungHeap"]], bool]
-    ] = None,
-    monitor: Optional[Monitor] = None,
-) -> StudyResult:
-    judge = ASHAJudge(
-        schedule=plan,
-        always_checkpoint=always_checkpoint,
-        study_early_stop=study_early_stop,
-        trial_early_stop=trial_early_stop,
-        monitor=monitor,
-    )
-    path = os.path.join(checkpoint_path, str(uuid4()))
-    FileSystem().makedirs(path, recreate=True)
-    study = IterativeStudy(objective, checkpoint_path=path)
-    return study.optimize(dataset, judge=judge)
 
 
 class RungHeap:

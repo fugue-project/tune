@@ -21,9 +21,10 @@ setup(
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
-        "visual": ["matplotlib"],
+        "visual": ["seaborn", "plotly"],
         "tensorflow": ["tensorflow"],
-        "all": ["hyperopt", "optuna", "matplotlib", "tensorflow"],
+        "notebook": ["ipython", "seaborn", "plotly"],
+        "all": ["hyperopt", "optuna", "seaborn", "tensorflow", "ipython", "plotly"],
     },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"

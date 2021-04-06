@@ -5,7 +5,7 @@ from fugue import FugueWorkflow
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
 from tune.noniterative.convert import to_noniterative_objective
-from tune.noniterative.study import run_noniterative_study
+from tune import optimize_noniterative
 from tune.space import Grid, Space
 from tune.trial import Monitor
 
@@ -43,7 +43,7 @@ def test_study(tmpdir):
     dataset = builder.build(dag, 1)
     for distributed in [True, False, None]:
         # min_better = True
-        result = run_noniterative_study(
+        result = optimize_noniterative(
             objective=to_noniterative_objective(objective),
             dataset=dataset,
             distributed=distributed,
@@ -56,7 +56,7 @@ def test_study(tmpdir):
         )
 
         # min_better = False
-        result = run_noniterative_study(
+        result = optimize_noniterative(
             objective=to_noniterative_objective(objective, min_better=False),
             dataset=dataset,
             distributed=distributed,
@@ -74,7 +74,7 @@ def test_study(tmpdir):
     )
     dataset = builder.build(dag, 1)
     for distributed in [True, False, None]:
-        result = run_noniterative_study(
+        result = optimize_noniterative(
             objective=to_noniterative_objective(objective),
             dataset=dataset,
             distributed=distributed,
