@@ -116,6 +116,8 @@ def test_trial_report_heap():
     h = TrialReportHeap(min_heap=False)
     for r in [r1, r2, r3, r4]:
         h.push(r)
+    for r in [r1, r2, r4]:
+        assert r in list(h.values())
     for r in [r2, r1, r4]:
         assert h.pop() is r
     assert 0 == len(h)

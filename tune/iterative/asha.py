@@ -1,14 +1,21 @@
+import json
 import os
 from threading import RLock
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from triad import FileSystem, to_uuid
 from tune.dataset import StudyResult, TuneDataset
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.trial import TrialJudge, Monitor
-from tune.trial import Trial, TrialDecision, TrialReport, TrialReportHeap
+from tune.trial import (
+    Monitor,
+    Trial,
+    TrialDecision,
+    TrialJudge,
+    TrialReport,
+    TrialReportHeap,
+)
 
 
 def run_continuous_asha(
@@ -70,6 +77,9 @@ class RungHeap:
         with self._lock:
             return tid in self._heap
 
+    def values(self) -> Iterable[TrialReport]:
+        return self._heap.values()
+
     def push(self, report: TrialReport) -> bool:
         with self._lock:
             if len(self) == 0:
@@ -106,7 +116,12 @@ class _PerTrial:
             self._history.append(report)
             can_push = self._parent._rungs[report.rung].push(report)
             if not can_push:
-                reasons.append("not best")
+                data = sorted(
+                    self._parent._rungs[report.rung].values(),
+                    key=lambda x: x.sort_metric,
+                )
+                # TODO: change this!! too much
+                reasons.append("not best: " + json.dumps(data))
             return can_push, ", ".join(reasons)
         return False, ", ".join(reasons)
 

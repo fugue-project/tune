@@ -1,6 +1,6 @@
 import heapq
 import json
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 from tune.space.parameters import decode_params, encode_params
@@ -226,6 +226,10 @@ class TrialReportHeap:
 
     def __contains__(self, tid: str) -> bool:
         return tid in self._ids
+
+    def values(self) -> Iterable[TrialReport]:
+        for x in self._data:
+            yield x.report
 
     def push(self, report: TrialReport) -> None:
         w = TrialReportHeap._Wrapper(report, self._min_heap)
