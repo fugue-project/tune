@@ -248,11 +248,13 @@ class TrialDecision:
         report: TrialReport,
         budget: float,
         should_checkpoint: bool,
+        reason: str = "",
         metadata: Optional[Dict[str, Any]] = None,
     ):
         self._report = report
         self._budget = budget
         self._should_checkpoint = should_checkpoint
+        self._reason = reason
         self._metadata = metadata or {}
 
     def __copy__(self) -> "TrialDecision":
@@ -286,6 +288,10 @@ class TrialDecision:
         return self._should_checkpoint
 
     @property
+    def reason(self) -> str:
+        return self._reason
+
+    @property
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
@@ -295,6 +301,7 @@ class TrialDecision:
             "report": self.report.jsondict,
             "budget": self.budget,
             "should_checkpoint": self.should_checkpoint,
+            "reason": self.reason,
             "metadata": self.metadata,
         }
 

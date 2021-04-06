@@ -150,13 +150,14 @@ def test_trial_decision():
         trial, metric=np.float(0.1), params={"c": Rand(0, 3)}, metadata={"d": 4}
     )
     decision = TrialDecision(
-        report, budget=0.0, should_checkpoint=True, metadata={"x": 1}
+        report, budget=0.0, should_checkpoint=True, metadata={"x": 1}, reason="p"
     )
     assert trial is decision.trial
     assert report is decision.report
     assert decision.should_stop
     assert decision.should_checkpoint
     assert {"x": 1} == decision.metadata
+    assert "p" == decision.reason
     assert 0.0 == decision.budget
 
     assert copy.copy(decision) is decision
@@ -168,6 +169,7 @@ def test_trial_decision():
     assert decision.should_stop
     assert decision.should_checkpoint
     assert {"x": 1} == decision.metadata
+    assert "p" == decision.reason
 
     decision = TrialDecision(
         report, budget=1.0, should_checkpoint=True, metadata={"x": 1}
