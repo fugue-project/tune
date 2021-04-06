@@ -22,11 +22,12 @@ class F(IterativeObjectiveFunc):
     def copy(self) -> "F":
         return F()
 
-    def preprocess(self) -> None:
+    def initialize(self) -> None:
         assert self.step == 0  # because of copy
 
-    def run_single_iteration(self, trial: Trial) -> TrialReport:
+    def run_single_iteration(self) -> TrialReport:
         self.step += 1
+        trial = self.current_trial
         return TrialReport(
             trial=trial, metric=f(self.step, trial.params["a"], trial.params["b"])
         )

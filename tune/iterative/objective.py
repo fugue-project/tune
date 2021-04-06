@@ -13,9 +13,15 @@ from tune.trial import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 class IterativeObjectiveFunc:
     def __init__(self):
         self._rung = 0
+        self._current_trial: Optional[Trial] = None
 
     def copy(self) -> "IterativeObjectiveFunc":  # pragma: no cover
         raise NotImplementedError
+
+    @property
+    def current_trial(self) -> Trial:
+        assert self._current_trial is not None
+        return self._current_trial
 
     @property
     def rung(self) -> int:
@@ -24,25 +30,25 @@ class IterativeObjectiveFunc:
     def generate_sort_metric(self, value: float) -> float:
         return value
 
-    def load_checkpoint(self, fs: FSBase, trial: Trial) -> None:  # pragma: no cover
+    def load_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
         return
 
-    def save_checkpoint(self, fs: FSBase, trial: Trial) -> None:  # pragma: no cover
+    def save_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
         return
 
-    def preprocess(self) -> None:  # pragma: no cover
+    def initialize(self) -> None:  # pragma: no cover
         return
 
-    def postprocess(self) -> None:  # pragma: no cover
+    def finalize(self) -> None:  # pragma: no cover
         return
 
-    def run_single_iteration(self, trial: Trial) -> TrialReport:  # pragma: no cover
+    def run_single_iteration(self) -> TrialReport:  # pragma: no cover
         raise NotImplementedError
 
-    def run_single_rung(self, trial: Trial, budget: float) -> TrialReport:
+    def run_single_rung(self, budget: float) -> TrialReport:
         used = 0.0
         while True:
-            current_report = self.run_single_iteration(trial)
+            current_report = self.run_single_iteration()
             used += current_report.cost
             if used >= budget:
                 return current_report.with_cost(used)
@@ -58,24 +64,27 @@ class IterativeObjectiveFunc:
         )
         if not judge.can_accept(trial):
             return
-        self.preprocess()
-        if len(checkpoint) > 0:
-            self._rung = int(checkpoint.latest.readtext("__RUNG__")) + 1
-            self.load_checkpoint(checkpoint.latest, trial)
-        budget = judge.get_budget(trial, self.rung)
-        while budget > 0:
-            report = self.run_single_rung(trial, budget)
-            report = report.with_rung(self.rung).with_sort_metric(
-                self.generate_sort_metric(report.metric)
-            )
-            decision = judge.judge(report)
-            if decision.should_checkpoint:
-                with checkpoint.create() as fs:
-                    fs.writetext("__RUNG__", str(self.rung))
-                    self.save_checkpoint(fs, trial)
-            budget = decision.budget
-            self._rung += 1
-        self.postprocess()
+        self._current_trial = trial
+        self.initialize()
+        try:
+            if len(checkpoint) > 0:
+                self._rung = int(checkpoint.latest.readtext("__RUNG__")) + 1
+                self.load_checkpoint(checkpoint.latest)
+            budget = judge.get_budget(trial, self.rung)
+            while budget > 0:
+                report = self.run_single_rung(budget)
+                report = report.with_rung(self.rung).with_sort_metric(
+                    self.generate_sort_metric(report.metric)
+                )
+                decision = judge.judge(report)
+                if decision.should_checkpoint:
+                    with checkpoint.create() as fs:
+                        fs.writetext("__RUNG__", str(self.rung))
+                        self.save_checkpoint(fs)
+                budget = decision.budget
+                self._rung += 1
+        finally:
+            self.finalize()
 
 
 def validate_iterative_objective(

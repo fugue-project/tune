@@ -112,12 +112,12 @@ class TuneDatasetBuilder:
             dfs, keys = self._serialize_dfs()
             res = dfs.cross_join(space)
 
-        def postprocess(df: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+        def finalize(df: Iterable[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
             for row in df:
                 yield _to_trail_row(row, trial_metadata or {})
 
         data = res.transform(
-            postprocess,
+            finalize,
             schema=f"*,{TUNE_DATASET_TRIALS}:str-{TUNE_DATASET_PARAMS_PREFIX}",
         )
         return TuneDataset(data, [x[0] for x in self._dfs_spec], keys)

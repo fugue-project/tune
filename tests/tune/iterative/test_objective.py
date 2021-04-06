@@ -15,21 +15,21 @@ class F(IterativeObjectiveFunc):
     def copy(self) -> "F":
         return F()
 
-    def preprocess(self) -> None:
+    def initialize(self) -> None:
         self.v = 0
 
-    def postprocess(self) -> None:
+    def finalize(self) -> None:
         self.v = -10
 
-    def load_checkpoint(self, fs: FSBase, trial: Trial) -> None:
+    def load_checkpoint(self, fs: FSBase) -> None:
         self.v = int(fs.readtext("x"))
 
-    def save_checkpoint(self, fs: FSBase, trial: Trial) -> None:
+    def save_checkpoint(self, fs: FSBase) -> None:
         fs.writetext("x", str(self.v))
 
-    def run_single_iteration(self, trial: Trial) -> TrialReport:
+    def run_single_iteration(self) -> TrialReport:
         self.v += 1
-        return TrialReport(trial, self.v, metadata={"d": 4})
+        return TrialReport(self.current_trial, self.v, metadata={"d": 4})
 
     def generate_sort_metric(self, value: float) -> float:
         return -value

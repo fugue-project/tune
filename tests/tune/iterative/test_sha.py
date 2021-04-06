@@ -20,13 +20,14 @@ class F(IterativeObjectiveFunc):
             [7, 4, 3, 4],
         ]
 
-    def save_checkpoint(self, fs, trial):
+    def save_checkpoint(self, fs):
         fs.writetext("x", str(self._it))
 
-    def load_checkpoint(self, fs, trial):
+    def load_checkpoint(self, fs):
         self._it = int(fs.readtext("x"))
 
-    def run_single_iteration(self, trial):
+    def run_single_iteration(self):
+        trial = self.current_trial
         metric = self._all[trial.params["a"]][self._it]
         self._it += 1
         return TrialReport(trial, metric=metric)

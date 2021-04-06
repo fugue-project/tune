@@ -9,7 +9,7 @@ from tune.trial import Trial
 def test_hyperopt():
     params = dict(a=Rand(-10.0, 10.0), b=RandInt(-100, 100), c=2.0)
     trial = Trial("a", params, metadata={})
-    h = HyperoptRunner(max_iter=200, seed=0)
+    h = HyperoptRunner(max_iter=300, seed=0)
 
     @noniterative_objective
     def objective(a, b, c) -> Tuple[float, Dict[str, Any]]:
