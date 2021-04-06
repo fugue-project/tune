@@ -1,4 +1,3 @@
-import json
 import os
 from threading import RLock
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
@@ -116,12 +115,12 @@ class _PerTrial:
             self._history.append(report)
             can_push = self._parent._rungs[report.rung].push(report)
             if not can_push:
-                data = sorted(
-                    (x.jsondict for x in self._parent._rungs[report.rung].values()),
-                    key=lambda x: x["sort_metric"],
-                )
-                # TODO: change this!! too much
-                reasons.append("not best: " + json.dumps(data))
+                # data = sorted(
+                #     (x.jsondict for x in self._parent._rungs[report.rung].values()),
+                #     key=lambda x: x["sort_metric"],
+                # )
+                # reasons.append("not best: " + json.dumps(data))
+                reasons.append("not best")
             return can_push, ", ".join(reasons)
         return False, ", ".join(reasons)
 

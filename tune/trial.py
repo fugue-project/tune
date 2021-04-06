@@ -208,8 +208,8 @@ class TrialReportHeap:
             self.min_heap = min_heap
 
         def __lt__(self, other: "TrialReportHeap._Wrapper") -> bool:
-            k1 = (self.report.metric, self.report.cost, self.report.rung)
-            k2 = (other.report.metric, other.report.cost, other.report.rung)
+            k1 = (self.report.sort_metric, self.report.cost, self.report.rung)
+            k2 = (other.report.sort_metric, other.report.cost, other.report.rung)
             return k1 < k2 if self.min_heap else k2 < k1
 
         @property

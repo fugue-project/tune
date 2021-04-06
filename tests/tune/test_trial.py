@@ -122,7 +122,18 @@ def test_trial_report_heap():
         assert h.pop() is r
     assert 0 == len(h)
 
-    # test __lt__
+    # test __lt__, the sort key is sort_metric!
+    r5 = TrialReport(t1, metric=0.1, sort_metric=-0.1)
+    r6 = TrialReport(t2, metric=0.2, sort_metric=-0.2)
+    r7 = TrialReport(t3, metric=0.3, sort_metric=-0.3)
+
+    h = TrialReportHeap(min_heap=True)
+    for r in [r7, r6, r5]:
+        h.push(r)
+    for r in [r7, r6, r5]:
+        assert h.pop() is r
+    assert 0 == len(h)
+
     r5 = TrialReport(t1, metric=0.1, cost=0.2, rung=5)
     r6 = TrialReport(t2, metric=0.1, cost=0.3, rung=5)
     r7 = TrialReport(t3, metric=0.1, cost=0.3, rung=6)
