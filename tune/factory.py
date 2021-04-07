@@ -1,3 +1,4 @@
+from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME
 from tune.space import Space
 from tune.trial import Monitor
 from typing import Any, Callable, List, Optional
@@ -57,7 +58,7 @@ class TuneObjectFactory:
         dag: FugueWorkflow,
         dataset: Any,
         df: Any = None,
-        df_name: str = "df",
+        df_name: str = TUNE_DATASET_DF_DEFAULT_NAME,
         partition_keys: Optional[List[str]] = None,
         temp_path: str = "",
     ) -> TuneDataset:

@@ -1,3 +1,3 @@
 # flake8: noqa
 
-from tune_tensorflow.objective import KerasObjective, KerasTrainingSpec
+from tune_tensorflow.objective import KerasTrainingSpec

@@ -4,7 +4,7 @@ from tune import RandInt, Trial
 from tune.noniterative.hyperopt import HyperoptRunner
 from tune.noniterative.objective import validate_noniterative_objective
 
-from tune_sklearn.constants import DF_PARAM_NAME, MODEL_PARAM_NAME
+from tune_sklearn.constants import TUNE_DATASET_DF_DEFAULT_NAME, MODEL_PARAM_NAME
 from tune_sklearn.objective import SKCVObjective
 
 
@@ -20,7 +20,7 @@ def test_objective(tmpdir):
             "max_iter": RandInt(2, 4),
             MODEL_PARAM_NAME: "sklearn.linear_model.LogisticRegression",
         },
-        dfs={DF_PARAM_NAME: df},
+        dfs={TUNE_DATASET_DF_DEFAULT_NAME: df},
     )
     obj = SKCVObjective(scoring="accuracy")
     runner = HyperoptRunner(5, 0)

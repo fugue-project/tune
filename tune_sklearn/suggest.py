@@ -4,7 +4,6 @@ from typing import Any, List, Optional
 from fugue import FugueWorkflow
 from tune import (
     TUNE_OBJECT_FACTORY,
-    Monitor,
     NonIterativeObjectiveRunner,
     Space,
     TrialReport,
@@ -12,7 +11,6 @@ from tune import (
 )
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 
-from tune_sklearn.constants import DF_PARAM_NAME
 from tune_sklearn.objective import SKCVObjective
 
 
@@ -28,7 +26,7 @@ def suggest_sk_models_by_cv(
     partition_keys: Optional[List[str]] = None,
     top_n: int = 1,
     objective_runner: Optional[NonIterativeObjectiveRunner] = None,
-    monitor: Optional[Monitor] = None,
+    monitor: Any = None,
     distributed: Optional[bool] = None,
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
@@ -38,7 +36,6 @@ def suggest_sk_models_by_cv(
         dag,
         space,
         df=train_df,
-        df_name=DF_PARAM_NAME,
         partition_keys=partition_keys,
         temp_path=temp_path,
     )
@@ -54,7 +51,7 @@ def suggest_sk_models_by_cv(
         dataset=dataset,
         runner=objective_runner,
         distributed=distributed,
-        monitor=monitor,
+        monitor=TUNE_OBJECT_FACTORY.make_monitor(monitor),
     )
     study.result(top_n).yield_dataframe_as("result")
 
