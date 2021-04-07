@@ -24,7 +24,16 @@ setup(
         "visual": ["seaborn", "plotly"],
         "tensorflow": ["tensorflow"],
         "notebook": ["ipython", "seaborn", "plotly"],
-        "all": ["hyperopt", "optuna", "seaborn", "tensorflow", "ipython", "plotly"],
+        "sklearn": ["scikit-learn"],
+        "all": [
+            "hyperopt",
+            "optuna",
+            "seaborn",
+            "tensorflow",
+            "ipython",
+            "plotly",
+            "scikit-learn",
+        ],
     },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"

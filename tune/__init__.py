@@ -9,6 +9,9 @@ from tune.iterative.objective import (
     validate_iterative_objective,
 )
 from tune.noniterative.convert import noniterative_objective, to_noniterative_objective
-from tune.noniterative.objective import NonIterativeObjectiveFunc
+from tune.noniterative.objective import (
+    NonIterativeObjectiveFunc,
+    validate_noniterative_objective,
+)
 from tune.space import Choice, Grid, Rand, RandInt, Space
 from tune.trial import Monitor, Trial, TrialDecision, TrialReport
