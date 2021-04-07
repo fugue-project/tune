@@ -1,6 +1,6 @@
 from tune.space import Space
 from tune.trial import Monitor
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 from triad import assert_or_throw
 from fugue import FugueWorkflow
@@ -58,6 +58,7 @@ class TuneObjectFactory:
         dataset: Any,
         df: Any = None,
         df_name: str = "df",
+        partition_keys: Optional[List[str]] = None,
         temp_path: str = "",
     ) -> TuneDataset:
         assert_or_throw(dataset is not None, TuneCompileError("dataset can't be None"))
@@ -70,7 +71,10 @@ class TuneObjectFactory:
             path = self.get_path_or_temp(temp_path)
             builder = TuneDatasetBuilder(dataset, path)
             if df is not None:
-                builder.add_df(df_name, dag.df(df))
+                wdf = dag.df(df)
+                if partition_keys is not None and len(partition_keys) > 0:
+                    wdf = wdf.partition_by(*partition_keys)
+                builder.add_df(df_name, wdf)
             return builder.build(dag, batch_size=1, shuffle=True)
         raise TuneCompileError(f"{dataset} can't be converted to TuneDataset")
 
