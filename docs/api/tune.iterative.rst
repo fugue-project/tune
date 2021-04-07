@@ -1,5 +1,5 @@
-tune.tunable 
-=============
+tune.iterative 
+===============
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,10 +21,34 @@ tune.tunable
 
 
 
-tune.tunable.tunable
+tune.iterative.asha
+-------------------
+
+.. automodule:: tune.iterative.asha
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.iterative.objective
+------------------------
+
+.. automodule:: tune.iterative.objective
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.iterative.sha
+------------------
+
+.. automodule:: tune.iterative.sha
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.iterative.study
 --------------------
 
-.. automodule:: tune.tunable.tunable
+.. automodule:: tune.iterative.study
    :members:
    :undoc-members:
    :show-inheritance:

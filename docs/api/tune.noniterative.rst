@@ -1,5 +1,5 @@
-tune.trial 
-===========
+tune.noniterative 
+==================
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,26 +21,34 @@ tune.trial
 
 
 
-tune.trial.hyperopt
--------------------
+tune.noniterative.convert
+-------------------------
 
-.. automodule:: tune.trial.hyperopt
+.. automodule:: tune.noniterative.convert
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.trial.objective
---------------------
+tune.noniterative.hyperopt
+--------------------------
 
-.. automodule:: tune.trial.objective
+.. automodule:: tune.noniterative.hyperopt
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.trial.trial
-----------------
+tune.noniterative.objective
+---------------------------
 
-.. automodule:: tune.trial.trial
+.. automodule:: tune.noniterative.objective
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.noniterative.study
+-----------------------
+
+.. automodule:: tune.noniterative.study
    :members:
    :undoc-members:
    :show-inheritance:
