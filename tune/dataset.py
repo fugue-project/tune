@@ -60,10 +60,14 @@ class TuneDataset:
             w = np.array(weights)
             p = w / np.sum(w)
             df["__tune_divide_id_"] = np.random.choice(len(weights), df.shape[0], p=p)
-            return df
+            return df.reset_index(drop=True)
 
         def select(df: pd.DataFrame, n: int) -> pd.DataFrame:
-            return df[df["__tune_divide_id_"] == n].drop(["__tune_divide_id_"], axis=1)
+            return (
+                df[df["__tune_divide_id_"] == n]
+                .drop(["__tune_divide_id_"], axis=1)
+                .reset_index(drop=True)
+            )
 
         temp = self._data.process(label).persist()
         datasets: List["TuneDataset"] = []
@@ -178,10 +182,10 @@ class TuneDatasetBuilder:
                 def transform(self, df: LocalDataFrame) -> LocalDataFrame:
                     p = _get_temp_path(self.params.get("path", ""), self.workflow_conf)
                     fp = os.path.join(p, str(uuid4()) + ".parquet")
+                    first = df.peek_dict()
+                    keys = [first[x] for x in self.key_schema.names]
                     df.as_pandas().to_parquet(fp)
-                    return ArrayDataFrame(
-                        [self.cursor.key_value_array + [fp]], self.output_schema
-                    )
+                    return ArrayDataFrame([keys + [fp]], self.output_schema)
 
             return df.transform(SavePartition, params={"path": path, "name": name})
 

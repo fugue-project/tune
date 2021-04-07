@@ -3,6 +3,9 @@ from sklearn.datasets import load_diabetes
 from tune_sklearn import sk_space, suggest_sk_models_by_cv
 from tune import Grid, TUNE_OBJECT_FACTORY, Rand
 from sklearn.linear_model import Lasso, LinearRegression
+from fugue_dask import DaskExecutionEngine
+
+# from fugue_spark import SparkExecutionEngine
 
 
 def test_suggest_cv(tmpdir):
@@ -39,6 +42,26 @@ def test_suggest_cv(tmpdir):
         "neg_mean_absolute_error",
         top_n=1,
         partition_keys=["sex"],
+        execution_engine=DaskExecutionEngine,
     )
     assert 2 == len(result)
     assert 50 > result[0].sort_metric
+
+    # TODO: why the following unit test is so slow
+
+    # result = suggest_sk_models_by_cv(
+    #     space1 + space2,
+    #     train,
+    #     "neg_mean_absolute_error",
+    #     top_n=1,
+    #     partition_keys=["sex"],
+    #     execution_engine=SparkExecutionEngine,
+    #     execution_engine_conf={
+    #         "spark.sql.shuffle.partitions": 4,
+    #         "spark.default.parallelism": 4,
+    #         "spark.executor.cores": 4,
+    #         "spark.sql.adaptive.enabled": "false",
+    #     },
+    # )
+    # assert 2 == len(result)
+    # assert 50 > result[0].sort_metric
