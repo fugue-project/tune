@@ -5,6 +5,7 @@ import random
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
+import numpy as np
 import pandas as pd
 from fugue import (
     ArrayDataFrame,
@@ -18,6 +19,7 @@ from fugue import (
     WorkflowDataFrames,
 )
 from triad import ParamDict, assert_or_throw, to_uuid
+
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
@@ -50,6 +52,32 @@ class TuneDataset:
     @property
     def keys(self) -> List[str]:
         return self._keys
+
+    def divide(self, weights: List[float], seed: Any) -> List["TuneDataset"]:
+        def label(df: pd.DataFrame) -> pd.DataFrame:
+            if seed is not None:
+                np.random.seed(seed)
+            w = np.array(weights)
+            p = w / np.sum(w)
+            df["__tune_divide_id_"] = np.random.choice(len(weights), df.shape[0], p=p)
+            return df
+
+        def select(df: pd.DataFrame, n: int) -> pd.DataFrame:
+            return df[df["__tune_divide_id_"] == n].drop(["__tune_divide_id_"], axis=1)
+
+        temp = self._data.process(label).persist()
+        datasets: List["TuneDataset"] = []
+        for i in range(len(weights)):
+            datasets.append(
+                TuneDataset(
+                    temp.transform(
+                        select, schema="*-__tune_divide_id_", params=dict(n=i)
+                    ),
+                    self.dfs,
+                    self.keys,
+                )
+            )
+        return datasets
 
 
 def get_trials_from_row(row: Dict[str, Any]) -> Iterable[Trial]:
@@ -216,6 +244,14 @@ class StudyResult:
             [TUNE_REPORT_ID, TUNE_REPORT_METRIC, TUNE_REPORT], if_exists=True
         )
         return TuneDataset(data, dfs=self._dataset.dfs, keys=self._dataset.keys)
+
+    def union_with(self, other: "StudyResult") -> None:
+        self._result = (
+            self._result.union(other._result)
+            .partition_by(TUNE_REPORT_ID, presort=TUNE_REPORT_METRIC)
+            .take(1)
+            .persist()
+        )
 
 
 def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:

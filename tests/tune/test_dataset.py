@@ -9,13 +9,15 @@ from fugue import (
 )
 import pickle
 
+import fugue
+
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
     TUNE_DATASET_TRIALS,
     TUNE_TEMP_PATH,
 )
-from tune.dataset import TuneDatasetBuilder, _to_trail_row
+from tune.dataset import TuneDatasetBuilder, _to_trail_row, TuneDataset
 from tune.space import Grid, Rand
 from tune.space.spaces import Space
 from tune.trial import Trial
@@ -87,6 +89,21 @@ def test_builder(tmpdir):
                 f"__tune_df__c:str,{TUNE_DATASET_TRIALS}:str",
             ),
         )
+
+
+def test_dataset(tmpdir):
+    space = Space(a=Grid(0, 1, 2, 3, 4), b=Grid(5, 6, 7, 8, 9))
+    builder = TuneDatasetBuilder(space, str(tmpdir))
+
+    dag = FugueWorkflow()
+    dataset = builder.build(dag)
+    ds = dataset.divide([4, 1], 0)
+    assert 2 == len(ds)
+    ds[0].data.yield_dataframe_as("a")
+    ds[1].data.yield_dataframe_as("b")
+    res = dag.run()
+    assert 25 == len(res["a"].as_array()) + len(res["b"].as_array())
+    assert len(res["b"].as_array()) < 10
 
 
 def test_to_trial_row():

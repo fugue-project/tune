@@ -2,7 +2,12 @@
 
 from tune_version import __version__
 
-from tune.api import optimize_by_continuous_asha, optimize_by_sha, optimize_noniterative
+from tune.api import (
+    optimize_by_continuous_asha,
+    optimize_by_hyperband,
+    optimize_by_sha,
+    optimize_noniterative,
+)
 from tune.checkpoint import Checkpoint
 from tune.factory import TUNE_OBJECT_FACTORY
 from tune.iterative.objective import (

@@ -50,6 +50,33 @@ def optimize_by_sha(
     return result
 
 
+def optimize_by_hyperband(
+    objective: IterativeObjectiveFunc,
+    dataset: TuneDataset,
+    plans: List[List[Tuple[float, int]]],
+    checkpoint_path: str = "",
+    distributed: Optional[bool] = None,
+    monitor: Optional[Monitor] = None,
+) -> StudyResult:
+    weights = [float(p[0][1]) for p in plans]
+    datasets = dataset.divide(weights, seed=0)
+    result: Any = None
+    for d, plan in zip(datasets, plans):
+        r = optimize_by_sha(
+            objective=objective,
+            dataset=d,
+            plan=plan,
+            checkpoint_path=checkpoint_path,
+            distributed=distributed,
+            monitor=monitor,
+        )
+        if result is None:
+            result = r
+        else:
+            result.union_with(r)
+    return result
+
+
 def optimize_by_continuous_asha(
     objective: IterativeObjectiveFunc,
     dataset: TuneDataset,
