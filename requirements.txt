@@ -16,6 +16,9 @@ sphinx-rtd-theme
 sphinx-autodoc-typehints
 flask
 
+pyspark
+dask[dataframe]
+
 # publish to pypi
 wheel
 twine
