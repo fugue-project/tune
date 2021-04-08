@@ -5,7 +5,7 @@ from tune_tensorflow import KerasTrainingSpec
 
 
 class MockSpec(KerasTrainingSpec):
-    def __init__(self, params):
+    def __init__(self, params, dfs):
         super().__init__(params)
         (self.train_data, self.train_targets), (
             self.test_data,

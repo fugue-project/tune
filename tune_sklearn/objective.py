@@ -8,9 +8,8 @@ import pandas as pd
 from sklearn.model_selection import cross_val_score
 from triad import FileSystem
 from tune import NonIterativeObjectiveFunc, Trial, TrialReport
-from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME
+from tune.constants import SPACE_MODEL_NAME, TUNE_DATASET_DF_DEFAULT_NAME
 
-from tune_sklearn.constants import MODEL_PARAM_NAME
 from tune_sklearn.utils import to_sk_model, to_sk_model_expr
 
 
@@ -40,12 +39,12 @@ class SKCVObjective(NonIterativeObjectiveFunc):
     def run(self, trial: Trial) -> TrialReport:
         params = dict(trial.params)
         if trial.trial_id != self._last_id:
-            self._model_type = to_sk_model(params.pop(MODEL_PARAM_NAME))
+            self._model_type = to_sk_model(params.pop(SPACE_MODEL_NAME))
             self._model_expr = to_sk_model_expr(self._model_type)
             self._reset_xy(trial.dfs[TUNE_DATASET_DF_DEFAULT_NAME])
             self._last_id = trial.trial_id
         else:
-            params.pop(MODEL_PARAM_NAME)
+            params.pop(SPACE_MODEL_NAME)
 
         model = self._model_type(**params)
         s = cross_val_score(

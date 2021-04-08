@@ -15,8 +15,11 @@ def test_grid():
     assert v == v and v != v2
     assert to_uuid(v) != to_uuid(v2)
 
+    raises(ValueError, lambda: Grid())
+
 
 def test_choice():
+    raises(ValueError, lambda: Choice())
     v = Choice("a", "b", "c")
     assert v.generate(0) == v.generate(0)
     assert v.generate(0) != v.generate(1)
@@ -27,6 +30,12 @@ def test_choice():
 
     assert to_uuid(v) != to_uuid(Grid("a", "b", "c"))
     assert v != Grid("a", "b", "c")
+
+    v = Choice(1, 2, 3)
+    assert json.loads(json.dumps({"x": v.generate(0)}))["x"] <= 3
+
+    v = Choice("a", "b", "c")
+    assert isinstance(json.loads(json.dumps({"x": v.generate(0)}))["x"], str)
 
 
 def test_rand():

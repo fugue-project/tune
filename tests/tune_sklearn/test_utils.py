@@ -1,8 +1,8 @@
 from pytest import raises
 from tune import Grid
+from tune.constants import SPACE_MODEL_NAME
 
 from tune_sklearn.utils import sk_space, to_sk_model, to_sk_model_expr
-from tune_sklearn.constants import MODEL_PARAM_NAME
 
 
 def test_conversion():
@@ -22,4 +22,4 @@ def test_sk_space():
         )
     )
     assert 2 == len(rows)
-    assert "sklearn.linear_model._base.LinearRegression" == rows[0][MODEL_PARAM_NAME]
+    assert "sklearn.linear_model._base.LinearRegression" == rows[0][SPACE_MODEL_NAME]

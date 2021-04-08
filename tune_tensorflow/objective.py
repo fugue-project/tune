@@ -1,84 +1,20 @@
-import tempfile
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Optional
 
-from tensorflow import keras
 from fs.base import FS as FSBase
-from triad import FileSystem
+from tensorflow import keras
+from triad.utils.convert import to_type
 from tune import IterativeObjectiveFunc, TrialReport
+from tune.constants import SPACE_MODEL_NAME
 
-
-class KerasTrainingSpec:
-    def __init__(self, params: Dict[str, Any]):
-        self._params = params
-
-    @property
-    def params(self) -> Dict[str, Any]:
-        return self._params
-
-    def finalize(self) -> None:
-        pass
-
-    def generate_sort_metric(self, metric: float) -> float:
-        raise NotImplementedError  # pragma: no cover
-
-    def get_fit_metric(self, history: keras.callbacks.History) -> float:
-        raise NotImplementedError  # pragma: no cover
-
-    def get_fit_params(self) -> Tuple[List[Any], Dict[str, Any]]:
-        raise NotImplementedError  # pragma: no cover
-
-    def get_compile_params(self) -> Dict[str, Any]:
-        raise NotImplementedError  # pragma: no cover
-
-    def get_model(self) -> keras.models.Model:
-        raise NotImplementedError  # pragma: no cover
-
-    def save_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".h5") as tf:
-            model.save_weights(tf.name)
-            with open(tf.name, "rb") as fin:
-                fs.writefile("model.h5", fin)
-
-    def load_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".h5") as tf:
-            local_fs = FileSystem()
-            with fs.open("model.h5", "rb") as fin:
-                local_fs.writefile(tf.name, fin)
-            model.load_weights(tf.name)
-
-    def compile_model(self, **add_kwargs: Any) -> keras.models.Model:
-        params = dict(self.get_compile_params())
-        params.update(add_kwargs)
-        model = self.get_model()
-        model.compile(**params)
-        return model
-
-    def fit(self, **add_kwargs: Any) -> keras.callbacks.History:
-        args, kwargs = self.get_fit_params()
-        kwargs = dict(kwargs)
-        kwargs.update(add_kwargs)
-        model = self.compile_model()
-        metric = model.fit(*args, **kwargs)
-        self.finalize()
-        return metric
-
-    def compute_sort_metric(self, **add_kwargs: Any) -> float:
-        metric = self.get_fit_metric(self.fit(**add_kwargs))
-        return self.generate_sort_metric(metric)
+from tune_tensorflow.spec import KerasTrainingSpec
 
 
 class KerasObjective(IterativeObjectiveFunc):
-    def __init__(
-        self,
-        init_spec: Union[
-            Type[KerasTrainingSpec], Callable[[Dict[str, Any]], KerasTrainingSpec]
-        ],
-    ) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._epochs = 0
         self._spec: Optional[KerasTrainingSpec] = None
         self._model: Optional[keras.models.Model] = None
-        self._init_spec = init_spec
 
     @property
     def model(self) -> keras.models.Model:
@@ -91,7 +27,7 @@ class KerasObjective(IterativeObjectiveFunc):
         return self._spec
 
     def copy(self) -> "KerasObjective":
-        return KerasObjective(self._init_spec)
+        return KerasObjective()
 
     def generate_sort_metric(self, value: float) -> float:
         return self.spec.generate_sort_metric(value)
@@ -117,7 +53,8 @@ class KerasObjective(IterativeObjectiveFunc):
         return TrialReport(trial=trial, metric=metric, cost=budget, rung=self.rung)
 
     def initialize(self) -> None:
-        self._spec = self._init_spec(self.current_trial.params)
+        spec = to_type(self.current_trial.params[SPACE_MODEL_NAME], KerasTrainingSpec)
+        self._spec = spec(self.current_trial.params, self.current_trial.dfs)
         self._model = self.spec.compile_model()
 
     def finalize(self) -> None:

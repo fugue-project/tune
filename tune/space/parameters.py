@@ -12,6 +12,9 @@ class Grid(object):
     """
 
     def __init__(self, *args: Any):
+        assert_or_throw(
+            len(args) > 0, ValueError("Grid must take at least one element")
+        )
         self._values = list(args)
 
     def __iter__(self) -> Iterable[Any]:
@@ -61,6 +64,9 @@ class Choice(StochasticExpression):
     """
 
     def __init__(self, *args: Any):
+        assert_or_throw(
+            len(args) > 0, ValueError("Choice must take at least one element")
+        )
         self._values = list(args)
 
     @property
@@ -75,7 +81,10 @@ class Choice(StochasticExpression):
     def generate(self, seed: Any = None) -> Any:
         if seed is not None:
             np.random.seed(seed)
-        return np.random.choice(self._values)
+        value = np.random.choice(self._values)
+        if isinstance(value, np.generic):
+            return value.item()
+        return value  # pragma: no cover
 
 
 class RandBase(StochasticExpression):

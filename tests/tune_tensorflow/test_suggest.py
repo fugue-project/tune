@@ -9,21 +9,25 @@ from tune import (
 )
 from tune.exceptions import TuneCompileError
 
-from tune_tensorflow import KerasObjective
+from tune_tensorflow import (
+    keras_space,
+    suggest_keras_models_by_continuous_asha,
+    suggest_keras_models_by_hyperband,
+    suggest_keras_models_by_sha,
+)
 
 from .mock import MockSpec
 
 
 def test_sha(tmpdir):
     TUNE_OBJECT_FACTORY.set_temp_path(str(tmpdir))
-    TUNE_OBJECT_FACTORY.set_iterative_objective_converter(lambda x: KerasObjective(x))
 
-    space = Space(l1=RandInt(8, 16), l2=RandInt(8, 24))
+    space = keras_space(MockSpec, l1=RandInt(8, 16), l2=RandInt(8, 24))
     with raises(TuneCompileError):
-        suggest_by_sha(MockSpec, space, plan=[(2.0, 4), (4.0, 2)])
+        suggest_keras_models_by_sha(space, plan=[(2.0, 4), (4.0, 2)])
 
     space = space.sample(6, 0)
-    reports = suggest_by_sha(MockSpec, space, plan=[(2.0, 4), (4.0, 2)], top_n=2)
+    reports = suggest_keras_models_by_sha(space, plan=[(2.0, 4), (4.0, 2)], top_n=2)
     for r in reports:
         print(r.jsondict)
     assert 2 == len(reports)
@@ -31,12 +35,10 @@ def test_sha(tmpdir):
 
 def test_hyperband(tmpdir):
     TUNE_OBJECT_FACTORY.set_temp_path(str(tmpdir))
-    TUNE_OBJECT_FACTORY.set_iterative_objective_converter(lambda x: KerasObjective(x))
 
-    space = Space(l1=RandInt(8, 16), l2=RandInt(8, 24))
+    space = keras_space(MockSpec, l1=RandInt(8, 16), l2=RandInt(8, 24))
     with raises(TuneCompileError):
-        suggest_by_hyperband(
-            MockSpec,
+        suggest_keras_models_by_hyperband(
             space,
             plans=[
                 [(2.0, 4), (4.0, 2)],
@@ -45,8 +47,7 @@ def test_hyperband(tmpdir):
         )
 
     space = space.sample(10, 0)
-    reports = suggest_by_hyperband(
-        MockSpec,
+    reports = suggest_keras_models_by_hyperband(
         space,
         plans=[
             [(2.0, 4), (4.0, 2)],
@@ -61,15 +62,14 @@ def test_hyperband(tmpdir):
 
 def test_asha(tmpdir):
     TUNE_OBJECT_FACTORY.set_temp_path(str(tmpdir))
-    TUNE_OBJECT_FACTORY.set_iterative_objective_converter(lambda x: KerasObjective(x))
 
-    space = Space(l1=RandInt(8, 16), l2=RandInt(8, 24))
+    space = keras_space(MockSpec, l1=RandInt(8, 16), l2=RandInt(8, 24))
     with raises(TuneCompileError):
-        suggest_by_continuous_asha(MockSpec, space, plan=[(2.0, 4), (4.0, 2)])
+        suggest_keras_models_by_continuous_asha(space, plan=[(2.0, 4), (4.0, 2)])
 
     space = space.sample(6, 0)
-    reports = suggest_by_continuous_asha(
-        MockSpec, space, plan=[(2.0, 4), (4.0, 2)], top_n=2
+    reports = suggest_keras_models_by_continuous_asha(
+        space, plan=[(2.0, 4), (4.0, 2)], top_n=2
     )
     for r in reports:
         print(r.jsondict)

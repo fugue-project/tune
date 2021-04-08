@@ -1,11 +1,10 @@
 from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 from tune import RandInt, Trial
-from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME
-from tune_hyperopt import HyperoptRunner
+from tune.constants import SPACE_MODEL_NAME, TUNE_DATASET_DF_DEFAULT_NAME
 from tune.noniterative.objective import validate_noniterative_objective
+from tune_hyperopt import HyperoptRunner
 
-from tune_sklearn.constants import MODEL_PARAM_NAME
 from tune_sklearn.objective import SKCVObjective
 
 
@@ -19,7 +18,7 @@ def test_objective(tmpdir):
         "x",
         params={
             "max_iter": RandInt(2, 4),
-            MODEL_PARAM_NAME: "sklearn.linear_model.LogisticRegression",
+            SPACE_MODEL_NAME: "sklearn.linear_model.LogisticRegression",
         },
         dfs={TUNE_DATASET_DF_DEFAULT_NAME: df},
     )

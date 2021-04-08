@@ -59,6 +59,7 @@ def optimize_by_hyperband(
     distributed: Optional[bool] = None,
     monitor: Any = None,
 ) -> StudyResult:
+    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
     weights = [float(p[0][1]) for p in plans]
     datasets = dataset.divide(weights, seed=0)
     result: Any = None
@@ -69,7 +70,7 @@ def optimize_by_hyperband(
             plan=plan,
             checkpoint_path=checkpoint_path,
             distributed=distributed,
-            monitor=monitor,
+            monitor=_monitor,
         )
         if result is None:
             result = r
