@@ -7,12 +7,17 @@ from triad import FileSystem
 
 
 class KerasTrainingSpec:
-    def __init__(self, params: Dict[str, Any]):
+    def __init__(self, params: Dict[str, Any], dfs: Dict[str, Any]):
         self._params = params
+        self._dfs = dfs
 
     @property
     def params(self) -> Dict[str, Any]:
         return self._params
+
+    @property
+    def dfs(self) -> Dict[str, Any]:
+        return self._dfs
 
     def finalize(self) -> None:
         pass
