@@ -21,4 +21,9 @@ from tune.noniterative.objective import (
     validate_noniterative_objective,
 )
 from tune.space import Choice, Grid, Rand, RandInt, Space
+from tune.suggest import (
+    suggest_by_continuous_asha,
+    suggest_by_hyperband,
+    suggest_by_sha,
+)
 from tune.trial import Monitor, Trial, TrialDecision, TrialReport
