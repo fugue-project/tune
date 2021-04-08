@@ -2,7 +2,7 @@ from sklearn.datasets import load_iris
 from sklearn.linear_model import LogisticRegression
 from tune import RandInt, Trial
 from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME
-from tune.noniterative.hyperopt import HyperoptRunner
+from tune_hyperopt import HyperoptRunner
 from tune.noniterative.objective import validate_noniterative_objective
 
 from tune_sklearn.constants import MODEL_PARAM_NAME

@@ -3,7 +3,7 @@ from typing import Any, Dict, Tuple
 from tune import Rand, RandInt
 from tune.noniterative.convert import noniterative_objective
 from tune.noniterative.objective import validate_noniterative_objective
-from tune.noniterative.hyperopt import HyperoptRunner
+from tune_hyperopt import HyperoptRunner
 from tune.trial import Trial
 
 
