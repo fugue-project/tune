@@ -10,12 +10,11 @@ from tune import Monitor, TrialReport
 
 
 class NotebookSimpleChart(Monitor):
-    def __init__(self, by_time: bool = False):
+    def __init__(self):
         super().__init__()
         self._values: List[Any] = []
         self._lock = RLock()
         self._last: Any = None
-        self._by_time = by_time
         self._min: Any = None
 
     def on_report(self, report: TrialReport) -> None:
@@ -26,16 +25,39 @@ class NotebookSimpleChart(Monitor):
             else:
                 self._min = min(self._min, report.sort_metric)
             self._values.append(
-                [report.rung, now, report.trial_id, report.sort_metric, self._min]
+                [
+                    str(report.trial.keys),
+                    report.rung,
+                    now,
+                    report.trial_id,
+                    report.sort_metric,
+                    self._min,
+                ]
             )
             if self._last is None or (now - self._last).total_seconds() > 1.0:
                 clear_output()
                 df = pd.DataFrame(
-                    self._values, columns=["rung", "time", "id", "metric", "min_metric"]
+                    self._values,
+                    columns=["partition", "rung", "time", "id", "metric", "min_metric"],
                 )
-                if not self._by_time:
-                    sns.lineplot(data=df, x="rung", y="metric", hue="id", legend=False)
-                else:
-                    sns.lineplot(data=df, x="time", y="min_metric", legend=False)
+                self.plot(df)
                 plt.show()
                 self._last = datetime.now()
+
+    def plot(self, df: pd.DataFrame) -> None:
+        return  # pragma: no cover
+
+
+class NotebookSimpleRungs(NotebookSimpleChart):
+    def plot(self, df: pd.DataFrame) -> None:
+        sns.lineplot(data=df, x="rung", y="metric", hue="id", legend=False)
+
+
+class NotebookSimpleTimeSeries(NotebookSimpleChart):
+    def plot(self, df: pd.DataFrame) -> None:
+        sns.lineplot(data=df, x="time", y="min_metric", hue="partition")
+
+
+class NotebookSimpleHist(NotebookSimpleChart):
+    def plot(self, df: pd.DataFrame) -> None:
+        sns.histplot(data=df, x="metric", hue="partition")

@@ -51,7 +51,7 @@ def suggest_sk_models_by_cv(
         dataset=dataset,
         runner=objective_runner,
         distributed=distributed,
-        monitor=TUNE_OBJECT_FACTORY.make_monitor(monitor),
+        monitor=monitor,
     )
     study.result(top_n).yield_dataframe_as("result")
 
