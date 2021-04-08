@@ -16,7 +16,7 @@ from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 
 
 def suggest_by_sha(
-    obj: Any,
+    objective: Any,
     space: Space,
     plan: List[Tuple[float, int]],
     train_df: Any = None,
@@ -35,7 +35,6 @@ def suggest_by_sha(
             "use sample method before calling this function"
         ),
     )
-    objective = TUNE_OBJECT_FACTORY.make_iterative_objective(obj)
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,
@@ -50,7 +49,7 @@ def suggest_by_sha(
         plan=plan,
         checkpoint_path=temp_path,
         distributed=distributed,
-        monitor=TUNE_OBJECT_FACTORY.make_monitor(monitor),
+        monitor=monitor,
     )
     study.result(top_n).yield_dataframe_as("result")
 
@@ -67,7 +66,7 @@ def suggest_by_sha(
 
 
 def suggest_by_hyperband(
-    obj: Any,
+    objective: Any,
     space: Space,
     plans: List[List[Tuple[float, int]]],
     train_df: Any = None,
@@ -86,7 +85,6 @@ def suggest_by_hyperband(
             "use sample method before calling this function"
         ),
     )
-    objective = TUNE_OBJECT_FACTORY.make_iterative_objective(obj)
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,
@@ -101,7 +99,7 @@ def suggest_by_hyperband(
         plans=plans,
         checkpoint_path=temp_path,
         distributed=distributed,
-        monitor=TUNE_OBJECT_FACTORY.make_monitor(monitor),
+        monitor=monitor,
     )
     study.result(top_n).yield_dataframe_as("result")
 
@@ -118,7 +116,7 @@ def suggest_by_hyperband(
 
 
 def suggest_by_continuous_asha(
-    obj: Any,
+    objective: Any,
     space: Space,
     plan: List[Tuple[float, int]],
     train_df: Any = None,
@@ -136,7 +134,6 @@ def suggest_by_continuous_asha(
             "use sample method before calling this function"
         ),
     )
-    objective = TUNE_OBJECT_FACTORY.make_iterative_objective(obj)
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,
@@ -150,7 +147,7 @@ def suggest_by_continuous_asha(
         dataset=dataset,
         plan=plan,
         checkpoint_path=temp_path,
-        monitor=TUNE_OBJECT_FACTORY.make_monitor(monitor),
+        monitor=monitor,
     )
     study.result(top_n).yield_dataframe_as("result")
 

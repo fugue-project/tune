@@ -65,8 +65,6 @@ class TuneObjectFactory:
         return self._noniterative_objective_runner_converter(obj)
 
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
-        if obj is None:
-            return None
         if isinstance(obj, Monitor):
             return obj
         return self._monitor_converter(obj)
@@ -123,6 +121,8 @@ class TuneObjectFactory:
         )
 
     def _object_to_monitor(self, obj: Any) -> Optional[Monitor]:
+        if obj is None:
+            return None
         raise TuneCompileError(f"{obj} can't be converted to Monitor")
 
 
