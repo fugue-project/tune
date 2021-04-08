@@ -25,7 +25,8 @@ def optimize_noniterative(
     distributed: Optional[bool] = None,
     monitor: Optional[Monitor] = None,
 ) -> StudyResult:
-    study = NonIterativeStudy(objective, runner or NonIterativeObjectiveRunner())
+    _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
+    study = NonIterativeStudy(objective, _runner)
     return study.optimize(dataset, distributed=distributed, monitor=monitor)
 
 

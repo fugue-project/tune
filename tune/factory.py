@@ -7,7 +7,10 @@ from triad import assert_or_throw
 from fugue import FugueWorkflow
 from tune.exceptions import TuneCompileError
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.noniterative.objective import NonIterativeObjectiveFunc
+from tune.noniterative.objective import (
+    NonIterativeObjectiveFunc,
+    NonIterativeObjectiveRunner,
+)
 from tune.dataset import TuneDataset, TuneDatasetBuilder
 
 
@@ -15,6 +18,9 @@ class TuneObjectFactory:
     def __init__(self):
         self._iterative_objective_converter = self._object_to_iterative_objective
         self._noniterative_objective_converter = self._object_to_noniterative_objective
+        self._noniterative_objective_runner_converter = (
+            self._object_to_noniterative_objective_runner
+        )
         self._monitor_converter = self._object_to_monitor
         self._tmp = ""
 
@@ -27,6 +33,11 @@ class TuneObjectFactory:
         self, func: Callable[[Any], NonIterativeObjectiveFunc]
     ) -> None:
         self._noniterative_objective_converter = func
+
+    def set_noniterative_objective_runner_converter(
+        self, func: Callable[[Any], NonIterativeObjectiveRunner]
+    ) -> None:
+        self._noniterative_objective_runner_converter = func
 
     def set_monitor_converter(self, func: Callable[[Any], Optional[Monitor]]) -> None:
         self._monitor_converter = func
@@ -45,6 +56,13 @@ class TuneObjectFactory:
         if isinstance(obj, NonIterativeObjectiveFunc):
             return obj
         return self._noniterative_objective_converter(obj)
+
+    def make_noniterative_objective_runner(
+        self, obj: Any
+    ) -> NonIterativeObjectiveRunner:
+        if isinstance(obj, NonIterativeObjectiveRunner):
+            return obj
+        return self._noniterative_objective_runner_converter(obj)
 
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
         if obj is None:
@@ -93,6 +111,15 @@ class TuneObjectFactory:
     def _object_to_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
         raise TuneCompileError(
             f"{obj} can't be converted to non iterative objective function"
+        )
+
+    def _object_to_noniterative_objective_runner(
+        self, obj: Any
+    ) -> NonIterativeObjectiveRunner:
+        if obj is None:
+            return NonIterativeObjectiveRunner()
+        raise TuneCompileError(
+            f"{obj} can't be converted to non iterative objective runner"
         )
 
     def _object_to_monitor(self, obj: Any) -> Optional[Monitor]:
