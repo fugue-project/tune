@@ -2,11 +2,10 @@ from typing import Optional
 
 from fs.base import FS as FSBase
 from tensorflow import keras
-from triad.utils.convert import to_type
 from tune import IterativeObjectiveFunc, TrialReport
-from tune.constants import SPACE_MODEL_NAME
 
 from tune_tensorflow.spec import KerasTrainingSpec
+from tune_tensorflow.utils import extract_keras_spec
 
 
 class KerasObjective(IterativeObjectiveFunc):
@@ -53,7 +52,7 @@ class KerasObjective(IterativeObjectiveFunc):
         return TrialReport(trial=trial, metric=metric, cost=budget, rung=self.rung)
 
     def initialize(self) -> None:
-        spec = to_type(self.current_trial.params[SPACE_MODEL_NAME], KerasTrainingSpec)
+        spec = extract_keras_spec(self.current_trial.params)
         self._spec = spec(self.current_trial.params, self.current_trial.dfs)
         self._model = self.spec.compile_model()
 
