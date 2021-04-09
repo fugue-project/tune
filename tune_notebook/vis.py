@@ -50,12 +50,12 @@ class NotebookSimpleChart(Monitor):
 
 class NotebookSimpleRungs(NotebookSimpleChart):
     def plot(self, df: pd.DataFrame) -> None:
-        sns.lineplot(data=df, x="rung", y="metric", hue="id", legend=False)
+        sns.lineplot(data=df, x="rung", y="metric", hue="id", marker="o", legend=False)
 
 
 class NotebookSimpleTimeSeries(NotebookSimpleChart):
     def plot(self, df: pd.DataFrame) -> None:
-        sns.lineplot(data=df, x="time", y="min_metric", hue="partition")
+        sns.lineplot(data=df, x="time", y="min_metric", hue="partition", marker="o")
 
 
 class NotebookSimpleHist(NotebookSimpleChart):
