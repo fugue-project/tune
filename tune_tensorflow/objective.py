@@ -1,4 +1,4 @@
-from typing import Optional, Set, Type
+from typing import Optional
 
 from fs.base import FS as FSBase
 from tensorflow import keras
@@ -10,12 +10,11 @@ from tune_tensorflow.spec import KerasTrainingSpec
 
 
 class KerasObjective(IterativeObjectiveFunc):
-    def __init__(self, spec_types: Set[Type[KerasTrainingSpec]]) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._epochs = 0
         self._spec: Optional[KerasTrainingSpec] = None
         self._model: Optional[keras.models.Model] = None
-        self._spec_types = spec_types  # this makes cloudpickle aware of those types
 
     @property
     def model(self) -> keras.models.Model:
@@ -28,7 +27,7 @@ class KerasObjective(IterativeObjectiveFunc):
         return self._spec
 
     def copy(self) -> "KerasObjective":
-        return KerasObjective(spec_types=self._spec_types)
+        return KerasObjective()
 
     def generate_sort_metric(self, value: float) -> float:
         return self.spec.generate_sort_metric(value)

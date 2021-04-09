@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Set, Tuple, Type
+from typing import Any, List, Optional, Tuple
 
 from tune import (
     Space,
@@ -9,8 +9,6 @@ from tune import (
 )
 
 from tune_tensorflow.objective import KerasObjective
-from tune_tensorflow.spec import KerasTrainingSpec
-from tune_tensorflow.utils import extract_keras_spec
 
 
 def suggest_keras_models_by_sha(
@@ -26,7 +24,7 @@ def suggest_keras_models_by_sha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_sha(
-        objective=_get_objective(space),
+        objective=KerasObjective(),
         space=space,
         plan=plan,
         train_df=train_df,
@@ -53,7 +51,7 @@ def suggest_keras_models_by_hyperband(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_hyperband(
-        objective=_get_objective(space),
+        objective=KerasObjective(),
         space=space,
         plans=plans,
         train_df=train_df,
@@ -79,7 +77,7 @@ def suggest_keras_models_by_continuous_asha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_continuous_asha(
-        objective=_get_objective(space),
+        objective=KerasObjective(),
         space=space,
         plan=plan,
         train_df=train_df,
@@ -90,10 +88,3 @@ def suggest_keras_models_by_continuous_asha(
         execution_engine=execution_engine,
         execution_engine_conf=execution_engine_conf,
     )
-
-
-def _get_objective(space: Space) -> KerasObjective:
-    types: Set[Type[KerasTrainingSpec]] = set()
-    for d in space:  # type: ignore
-        types.add(extract_keras_spec(d))
-    return KerasObjective(types)
