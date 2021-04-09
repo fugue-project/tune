@@ -29,5 +29,10 @@ def keras_space(model: Any, **params: Any) -> Space:
     return Space(**data)
 
 
-def extract_keras_spec(params: Dict[str, Any]) -> Type[KerasTrainingSpec]:
-    return to_keras_spec(params[SPACE_MODEL_NAME])
+def extract_keras_spec(
+    params: Dict[str, Any], type_dict: Dict[str, Any]
+) -> Type[KerasTrainingSpec]:
+    obj = params[SPACE_MODEL_NAME]
+    if isinstance(obj, str) and obj in type_dict:
+        return type_dict[obj]
+    return to_keras_spec(obj)

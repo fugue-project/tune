@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional, Type
 
 from fs.base import FS as FSBase
 from tensorflow import keras
@@ -9,11 +9,12 @@ from tune_tensorflow.utils import extract_keras_spec
 
 
 class KerasObjective(IterativeObjectiveFunc):
-    def __init__(self) -> None:
+    def __init__(self, type_dict: Dict[str, Type[KerasTrainingSpec]]) -> None:
         super().__init__()
         self._epochs = 0
         self._spec: Optional[KerasTrainingSpec] = None
         self._model: Optional[keras.models.Model] = None
+        self._type_dict = type_dict
 
     @property
     def model(self) -> keras.models.Model:
@@ -26,7 +27,7 @@ class KerasObjective(IterativeObjectiveFunc):
         return self._spec
 
     def copy(self) -> "KerasObjective":
-        return KerasObjective()
+        return KerasObjective(self._type_dict)
 
     def generate_sort_metric(self, value: float) -> float:
         return self.spec.generate_sort_metric(value)
@@ -52,7 +53,7 @@ class KerasObjective(IterativeObjectiveFunc):
         return TrialReport(trial=trial, metric=metric, cost=budget, rung=self.rung)
 
     def initialize(self) -> None:
-        spec = extract_keras_spec(self.current_trial.params)
+        spec = extract_keras_spec(self.current_trial.params, self._type_dict)
         self._spec = spec(self.current_trial.params, self.current_trial.dfs)
         self._model = self.spec.compile_model()
 

@@ -9,6 +9,7 @@ from tune import (
 )
 
 from tune_tensorflow.objective import KerasObjective
+from tune_tensorflow.utils import _TYPE_DICT
 
 
 def suggest_keras_models_by_sha(
@@ -24,7 +25,7 @@ def suggest_keras_models_by_sha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_sha(
-        objective=KerasObjective(),
+        objective=KerasObjective(_TYPE_DICT),
         space=space,
         plan=plan,
         train_df=train_df,
@@ -51,7 +52,7 @@ def suggest_keras_models_by_hyperband(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_hyperband(
-        objective=KerasObjective(),
+        objective=KerasObjective(_TYPE_DICT),
         space=space,
         plans=plans,
         train_df=train_df,
@@ -77,7 +78,7 @@ def suggest_keras_models_by_continuous_asha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     return suggest_by_continuous_asha(
-        objective=KerasObjective(),
+        objective=KerasObjective(_TYPE_DICT),
         space=space,
         plan=plan,
         train_df=train_df,

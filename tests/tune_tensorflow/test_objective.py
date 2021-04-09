@@ -2,6 +2,7 @@ from tune import Trial, validate_iterative_objective
 
 from tune_tensorflow import keras_space
 from tune_tensorflow.objective import KerasObjective
+from tune_tensorflow.utils import _TYPE_DICT
 
 from .mock import MockSpec
 
@@ -17,7 +18,7 @@ def test_objective():
         assert reports[-1].metric < 10
 
     space = keras_space(MockSpec, l1=16, l2=16)
-    obj = KerasObjective()
+    obj = KerasObjective(_TYPE_DICT)
 
     for cont in [True, False]:
         validate_iterative_objective(

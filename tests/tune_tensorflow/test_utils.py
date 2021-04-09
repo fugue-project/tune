@@ -9,8 +9,12 @@ from tune_tensorflow.utils import (
 
 def test_keras_space():
     space = keras_space(MockSpec, a=1, b=2)
-    spec = extract_keras_spec(list(space.encode())[0])
+    spec = extract_keras_spec(list(space.encode())[0], {})
     assert spec == MockSpec
+    spec = extract_keras_spec(
+        list(space.encode())[0], {to_keras_spec_expr(MockSpec): "dummy"}
+    )
+    assert "dummy" == spec
 
 
 def test_to_keras_spec():
