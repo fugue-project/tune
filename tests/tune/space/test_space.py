@@ -2,12 +2,14 @@ import json
 
 from pytest import raises
 
-from tune import Choice, Grid, Rand, RandInt, Space, decode
+from tune import Choice, Grid, Rand, RandInt, Space
 from tune.space import HorizontalSpace, VerticalSpace
 
 
 def test_single_space():
-    dicts = list(Space(a=1, b=Grid(2, 3, 4)))
+    space = Space(a=1, b=Grid(2, 3, 4))
+    dicts = list(space)
+    dicts = list(space)  # make sure iteration doesn't alter the object
     assert 3 == len(dicts)
     assert dict(a=1, b=2) == dicts[0]
     assert dict(a=1, b=3) == dicts[1]
@@ -30,7 +32,25 @@ def test_single_space():
     assert dict(a=1, b=dict(x=3, y=5)) == dicts[3]
 
 
-def test_space_simple_dict():
+def test_single_space_sample():
+    assert not Space(a=1).has_random_parameter
+    assert not Space(a=1, b=Grid(1, 2)).has_random_parameter
+    assert Space(a=1, b=[Grid(1, 2), Rand(0.0, 1.0)]).has_random_parameter
+
+    dicts = list(Space(a=1, b=Grid(1, 2)).sample(100))
+    assert 2 == len(dicts)
+
+    space = Space(a=1, b=[Grid(1, 2), Rand(0.0, 1.0)], c=Choice("a", "b"))
+    ec = list(space.encode())
+    assert list(space.sample(5, 0)) == list(space.sample(5, 0))
+    assert list(space.sample(5, 0)) != list(space.sample(5, 1))
+    dicts = list(space.sample(5, 0))
+    assert 10 == len(dicts)
+    assert 5 == len(set(d["b"][1] for d in dicts))
+    assert ec == list(space.encode())  # make sure the instance value was not altered
+
+
+def test_horizontal_space():
     spaces = list(HorizontalSpace())
     assert 1 == len(spaces)
     assert {} == spaces[0]
@@ -49,8 +69,22 @@ def test_space_simple_dict():
 
     raises(ValueError, lambda: HorizontalSpace(10))
 
+    assert not HorizontalSpace(dict(a=10, b=[1, 2], c=dict(x=1))).has_random_parameter
 
-def test_spaces():
+    space = HorizontalSpace(
+        Space(a=Grid(1, 2), b=Rand(0.0, 1.0)), Space(c=Choice(3, 4))
+    )
+    ec = list(space.encode())
+    assert space.has_random_parameter
+    assert list(space.sample(5, 0)) == list(space.sample(5, 0))
+    assert list(space.sample(5, 0)) != list(space.sample(5, 1))
+    dicts = list(space.sample(5, 0))
+    assert 10 == len(dicts)
+    assert 5 == len(set(d["b"] for d in dicts))
+    assert ec == list(space.encode())
+
+
+def test_vertical_space():
     spaces = list(VerticalSpace())
     assert 0 == len(spaces)
 
@@ -64,6 +98,18 @@ def test_spaces():
     assert [dict(a=10), dict(b=10)] == spaces
 
     raises(ValueError, lambda: VerticalSpace(10))
+
+    assert not VerticalSpace(HorizontalSpace(a=10), dict(b=10)).has_random_parameter
+
+    space = VerticalSpace(Space(a=Grid(1, 2), b=Rand(0.0, 1.0)), Space(c=Choice(3, 4)))
+    ec = list(space.encode())
+    assert space.has_random_parameter
+    assert list(space.sample(5, 0)) == list(space.sample(5, 0))
+    assert list(space.sample(5, 0)) != list(space.sample(5, 1))
+    dicts = list(space.sample(5, 0))
+    assert 15 == len(dicts)
+    assert 5 == len(set(d["b"] for d in dicts if "b" in d))
+    assert ec == list(space.encode())
 
 
 def test_space_combo():
@@ -150,18 +196,3 @@ def test_operators():
         == list(sum([s1, s2, s3]))
         == list(sum([s1, s2, s3], None))
     )
-
-
-def test_encode_decode():
-    s1 = Space(
-        a=Grid(1, 2),
-        b=Rand(0, 1.0, 0.2, log=True),
-        c=Choice(1, 2, 3),
-        d=[Grid(1, 2), Rand(0, 2.0)],
-        e={"x": "xx", "y": Choice("a", "b")},
-        f=RandInt(0, 10, log=False),
-    )
-    actual = [decode(x) for x in s1.encode()]
-    assert list(s1) == actual
-    for x in s1.encode():
-        print(json.dumps(x, indent=2))

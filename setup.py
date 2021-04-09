@@ -17,12 +17,23 @@ setup(
     author_email="goodwanghan@gmail.com",
     keywords="hyper parameter hyperparameter tuning tune tuner",
     url="http://github.com/fugue-project/tune",
-    install_requires=["fugue"],
+    install_requires=["fugue>=0.5.2", "cloudpickle"],
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
-        "visual": ["matplotlib"],
-        "all": ["hyperopt", "optuna", "matplotlib"],
+        "visual": ["seaborn", "plotly"],
+        "tensorflow": ["tensorflow"],
+        "notebook": ["ipython", "seaborn", "plotly"],
+        "sklearn": ["scikit-learn"],
+        "all": [
+            "hyperopt",
+            "optuna",
+            "seaborn",
+            "tensorflow",
+            "ipython",
+            "plotly",
+            "scikit-learn",
+        ],
     },
     classifiers=[
         # "3 - Alpha", "4 - Beta" or "5 - Production/Stable"
