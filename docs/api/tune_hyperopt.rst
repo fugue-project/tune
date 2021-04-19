@@ -1,12 +1,5 @@
-tune 
-=====
-
-.. toctree::
-   :maxdepth: 4
-
-   tune.iterative
-   tune.noniterative
-   tune.space
+tune\_hyperopt 
+===============
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -28,66 +21,10 @@ tune
 
 
 
-tune.api
---------
+tune\_hyperopt.runner
+---------------------
 
-.. automodule:: tune.api
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.checkpoint
----------------
-
-.. automodule:: tune.checkpoint
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.constants
---------------
-
-.. automodule:: tune.constants
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.dataset
-------------
-
-.. automodule:: tune.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.exceptions
----------------
-
-.. automodule:: tune.exceptions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.factory
-------------
-
-.. automodule:: tune.factory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.suggest
-------------
-
-.. automodule:: tune.suggest
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.trial
-----------
-
-.. automodule:: tune.trial
+.. automodule:: tune_hyperopt.runner
    :members:
    :undoc-members:
    :show-inheritance:

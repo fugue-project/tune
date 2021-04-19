@@ -29,14 +29,6 @@ tune.noniterative.convert
    :undoc-members:
    :show-inheritance:
 
-tune.noniterative.hyperopt
---------------------------
-
-.. automodule:: tune.noniterative.hyperopt
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 tune.noniterative.objective
 ---------------------------
 

@@ -1,12 +1,5 @@
-tune 
-=====
-
-.. toctree::
-   :maxdepth: 4
-
-   tune.iterative
-   tune.noniterative
-   tune.space
+tune\_tensorflow 
+=================
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -28,66 +21,34 @@ tune
 
 
 
-tune.api
---------
+tune\_tensorflow.objective
+--------------------------
 
-.. automodule:: tune.api
+.. automodule:: tune_tensorflow.objective
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.checkpoint
----------------
+tune\_tensorflow.spec
+---------------------
 
-.. automodule:: tune.checkpoint
+.. automodule:: tune_tensorflow.spec
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.constants
---------------
+tune\_tensorflow.suggest
+------------------------
 
-.. automodule:: tune.constants
+.. automodule:: tune_tensorflow.suggest
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.dataset
-------------
+tune\_tensorflow.utils
+----------------------
 
-.. automodule:: tune.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.exceptions
----------------
-
-.. automodule:: tune.exceptions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.factory
-------------
-
-.. automodule:: tune.factory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.suggest
-------------
-
-.. automodule:: tune.suggest
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.trial
-----------
-
-.. automodule:: tune.trial
+.. automodule:: tune_tensorflow.utils
    :members:
    :undoc-members:
    :show-inheritance:
