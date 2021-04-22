@@ -1,4 +1,7 @@
-from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME
+from tune.constants import (
+    TUNE_DATASET_DF_DEFAULT_NAME,
+    TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
+)
 from tune.space import Space
 from tune.trial import Monitor
 from typing import Any, Callable, List, Optional
@@ -75,6 +78,8 @@ class TuneObjectFactory:
         dataset: Any,
         df: Any = None,
         df_name: str = TUNE_DATASET_DF_DEFAULT_NAME,
+        test_df: Any = None,
+        test_df_name: str = TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
         partition_keys: Optional[List[str]] = None,
         temp_path: str = "",
     ) -> TuneDataset:
@@ -92,6 +97,13 @@ class TuneObjectFactory:
                 if partition_keys is not None and len(partition_keys) > 0:
                     wdf = wdf.partition_by(*partition_keys)
                 builder.add_df(df_name, wdf)
+            if test_df is not None:
+                wdf = dag.df(test_df)
+                how = "cross"
+                if partition_keys is not None and len(partition_keys) > 0:
+                    wdf = wdf.partition_by(*partition_keys)
+                    how = "inner"
+                builder.add_df(test_df_name, wdf, how=how)
             return builder.build(dag, batch_size=1, shuffle=True)
         raise TuneCompileError(f"{dataset} can't be converted to TuneDataset")
 
