@@ -352,6 +352,9 @@ class Monitor:
         assert self._judge is not None
         return self._judge
 
+    def on_initialize(self) -> None:  # pragma: no cover
+        pass
+
     def on_report(self, report: TrialReport) -> None:  # pragma: no cover
         pass
 
@@ -361,4 +364,7 @@ class Monitor:
         pass
 
     def on_judge(self, decision: TrialDecision) -> None:  # pragma: no cover
+        pass
+
+    def on_finalize(self) -> None:  # pragma: no cover
         pass
