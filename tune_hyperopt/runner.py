@@ -1,20 +1,27 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
-from tune.space.parameters import Choice, Rand, RandInt, StochasticExpression
-from tune.noniterative.objective import (
-    NonIterativeObjectiveRunner,
-    NonIterativeObjectiveFunc,
-)
-from tune.trial import Trial, TrialReport
-
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
+from tune.noniterative.objective import (
+    NonIterativeObjectiveFunc,
+    NonIterativeObjectiveRunner,
+)
+from tune.space.parameters import Choice, Rand, RandInt, StochasticExpression
+from tune.trial import Trial, TrialReport
 
 
 class HyperoptRunner(NonIterativeObjectiveRunner):
-    def __init__(self, max_iter: int, seed: int = 0):
+    def __init__(
+        self,
+        max_iter: int,
+        seed: int = 0,
+        kwargs_func: Optional[
+            Callable[[NonIterativeObjectiveFunc, Trial], Dict[str, Any]]
+        ] = None,
+    ):
         self._max_iter = max_iter
         self._seed = seed
+        self._kwargs_func = kwargs_func
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
         static_params, stochastic_params = self._split(trial.params)
@@ -33,15 +40,17 @@ class HyperoptRunner(NonIterativeObjectiveRunner):
             }
 
         trials = Trials()
-        fmin(
-            obj,
-            space=list(stochastic_params.values()),
+        kwargs: Dict[str, Any] = dict(
             algo=tpe.suggest,
             max_evals=self._max_iter,
             trials=trials,
             show_progressbar=False,
             rstate=np.random.RandomState(self._seed),
         )
+        if self._kwargs_func is not None:
+            kwargs.update(self._kwargs_func(func, trial))
+
+        fmin(obj, space=list(stochastic_params.values()), **kwargs)
         return trials.best_trial["result"]["report"]
 
     def _split(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:

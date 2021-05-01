@@ -5,4 +5,5 @@ from tune_notebook.vis import (
     NotebookSimpleHist,
     NotebookSimpleRungs,
     NotebookSimpleTimeSeries,
+    PrintBest,
 )

@@ -9,6 +9,19 @@ from IPython.display import clear_output
 from tune import Monitor, TrialReport
 
 
+class PrintBest(Monitor):
+    def __init__(self):
+        super().__init__()
+        self._lock = RLock()
+        self._min: Any = None
+
+    def on_report(self, report: TrialReport) -> None:
+        with self._lock:
+            if self._min is None or report.sort_metric < self._min:
+                self._min = report.sort_metric
+                print(self._min, report.jsondict)
+
+
 class NotebookSimpleChart(Monitor):
     def __init__(self):
         super().__init__()
