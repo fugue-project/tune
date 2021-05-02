@@ -1,9 +1,12 @@
 import heapq
 import json
+from threading import RLock
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set
 
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 from tune.space.parameters import decode_params, encode_params
+from datetime import datetime
+from triad.utils.convert import to_datetime
 
 
 class Trial:
@@ -55,6 +58,8 @@ class Trial:
         return self._dfs
 
     def with_dfs(self, dfs: Dict[str, Any]) -> "Trial":
+        if len(dfs) == 0 and len(self.dfs) == 0:
+            return self
         t = self.copy()
         t._dfs = dfs
         return t
@@ -93,8 +98,9 @@ class TrialReport:
         rung: int = 0,
         sort_metric: Any = None,
         raw: bool = False,
+        log_time: Any = None,
     ):
-        self._trial = trial
+        self._trial = trial.with_dfs({})
         self._metric = float(metric)
         self._cost = float(cost)
         self._rung = rung
@@ -104,6 +110,7 @@ class TrialReport:
         else:
             self._params = params if raw else decode_params(params)
         self._metadata = metadata or {}
+        self._log_time = datetime.now() if log_time is None else to_datetime(log_time)
 
     def copy(self) -> "TrialReport":
         return TrialReport(
@@ -115,6 +122,7 @@ class TrialReport:
             rung=self._rung,
             sort_metric=self._sort_metric,
             raw=True,
+            log_time=self.log_time,
         )
 
     def __copy__(self) -> "TrialReport":
@@ -122,6 +130,15 @@ class TrialReport:
 
     def __deepcopy__(self, memo: Any) -> "TrialReport":
         return self.copy()
+
+    @property
+    def log_time(self) -> datetime:
+        return self._log_time
+
+    def reset_log_time(self) -> "TrialReport":
+        res = self.copy()
+        res._log_time = datetime.now()
+        return res
 
     @property
     def trial(self) -> Trial:
@@ -155,11 +172,6 @@ class TrialReport:
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
-    def without_dfs(self) -> "TrialReport":
-        t = self.copy()
-        t._trial = self.trial.with_dfs({})
-        return t
-
     def with_cost(self, cost: float) -> "TrialReport":
         t = self.copy()
         t._cost = cost
@@ -192,6 +204,7 @@ class TrialReport:
             "cost": self.cost,
             "rung": self.rung,
             "sort_metric": self.sort_metric,
+            "log_time": str(self.log_time),
         }
 
     @staticmethod
@@ -322,13 +335,16 @@ class TrialDecision:
 
 class TrialJudge(object):
     def __init__(self, monitor: Optional["Monitor"] = None):
-        self._trial_judge_monitor = monitor or Monitor()
-        self._trial_judge_monitor.set_judge(self)
+        self.reset_monitor(monitor)
 
     @property
     def monitor(self) -> "Monitor":
         assert self._trial_judge_monitor is not None
         return self._trial_judge_monitor
+
+    def reset_monitor(self, monitor: Optional["Monitor"] = None) -> None:
+        self._trial_judge_monitor = monitor or Monitor()
+        self._trial_judge_monitor.set_judge(self)
 
     def can_accept(self, trial: Trial) -> bool:  # pragma: no cover
         raise NotImplementedError
@@ -361,6 +377,34 @@ class RemoteTrialJudge(TrialJudge):
         return self._entrypoint("get_budget", dict(trial=trial.jsondict, rung=rung))
 
 
+class NoOpTrailJudge(TrialJudge):
+    def can_accept(self, trial: Trial) -> bool:  # pragma: no cover
+        return True
+
+    def get_budget(self, trial: Trial, rung: int) -> float:  # pragma: no cover
+        return 0.0
+
+    def judge(self, report: TrialReport) -> TrialDecision:  # pragma: no cover
+        self.monitor.on_report(report)
+        return TrialDecision(report, 0.0, False)
+
+
+class TrialCallback:
+    def __init__(self, judge: TrialJudge):
+        self._judge = judge
+
+    def entrypoint(self, name, kwargs: Dict[str, Any]) -> Any:
+        if name == "can_accept":
+            return self._judge.can_accept(Trial.from_jsondict(kwargs["trial"]))
+        if name == "judge":
+            return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
+        if name == "get_budget":
+            return self._judge.get_budget(
+                Trial.from_jsondict(kwargs["trial"]), kwargs["rung"]
+            )
+        raise NotImplementedError  # pragma: no cover
+
+
 class Monitor:
     def __init__(self):
         self._judge: Optional[TrialJudge] = None
@@ -383,3 +427,31 @@ class Monitor:
 
     def on_judge(self, decision: TrialDecision) -> None:  # pragma: no cover
         pass
+
+
+class TrialReportLogger:
+    def __init__(self, new_best_only: bool = False):
+        self._lock = RLock()
+        self._best_report: Optional[TrialReport] = None
+        self._new_best_only = new_best_only
+
+    def on_report(self, report: TrialReport) -> bool:
+        with self._lock:
+            updated = False
+            if (
+                self._best_report is None
+                or report.sort_metric < self._best_report.sort_metric
+            ):
+                self._best_report = report
+                updated = True
+            if updated or not self._new_best_only:
+                self.log(report)
+            return updated
+
+    def log(self, report: TrialReport) -> None:
+        pass
+
+    @property
+    def best(self) -> Optional[TrialReport]:
+        with self._lock:
+            return self._best_report

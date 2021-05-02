@@ -4,23 +4,7 @@ from triad import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.trial import RemoteTrialJudge, Trial, TrialJudge, TrialReport
-
-
-class TrialCallback:
-    def __init__(self, judge: TrialJudge):
-        self._judge = judge
-
-    def entrypoint(self, name, kwargs: Dict[str, Any]) -> Any:
-        if name == "can_accept":
-            return self._judge.can_accept(Trial.from_jsondict(kwargs["trial"]))
-        if name == "judge":
-            return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
-        if name == "get_budget":
-            return self._judge.get_budget(
-                Trial.from_jsondict(kwargs["trial"]), kwargs["rung"]
-            )
-        raise NotImplementedError  # pragma: no cover
+from tune.trial import RemoteTrialJudge, TrialCallback, TrialJudge
 
 
 class IterativeStudy:

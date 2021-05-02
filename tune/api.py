@@ -5,13 +5,21 @@ from uuid import uuid4
 from triad import FileSystem
 
 from tune.dataset import StudyResult, TuneDataset
+from tune.factory import TUNE_OBJECT_FACTORY
 from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.sha import _NonIterativeObjectiveWrapper
 from tune.iterative.study import IterativeStudy
-
 from tune.noniterative.study import NonIterativeStudy
-from tune.trial import TrialReport
-from tune.factory import TUNE_OBJECT_FACTORY
+from tune.trial import TrialJudge, TrialReport, NoOpTrailJudge
+
+
+def make_stopper(monitor: Any, stopper: Any) -> Optional[TrialJudge]:
+    if monitor is None and stopper is None:
+        return None
+    if stopper is None and monitor is not None:
+        _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+        return NoOpTrailJudge(_monitor)
+    raise NotImplementedError
 
 
 def optimize_noniterative(
@@ -20,12 +28,13 @@ def optimize_noniterative(
     runner: Any = None,
     distributed: Optional[bool] = None,
     monitor: Any = None,
+    stopper: Any = None,
 ) -> StudyResult:
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
     _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
     study = NonIterativeStudy(_objective, _runner)
-    return study.optimize(dataset, distributed=distributed, monitor=_monitor)
+    judge = make_stopper(monitor, stopper)
+    return study.optimize(dataset, distributed=distributed, judge=judge)
 
 
 def optimize_by_sha(

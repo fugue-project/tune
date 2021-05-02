@@ -26,4 +26,4 @@ from tune.suggest import (
     suggest_by_hyperband,
     suggest_by_sha,
 )
-from tune.trial import Monitor, Trial, TrialDecision, TrialReport
+from tune.trial import Monitor, Trial, TrialDecision, TrialReport, TrialReportLogger

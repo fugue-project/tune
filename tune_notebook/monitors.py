@@ -1,10 +1,10 @@
 from datetime import datetime
 from threading import RLock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pandas as pd
 from triad.utils.convert import to_timedelta
-from tune import Monitor, TrialReport
+from tune import Monitor, TrialReport, TrialReportLogger
 
 
 class PrintBest(Monitor):
@@ -105,41 +105,22 @@ class NotebookSimpleHist(NotebookSimpleChart):
         sns.histplot(data=df, x="metric", hue="partition")
 
 
-class _ReportBin:
+class _ReportBin(TrialReportLogger):
     def __init__(self, new_best_only: bool = False):
-        super().__init__()
+        super().__init__(new_best_only=new_best_only)
         self._values: List[List[Any]] = []
-        self._lock = RLock()
-        self._best_report: Optional[TrialReport] = None
-        self._new_best_only = new_best_only
 
-    def on_report(self, report: TrialReport) -> bool:
-        with self._lock:
-            now = datetime.now()
-            updated = False
-            if (
-                self._best_report is None
-                or report.sort_metric < self._best_report.sort_metric
-            ):
-                self._best_report = report
-                updated = True
-            if updated or not self._new_best_only:
-                self._values.append(
-                    [
-                        str(report.trial.keys),
-                        report.rung,
-                        now,
-                        report.trial_id,
-                        report.metric,
-                        self._best_report.metric,
-                    ]
-                )
-            return updated
-
-    @property
-    def best(self) -> Optional[TrialReport]:
-        with self._lock:
-            return self._best_report
+    def log(self, report: TrialReport) -> None:
+        self._values.append(
+            [
+                str(report.trial.keys),
+                report.rung,
+                datetime.now(),
+                report.trial_id,
+                report.metric,
+                self.best.metric,  # type: ignore
+            ]
+        )
 
     @property
     def records(self) -> List[List[Any]]:
