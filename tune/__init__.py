@@ -15,6 +15,7 @@ from tune.api.suggest import (
     suggest_by_sha,
 )
 from tune.concepts.checkpoint import Checkpoint
+from tune.concepts.dataset import StudyResult, TuneDataset, TuneDatasetBuilder
 from tune.concepts.flow import (
     Monitor,
     Trial,

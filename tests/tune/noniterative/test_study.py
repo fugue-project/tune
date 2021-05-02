@@ -2,12 +2,12 @@ from typing import List
 
 import pandas as pd
 from fugue import FugueWorkflow
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
-from tune.concepts.dataset import TuneDatasetBuilder
-from tune.noniterative.convert import to_noniterative_objective
 from tune import optimize_noniterative
-from tune.concepts.space import Grid, Space
+from tune.concepts.dataset import TuneDatasetBuilder
 from tune.concepts.flow import Monitor
+from tune.concepts.space import Grid, Space
+from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
+from tune.noniterative.convert import to_noniterative_objective
 
 
 def objective(a: float, b: pd.DataFrame) -> float:
