@@ -1,10 +1,10 @@
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable
 
 from triad import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.trial import RemoteTrialJudge, Trial, TrialJudge, TrialReport
 
 
 class TrialCallback:
@@ -21,27 +21,6 @@ class TrialCallback:
                 Trial.from_jsondict(kwargs["trial"]), kwargs["rung"]
             )
         raise NotImplementedError  # pragma: no cover
-
-
-class RemoteTrialJudge(TrialJudge):
-    def __init__(self, entrypoint: Callable[[str, Dict[str, Any]], Any]):
-        super().__init__()
-        self._entrypoint = entrypoint
-        self._report: Optional[TrialReport] = None
-
-    @property
-    def report(self) -> Optional[TrialReport]:
-        return self._report
-
-    def can_accept(self, trial: Trial) -> bool:
-        return self._entrypoint("can_accept", dict(trial=trial.jsondict))
-
-    def judge(self, report: TrialReport) -> TrialDecision:
-        self._report = report
-        return TrialDecision.from_jsondict(self._entrypoint("judge", report.jsondict))
-
-    def get_budget(self, trial: Trial, rung: int) -> float:
-        return self._entrypoint("get_budget", dict(trial=trial.jsondict, rung=rung))
 
 
 class IterativeStudy:

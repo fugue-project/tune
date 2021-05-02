@@ -1,6 +1,6 @@
 import heapq
 import json
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set
 
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 from tune.space.parameters import decode_params, encode_params
@@ -338,6 +338,27 @@ class TrialJudge(object):
 
     def judge(self, report: TrialReport) -> TrialDecision:  # pragma: no cover
         raise NotImplementedError
+
+
+class RemoteTrialJudge(TrialJudge):
+    def __init__(self, entrypoint: Callable[[str, Dict[str, Any]], Any]):
+        super().__init__()
+        self._entrypoint = entrypoint
+        self._report: Optional[TrialReport] = None
+
+    @property
+    def report(self) -> Optional[TrialReport]:
+        return self._report
+
+    def can_accept(self, trial: Trial) -> bool:
+        return self._entrypoint("can_accept", dict(trial=trial.jsondict))
+
+    def judge(self, report: TrialReport) -> TrialDecision:
+        self._report = report
+        return TrialDecision.from_jsondict(self._entrypoint("judge", report.jsondict))
+
+    def get_budget(self, trial: Trial, rung: int) -> float:
+        return self._entrypoint("get_budget", dict(trial=trial.jsondict, rung=rung))
 
 
 class Monitor:

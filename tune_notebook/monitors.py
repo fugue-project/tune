@@ -39,7 +39,8 @@ class NotebookSimpleChart(Monitor):
                 self._bins[key] = _ReportBin(new_best_only=True)
             rbin = self._bins[key]
 
-        rbin.on_report(report)
+        if not rbin.on_report(report):
+            return
 
         with self._lock:
             if self._last is None or now - self._last > self._interval:

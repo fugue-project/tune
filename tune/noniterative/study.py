@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, List
 
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
 from triad import assert_or_throw
@@ -19,6 +19,16 @@ class NonIterativeStudy:
         self._objective = objective
         self._runner = runner
 
+    def _local_process_row(self, row: Dict[str, Any]) -> List[TrialReport]:
+        reports: List[TrialReport] = []
+        for trial in get_trials_from_row(row):
+            report = self._runner.run(self._objective, trial)
+            report = report.with_sort_metric(
+                self._objective.generate_sort_metric(report.metric)
+            )
+            reports.append(report.without_dfs())
+        return reports
+
     def optimize(
         self,
         dataset: TuneDataset,
@@ -33,13 +43,10 @@ class NonIterativeStudy:
             _on_report: Optional[Callable[[TrialReport], None]] = None,
         ) -> Iterable[Dict[str, Any]]:
             for row in df:
-                for trial in get_trials_from_row(row):
-                    report = self._runner.run(self._objective, trial)
-                    report = report.with_sort_metric(
-                        self._objective.generate_sort_metric(report.metric)
-                    )
+                reports = self._local_process_row(row)
+                for report in reports:
                     if _on_report is not None:
-                        _on_report(report.without_dfs())
+                        _on_report(report)
                     yield report.fill_dict(dict(row))
 
         def compute_processor(engine: ExecutionEngine, df: DataFrame) -> DataFrame:
