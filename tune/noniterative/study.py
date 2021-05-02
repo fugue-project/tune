@@ -39,7 +39,7 @@ class NonIterativeStudy:
                         self._objective.generate_sort_metric(report.metric)
                     )
                     if _on_report is not None:
-                        _on_report(report)
+                        _on_report(report.without_dfs())
                     yield report.fill_dict(dict(row))
 
         def compute_processor(engine: ExecutionEngine, df: DataFrame) -> DataFrame:

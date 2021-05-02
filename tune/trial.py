@@ -155,6 +155,11 @@ class TrialReport:
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
+    def without_dfs(self) -> "TrialReport":
+        t = self.copy()
+        t._trial = self.trial.with_dfs({})
+        return t
+
     def with_cost(self, cost: float) -> "TrialReport":
         t = self.copy()
         t._cost = cost

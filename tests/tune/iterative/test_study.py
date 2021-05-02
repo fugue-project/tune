@@ -1,13 +1,12 @@
 from typing import Any, Dict, Iterable
-
 import numpy as np
 from fugue.workflow.workflow import FugueWorkflow
+from tune import Space, Trial, TrialDecision, TrialReport
 from tune.constants import TUNE_REPORT_METRIC
 from tune.dataset import TuneDatasetBuilder
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.space import Grid, Space
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.trial import TrialJudge
 
 
 def f(x, a, b):

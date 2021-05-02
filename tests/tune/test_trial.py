@@ -95,6 +95,12 @@ def test_trial_report():
     assert 3.0 == report.with_cost(3.0).cost
     assert 5 == report.with_rung(5).rung
 
+    td = trial.with_dfs({"a": pd.DataFrame})
+    report = TrialReport(td, metric=np.float(0.1))
+    assert 1 == len(report.trial.dfs)
+    report = report.without_dfs()
+    assert 0 == len(report.trial.dfs)
+
 
 def test_trial_report_heap():
     t1 = Trial("a", {})

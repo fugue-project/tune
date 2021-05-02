@@ -4,7 +4,7 @@ from tune_tensorflow import keras_space
 from tune_tensorflow.objective import KerasObjective
 from tune_tensorflow.utils import _TYPE_DICT
 
-from .mock import MockSpec
+from tests.tune_tensorflow.mock import MockSpec
 
 
 def test_spec():
