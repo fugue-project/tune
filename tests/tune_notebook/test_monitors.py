@@ -1,3 +1,5 @@
+from tune import Trial, TrialReport
+
 from tune_notebook import (
     NotebookSimpleChart,
     NotebookSimpleHist,
@@ -6,7 +8,6 @@ from tune_notebook import (
     PrintBest,
 )
 from tune_notebook.monitors import _ReportBin
-from tune import Trial, TrialReport
 
 
 def test_report_bin():
@@ -52,7 +53,7 @@ def test_print_best():
     b.on_report(r1)
 
 
-def test_charts():
+def _test_charts():
     t1 = Trial("a", dict(a=1, b=2), keys=["x", "y"])
     r1 = TrialReport(t1, 0.8, sort_metric=-0.8)
     t2 = Trial("b", dict(a=11, b=12), keys=["xx", "y"])

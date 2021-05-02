@@ -2,10 +2,7 @@ from datetime import datetime
 from threading import RLock
 from typing import Any, Dict, List, Optional
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
-from IPython.display import clear_output
 from triad.utils.convert import to_timedelta
 from tune import Monitor, TrialReport
 
@@ -46,6 +43,9 @@ class NotebookSimpleChart(Monitor):
 
         with self._lock:
             if self._last is None or now - self._last > self._interval:
+                import matplotlib.pyplot as plt
+                from IPython.display import clear_output
+
                 clear_output()
                 df = pd.concat(
                     [
@@ -79,6 +79,8 @@ class NotebookSimpleRungs(NotebookSimpleChart):
         super().__init__(interval)
 
     def plot(self, df: pd.DataFrame) -> None:
+        import seaborn as sns
+
         sns.lineplot(data=df, x="rung", y="metric", hue="id", marker="o", legend=False)
 
 
@@ -87,6 +89,8 @@ class NotebookSimpleTimeSeries(NotebookSimpleChart):
         super().__init__(interval)
 
     def plot(self, df: pd.DataFrame) -> None:
+        import seaborn as sns
+
         sns.lineplot(data=df, x="time", y="best_metric", hue="partition", marker="o")
 
 
@@ -95,6 +99,8 @@ class NotebookSimpleHist(NotebookSimpleChart):
         super().__init__(interval)
 
     def plot(self, df: pd.DataFrame) -> None:
+        import seaborn as sns
+
         sns.histplot(data=df, x="metric", hue="partition")
 
 

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Iterable, Optional
 
-from triad.collections.fs import FileSystem
+from triad import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
 from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc

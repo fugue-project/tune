@@ -1,12 +1,5 @@
 from pytest import raises
-from tune import (
-    TUNE_OBJECT_FACTORY,
-    RandInt,
-    Space,
-    suggest_by_continuous_asha,
-    suggest_by_hyperband,
-    suggest_by_sha,
-)
+from tune import TUNE_OBJECT_FACTORY, RandInt
 from tune.exceptions import TuneCompileError
 
 from tune_tensorflow import (
@@ -16,7 +9,7 @@ from tune_tensorflow import (
     suggest_keras_models_by_sha,
 )
 
-from .mock import MockSpec
+from tests.tune_tensorflow.mock import MockSpec
 
 
 def test_sha(tmpdir):

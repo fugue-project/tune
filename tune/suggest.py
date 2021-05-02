@@ -1,18 +1,15 @@
 import json
-from tune.exceptions import TuneCompileError
 from typing import Any, List, Optional, Tuple
 
 from fugue import FugueWorkflow
-from triad.utils.assertion import assert_or_throw
+from triad import assert_or_throw
+
+from tune.api import optimize_by_continuous_asha, optimize_by_hyperband, optimize_by_sha
+from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
+from tune.exceptions import TuneCompileError
 from tune.factory import TUNE_OBJECT_FACTORY
 from tune.space import Space
 from tune.trial import TrialReport
-from tune.api import (
-    optimize_by_continuous_asha,
-    optimize_by_sha,
-    optimize_by_hyperband,
-)
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 
 
 def suggest_by_sha(
