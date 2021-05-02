@@ -1,8 +1,8 @@
+from tune.noniterative.stopper import NonIterativeStopper
 from typing import Any, Callable, List, Optional
 
 from fugue import FugueWorkflow
 from triad import assert_or_throw
-
 from tune.constants import (
     TUNE_DATASET_DF_DEFAULT_NAME,
     TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
@@ -10,6 +10,7 @@ from tune.constants import (
 from tune.dataset import TuneDataset, TuneDatasetBuilder
 from tune.exceptions import TuneCompileError
 from tune.iterative.objective import IterativeObjectiveFunc
+from tune.noniterative.convert import to_noniterative_objective
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
     NonIterativeObjectiveRunner,
@@ -26,6 +27,7 @@ class TuneObjectFactory:
             self._object_to_noniterative_objective_runner
         )
         self._monitor_converter = self._object_to_monitor
+        self._stopper_converter = self._object_to_stopper
         self._tmp = ""
 
     def set_iterative_objective_converter(
@@ -50,28 +52,21 @@ class TuneObjectFactory:
         self._tmp = path
 
     def make_iterative_objective(self, obj: Any) -> IterativeObjectiveFunc:
-        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
-        if isinstance(obj, IterativeObjectiveFunc):
-            return obj
         return self._iterative_objective_converter(obj)
 
     def make_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
-        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
-        if isinstance(obj, NonIterativeObjectiveFunc):
-            return obj
         return self._noniterative_objective_converter(obj)
 
     def make_noniterative_objective_runner(
         self, obj: Any
     ) -> NonIterativeObjectiveRunner:
-        if isinstance(obj, NonIterativeObjectiveRunner):
-            return obj
         return self._noniterative_objective_runner_converter(obj)
 
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
-        if isinstance(obj, Monitor):
-            return obj
         return self._monitor_converter(obj)
+
+    def make_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
+        return self._stopper_converter(obj)
 
     def make_dataset(
         self,
@@ -115,11 +110,19 @@ class TuneObjectFactory:
         return path
 
     def _object_to_iterative_objective(self, obj: Any) -> IterativeObjectiveFunc:
+        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
+        if isinstance(obj, IterativeObjectiveFunc):
+            return obj
         raise TuneCompileError(
             f"{obj} can't be converted to iterative objective function"
         )
 
     def _object_to_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
+        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
+        if isinstance(obj, NonIterativeObjectiveFunc):
+            return obj
+        if callable(obj):
+            return to_noniterative_objective(obj)
         raise TuneCompileError(
             f"{obj} can't be converted to non iterative objective function"
         )
@@ -127,6 +130,8 @@ class TuneObjectFactory:
     def _object_to_noniterative_objective_runner(
         self, obj: Any
     ) -> NonIterativeObjectiveRunner:
+        if isinstance(obj, NonIterativeObjectiveRunner):
+            return obj
         if obj is None:
             return NonIterativeObjectiveRunner()
         raise TuneCompileError(
@@ -134,9 +139,18 @@ class TuneObjectFactory:
         )
 
     def _object_to_monitor(self, obj: Any) -> Optional[Monitor]:
+        if isinstance(obj, Monitor):
+            return obj
         if obj is None:
             return None
         raise TuneCompileError(f"{obj} can't be converted to Monitor")
+
+    def _object_to_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
+        if isinstance(obj, NonIterativeStopper):
+            return obj
+        if obj is None:
+            return None
+        raise TuneCompileError(f"{obj} can't be converted to NonIterativeStopper")
 
 
 TUNE_OBJECT_FACTORY = TuneObjectFactory()

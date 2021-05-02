@@ -14,12 +14,18 @@ from tune.trial import TrialJudge, TrialReport, NoOpTrailJudge
 
 
 def make_stopper(monitor: Any, stopper: Any) -> Optional[TrialJudge]:
-    if monitor is None and stopper is None:
+    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
+    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    if _monitor is None and _stopper is None:
         return None
-    if stopper is None and monitor is not None:
-        _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    if _stopper is None and _monitor is not None:
         return NoOpTrailJudge(_monitor)
-    raise NotImplementedError
+    if _stopper is not None and _monitor is None:
+        return _stopper
+    if _stopper is not None and _monitor is not None:
+        _stopper.reset_monitor(_monitor)
+        return _stopper
+    raise NotImplementedError  # pragma: no cover
 
 
 def optimize_noniterative(

@@ -44,7 +44,7 @@ def test_study(tmpdir):
     for distributed in [True, False, None]:
         # min_better = True
         result = optimize_noniterative(
-            objective=to_noniterative_objective(objective),
+            objective=objective,
             dataset=dataset,
             distributed=distributed,
         )
