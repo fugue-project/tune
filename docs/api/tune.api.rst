@@ -1,5 +1,5 @@
-tune.noniterative 
-==================
+tune.api 
+=========
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,34 +21,26 @@ tune.noniterative
 
 
 
-tune.noniterative.convert
--------------------------
+tune.api.factory
+----------------
 
-.. automodule:: tune.noniterative.convert
+.. automodule:: tune.api.factory
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.noniterative.objective
----------------------------
+tune.api.optimize
+-----------------
 
-.. automodule:: tune.noniterative.objective
+.. automodule:: tune.api.optimize
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.noniterative.stopper
--------------------------
+tune.api.suggest
+----------------
 
-.. automodule:: tune.noniterative.stopper
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.noniterative.study
------------------------
-
-.. automodule:: tune.noniterative.study
+.. automodule:: tune.api.suggest
    :members:
    :undoc-members:
    :show-inheritance:

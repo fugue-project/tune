@@ -1,5 +1,5 @@
-tune.noniterative 
-==================
+tune.concepts.flow 
+===================
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,34 +21,26 @@ tune.noniterative
 
 
 
-tune.noniterative.convert
+tune.concepts.flow.judge
+------------------------
+
+.. automodule:: tune.concepts.flow.judge
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tune.concepts.flow.report
 -------------------------
 
-.. automodule:: tune.noniterative.convert
+.. automodule:: tune.concepts.flow.report
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.noniterative.objective
----------------------------
+tune.concepts.flow.trial
+------------------------
 
-.. automodule:: tune.noniterative.objective
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.noniterative.stopper
--------------------------
-
-.. automodule:: tune.noniterative.stopper
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.noniterative.study
------------------------
-
-.. automodule:: tune.noniterative.study
+.. automodule:: tune.concepts.flow.trial
    :members:
    :undoc-members:
    :show-inheritance:

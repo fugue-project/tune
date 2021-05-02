@@ -12,21 +12,6 @@ from tune.iterative.study import IterativeStudy
 from tune.noniterative.study import NonIterativeStudy
 
 
-def make_stopper(monitor: Any, stopper: Any) -> Optional[TrialJudge]:
-    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
-    if _monitor is None and _stopper is None:
-        return None
-    if _stopper is None and _monitor is not None:
-        return NoOpTrailJudge(_monitor)
-    if _stopper is not None and _monitor is None:
-        return _stopper
-    if _stopper is not None and _monitor is not None:
-        _stopper.reset_monitor(_monitor)
-        return _stopper
-    raise NotImplementedError  # pragma: no cover
-
-
 def optimize_noniterative(
     objective: Any,
     dataset: TuneDataset,
@@ -38,7 +23,7 @@ def optimize_noniterative(
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
     _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
     study = NonIterativeStudy(_objective, _runner)
-    judge = make_stopper(monitor, stopper)
+    judge = _make_noniterative_judge(monitor, stopper)
     return study.optimize(dataset, distributed=distributed, judge=judge)
 
 
@@ -119,3 +104,18 @@ def optimize_by_continuous_asha(
     FileSystem().makedirs(path, recreate=True)
     study = IterativeStudy(_objective, checkpoint_path=path)
     return study.optimize(dataset, judge=judge)
+
+
+def _make_noniterative_judge(monitor: Any, stopper: Any) -> Optional[TrialJudge]:
+    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
+    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    if _monitor is None and _stopper is None:
+        return None
+    if _stopper is None and _monitor is not None:
+        return NoOpTrailJudge(_monitor)
+    if _stopper is not None and _monitor is None:
+        return _stopper
+    if _stopper is not None and _monitor is not None:
+        _stopper.reset_monitor(_monitor)
+        return _stopper
+    raise NotImplementedError  # pragma: no cover

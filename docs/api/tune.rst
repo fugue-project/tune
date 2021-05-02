@@ -4,9 +4,10 @@ tune
 .. toctree::
    :maxdepth: 4
 
+   tune.api
+   tune.concepts
    tune.iterative
    tune.noniterative
-   tune.concepts.space
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -28,22 +29,6 @@ tune
 
 
 
-tune.api.optimize
---------
-
-.. automodule:: tune.api.optimize
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.concepts.checkpoint
----------------
-
-.. automodule:: tune.concepts.checkpoint
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 tune.constants
 --------------
 
@@ -52,34 +37,10 @@ tune.constants
    :undoc-members:
    :show-inheritance:
 
-tune.concepts.dataset
-------------
-
-.. automodule:: tune.concepts.dataset
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 tune.exceptions
 ---------------
 
 .. automodule:: tune.exceptions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.api.factory
-------------
-
-.. automodule:: tune.api.factory
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.concepts.flow
-----------
-
-.. automodule:: tune.concepts.flow
    :members:
    :undoc-members:
    :show-inheritance:
