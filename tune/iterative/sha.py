@@ -3,7 +3,7 @@ from typing import Optional
 from triad import FileSystem
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.noniterative.objective import NonIterativeObjectiveFunc
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport
+from tune.concepts.flow import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):

@@ -2,19 +2,19 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
 from triad import assert_or_throw
-from tune.constants import TUNE_REPORT_ADD_SCHEMA
-from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
-from tune.exceptions import TuneCompileError
-from tune.noniterative.objective import (
-    NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
-)
-from tune.trial import (
+from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
+from tune.concepts.flow import (
     NoOpTrailJudge,
     RemoteTrialJudge,
     TrialCallback,
     TrialJudge,
     TrialReport,
+)
+from tune.constants import TUNE_REPORT_ADD_SCHEMA
+from tune.exceptions import TuneCompileError
+from tune.noniterative.objective import (
+    NonIterativeObjectiveFunc,
+    NonIterativeObjectiveRunner,
 )
 
 

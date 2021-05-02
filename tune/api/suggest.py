@@ -3,13 +3,16 @@ from typing import Any, List, Optional, Tuple
 
 from fugue import FugueWorkflow
 from triad import assert_or_throw
-
-from tune.api import optimize_by_continuous_asha, optimize_by_hyperband, optimize_by_sha
+from tune.api.factory import TUNE_OBJECT_FACTORY
+from tune.api.optimize import (
+    optimize_by_continuous_asha,
+    optimize_by_hyperband,
+    optimize_by_sha,
+)
+from tune.concepts.flow import TrialReport
+from tune.concepts.space import Space
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.exceptions import TuneCompileError
-from tune.factory import TUNE_OBJECT_FACTORY
-from tune.space import Space
-from tune.trial import TrialReport
 
 
 def suggest_by_sha(

@@ -4,7 +4,7 @@ from tune.iterative.objective import (
     IterativeObjectiveFunc,
     validate_iterative_objective,
 )
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport, Monitor
+from tune.concepts.flow import Trial, TrialDecision, TrialJudge, TrialReport, Monitor
 
 
 class F(IterativeObjectiveFunc):

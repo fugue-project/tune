@@ -3,10 +3,10 @@ import numpy as np
 from fugue.workflow.workflow import FugueWorkflow
 from tune import Space, Trial, TrialDecision, TrialReport
 from tune.constants import TUNE_REPORT_METRIC
-from tune.dataset import TuneDatasetBuilder
+from tune.concepts.dataset import TuneDatasetBuilder
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.iterative.study import IterativeStudy
-from tune.trial import TrialJudge
+from tune.concepts.flow import TrialJudge
 
 
 def f(x, a, b):

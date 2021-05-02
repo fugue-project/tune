@@ -3,8 +3,8 @@ import json
 import numpy as np
 from pytest import raises
 from triad import to_uuid
-from tune.space import Choice, Grid, NormalRand, NormalRandInt, Rand, RandInt, Space
-from tune.space.parameters import decode_params
+from tune.concepts.space import Choice, Grid, NormalRand, NormalRandInt, Rand, RandInt, Space
+from tune.concepts.space.parameters import decode_params
 
 
 def test_grid():

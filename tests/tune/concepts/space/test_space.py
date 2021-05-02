@@ -3,7 +3,7 @@ import json
 from pytest import raises
 
 from tune import Choice, Grid, Rand, RandInt, Space
-from tune.space import HorizontalSpace, VerticalSpace
+from tune.concepts.space import HorizontalSpace, VerticalSpace
 
 
 def test_single_space():

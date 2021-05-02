@@ -6,7 +6,7 @@ tune
 
    tune.iterative
    tune.noniterative
-   tune.space
+   tune.concepts.space
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -28,18 +28,18 @@ tune
 
 
 
-tune.api
+tune.api.optimize
 --------
 
-.. automodule:: tune.api
+.. automodule:: tune.api.optimize
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.checkpoint
+tune.concepts.checkpoint
 ---------------
 
-.. automodule:: tune.checkpoint
+.. automodule:: tune.concepts.checkpoint
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,10 +52,10 @@ tune.constants
    :undoc-members:
    :show-inheritance:
 
-tune.dataset
+tune.concepts.dataset
 ------------
 
-.. automodule:: tune.dataset
+.. automodule:: tune.concepts.dataset
    :members:
    :undoc-members:
    :show-inheritance:
@@ -68,18 +68,18 @@ tune.exceptions
    :undoc-members:
    :show-inheritance:
 
-tune.factory
+tune.api.factory
 ------------
 
-.. automodule:: tune.factory
+.. automodule:: tune.api.factory
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.trial
+tune.concepts.flow
 ----------
 
-.. automodule:: tune.trial
+.. automodule:: tune.concepts.flow
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,7 +1,13 @@
 from threading import RLock
 from typing import Dict, List
 
-from tune.trial import Trial, TrialDecision, TrialJudge, TrialReport, TrialReportLogger
+from tune.concepts.flow import (
+    Trial,
+    TrialDecision,
+    TrialJudge,
+    TrialReport,
+    TrialReportLogger,
+)
 
 
 class NonIterativeStopper(TrialJudge):

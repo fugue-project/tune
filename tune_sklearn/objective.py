@@ -1,6 +1,6 @@
 import os
 import pickle
-from tune.factory import TUNE_OBJECT_FACTORY
+from tune.api.factory import TUNE_OBJECT_FACTORY
 from typing import Any, Optional, Tuple
 from uuid import uuid4
 

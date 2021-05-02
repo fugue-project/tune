@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Tuple, no_type_check
 import numpy as np
 from triad import assert_or_throw
 from tune._utils import dict_product, product
-from tune.space.parameters import Grid, StochasticExpression, encode_params
+from tune.concepts.space.parameters import Grid, StochasticExpression, encode_params
 
 
 class Space(object):

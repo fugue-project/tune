@@ -4,7 +4,7 @@ from sklearn.base import is_classifier, is_regressor
 from triad import assert_or_throw
 from triad.utils.convert import get_full_type_path, to_type
 from tune.constants import SPACE_MODEL_NAME
-from tune.space.spaces import Space
+from tune.concepts.space.spaces import Space
 
 
 def to_sk_model(obj: Any) -> Type:

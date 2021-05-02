@@ -2,9 +2,9 @@ from typing import Any, Callable, Dict, Iterable
 
 from triad import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
-from tune.dataset import StudyResult, TuneDataset, get_trials_from_row
+from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.trial import RemoteTrialJudge, TrialCallback, TrialJudge
+from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge
 
 
 class IterativeStudy:

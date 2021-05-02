@@ -1,5 +1,5 @@
 from typing import Callable, Optional
-from tune.trial import Trial, TrialReport
+from tune.concepts.flow import Trial, TrialReport
 
 
 class NonIterativeObjectiveFunc:

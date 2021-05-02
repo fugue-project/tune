@@ -4,7 +4,7 @@ from hyperopt.early_stop import no_progress_loss
 from tune import Rand, RandInt
 from tune.noniterative.convert import noniterative_objective
 from tune.noniterative.objective import validate_noniterative_objective
-from tune.trial import Trial
+from tune.concepts.flow import Trial
 
 from tune_hyperopt import HyperoptRunner
 

@@ -3,14 +3,13 @@ from typing import Any, Callable, List, Optional, Tuple
 from uuid import uuid4
 
 from triad import FileSystem
-
-from tune.dataset import StudyResult, TuneDataset
-from tune.factory import TUNE_OBJECT_FACTORY
+from tune.api.factory import TUNE_OBJECT_FACTORY
+from tune.concepts.dataset import StudyResult, TuneDataset
+from tune.concepts.flow import NoOpTrailJudge, TrialJudge, TrialReport
 from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.sha import _NonIterativeObjectiveWrapper
 from tune.iterative.study import IterativeStudy
 from tune.noniterative.study import NonIterativeStudy
-from tune.trial import TrialJudge, TrialReport, NoOpTrailJudge
 
 
 def make_stopper(monitor: Any, stopper: Any) -> Optional[TrialJudge]:

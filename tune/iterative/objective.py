@@ -6,8 +6,8 @@ from uuid import uuid4
 from cloudpickle import pickle
 from fs.base import FS as FSBase
 from triad import FileSystem
-from tune.checkpoint import Checkpoint
-from tune.trial import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
+from tune.concepts.checkpoint import Checkpoint
+from tune.concepts.flow import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class IterativeObjectiveFunc:

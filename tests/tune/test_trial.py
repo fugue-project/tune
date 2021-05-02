@@ -4,8 +4,8 @@ from time import sleep
 import numpy as np
 import pandas as pd
 
-from tune.space import Rand
-from tune.trial import (
+from tune.concepts.space import Rand
+from tune.concepts.flow import (
     Trial,
     TrialDecision,
     TrialReport,

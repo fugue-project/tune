@@ -1,6 +1,6 @@
 # flake8: noqa
 
-from tune.space.parameters import (
+from tune.concepts.space.parameters import (
     Choice,
     Grid,
     NormalRand,
@@ -11,4 +11,4 @@ from tune.space.parameters import (
     decode_params,
     encode_params,
 )
-from tune.space.spaces import HorizontalSpace, Space, VerticalSpace
+from tune.concepts.space.spaces import HorizontalSpace, Space, VerticalSpace

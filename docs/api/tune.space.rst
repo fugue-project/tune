@@ -1,4 +1,4 @@
-tune.space 
+tune.concepts.space 
 ===========
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
@@ -21,18 +21,18 @@ tune.space
 
 
 
-tune.space.parameters
+tune.concepts.space.parameters
 ---------------------
 
-.. automodule:: tune.space.parameters
+.. automodule:: tune.concepts.space.parameters
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.space.spaces
+tune.concepts.space.spaces
 -----------------
 
-.. automodule:: tune.space.spaces
+.. automodule:: tune.concepts.space.spaces
    :members:
    :undoc-members:
    :show-inheritance:

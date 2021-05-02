@@ -31,8 +31,8 @@ from tune.constants import (
     TUNE_TEMP_PATH,
 )
 from tune.exceptions import TuneCompileError
-from tune.space import Space
-from tune.trial import Trial
+from tune.concepts.space import Space
+from tune.concepts.flow import Trial
 
 
 class TuneDataset:
