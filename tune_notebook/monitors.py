@@ -39,39 +39,46 @@ class NotebookSimpleChart(Monitor):
                 self._bins[key] = _ReportBin(new_best_only=True)
             rbin = self._bins[key]
 
-        rbin.on_report(report)
+        if not rbin.on_report(report):
+            return
 
         with self._lock:
             if self._last is None or now - self._last > self._interval:
-                import matplotlib.pyplot as plt
-                from IPython.display import clear_output
-
-                clear_output()
-                df = pd.concat(
-                    [
-                        pd.DataFrame(
-                            x.records,
-                            columns=[
-                                "partition",
-                                "rung",
-                                "time",
-                                "id",
-                                "metric",
-                                "best_metric",
-                            ],
-                        )
-                        for x in self._bins.values()
-                    ]
-                )
-                self.plot(df)
-                plt.show()
+                self._redraw()
                 self._last = datetime.now()
-                for best in [x.best for x in self._bins.values() if x.best is not None]:
-                    if best is not None:
-                        print(best.trial.keys, best.metric, best.jsondict)
 
     def plot(self, df: pd.DataFrame) -> None:
         return  # pragma: no cover
+
+    def finalize(self) -> None:
+        self._redraw()
+
+    def _redraw(self) -> None:
+        import matplotlib.pyplot as plt
+        from IPython.display import clear_output
+
+        clear_output()
+        df = pd.concat(
+            [
+                pd.DataFrame(
+                    x.records,
+                    columns=[
+                        "partition",
+                        "rung",
+                        "time",
+                        "id",
+                        "metric",
+                        "best_metric",
+                    ],
+                )
+                for x in self._bins.values()
+            ]
+        )
+        self.plot(df)
+        plt.show()
+        for best in [x.best for x in self._bins.values() if x.best is not None]:
+            if best is not None:
+                print(best.trial.keys, best.metric, best.jsondict)
 
 
 class NotebookSimpleRungs(NotebookSimpleChart):
