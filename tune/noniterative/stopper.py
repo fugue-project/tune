@@ -1,5 +1,5 @@
 from threading import RLock
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from tune.concepts.flow import (
     Trial,
@@ -10,6 +10,20 @@ from tune.concepts.flow import (
 )
 
 
+class TrialReportCollection(TrialReportLogger):
+    def __init__(self, new_best_only: bool = False):
+        super().__init__(new_best_only=new_best_only)
+        self._reports: List[TrialReport] = []
+
+    def log(self, report: TrialReport) -> None:
+        self._reports.append(report.reset_log_time())
+
+    @property
+    def reports(self) -> List[TrialReport]:
+        with self._lock:
+            return list(self._reports)
+
+
 class NonIterativeStopper(TrialJudge):
     def __init__(self, log_best_only: bool = False):
         super().__init__()
@@ -17,7 +31,7 @@ class NonIterativeStopper(TrialJudge):
         self._log_best_only = log_best_only
         self._logs: Dict[str, TrialReportCollection] = {}
 
-    def should_stop(self, trial: Trial) -> bool:
+    def should_stop(self, trial: Trial) -> bool:  # pragma: no cover
         return False
 
     def on_report(self, report: TrialReport) -> bool:
@@ -44,15 +58,28 @@ class NonIterativeStopper(TrialJudge):
         return v.reports
 
 
-class TrialReportCollection(TrialReportLogger):
-    def __init__(self, new_best_only: bool = False):
-        super().__init__(new_best_only=new_best_only)
-        self._reports: List[TrialReport] = []
+class SimpleNonIterativeStopper(NonIterativeStopper):
+    def __init__(self, log_best_only: bool = False):
+        super().__init__(log_best_only=log_best_only)
+        self._stopped: Set[str] = set()
 
-    def log(self, report: TrialReport) -> None:
-        self._reports.append(report.reset_log_time())
+    def partition_should_stop(
+        self, latest_report: TrialReport, updated: bool, reports: List[TrialReport]
+    ) -> bool:  # pragma: no cover
+        return False
 
-    @property
-    def reports(self) -> List[TrialReport]:
+    def should_stop(self, trial: Trial) -> bool:
+        key = str(trial.keys)
         with self._lock:
-            return list(self._reports)
+            return key in self._stopped
+
+    def on_report(self, report: TrialReport) -> bool:
+        updated = super().on_report(report)
+        key = str(report.trial.keys)
+        with self._lock:
+            if key not in self._stopped:
+                if self.partition_should_stop(
+                    report, updated, self.get_reports(report.trial)
+                ):
+                    self._stopped.add(key)
+        return updated
