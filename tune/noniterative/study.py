@@ -50,21 +50,29 @@ class NonIterativeStudy:
             # t._execution_engine = engine  # type:ignore
             return ArrayDataFrame(get_rows(), out_schema)
 
+        def preprocess(df: DataFrame) -> DataFrame:
+            if judge is not None:
+                judge.monitor.initialize()
+            return df
+
         def postprocess(df: DataFrame) -> None:
             if judge is not None:
                 judge.monitor.finalize()
 
         if not _dist:
-            res = dataset.data.process(compute_processor)
+            res = dataset.data.process(preprocess).process(compute_processor)
         else:
-            res = dataset.data.per_row().transform(
-                self._compute_transformer,
-                schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
-                callback=entrypoint,
+            res = (
+                dataset.data.process(preprocess)
+                .per_row()
+                .transform(
+                    self._compute_transformer,
+                    schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
+                    callback=entrypoint,
+                )
             )
 
-        if judge is not None:
-            res.persist().output(postprocess)
+        res.persist().output(postprocess)
 
         return StudyResult(dataset=dataset, result=res)
 
