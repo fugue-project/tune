@@ -25,7 +25,7 @@ class NonIterativeStudy:
         self._objective = objective
         self._runner = runner
 
-    def optimize(
+    def optimize(  # noqa: C901
         self,
         dataset: TuneDataset,
         distributed: Optional[bool] = None,
@@ -50,6 +50,10 @@ class NonIterativeStudy:
             # t._execution_engine = engine  # type:ignore
             return ArrayDataFrame(get_rows(), out_schema)
 
+        def postprocess(df: DataFrame) -> None:
+            if judge is not None:
+                judge.monitor.finalize()
+
         if not _dist:
             res = dataset.data.process(compute_processor)
         else:
@@ -58,6 +62,9 @@ class NonIterativeStudy:
                 schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
                 callback=entrypoint,
             )
+
+        if judge is not None:
+            res.persist().output(postprocess)
 
         return StudyResult(dataset=dataset, result=res)
 

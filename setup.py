@@ -1,3 +1,5 @@
+import os
+
 from setuptools import find_packages, setup
 
 from tune_version import __version__
@@ -5,9 +7,19 @@ from tune_version import __version__
 with open("README.md") as f:
     LONG_DESCRIPTION = f.read()
 
+
+def get_version() -> str:
+    tag = os.environ.get("RELEASE_TAG", "")
+    if "dev" in tag.split(".")[-1]:
+        return tag
+    if tag != "":
+        assert tag == __version__, "release tag and version mismatch"
+    return __version__
+
+
 setup(
     name="tune",
-    version=__version__,
+    version=get_version(),
     packages=find_packages(),
     description="An abstraction layer for hyper parameter tuning",
     long_description=LONG_DESCRIPTION,

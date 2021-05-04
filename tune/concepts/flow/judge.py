@@ -167,3 +167,6 @@ class Monitor:
 
     def on_judge(self, decision: TrialDecision) -> None:  # pragma: no cover
         pass
+
+    def finalize(self) -> None:  # pragma: no cover
+        pass
