@@ -25,9 +25,11 @@ def test_simple_stopper():
 
 class MockSimpleStopper(SimpleNonIterativeStopper):
     def __init__(self, func):
-        super().__init__(log_best_only=False)
-        self._func = func
+        super().__init__(
+            partition_should_stop=self.partition_should_stop, log_best_only=False
+        )
         self._last = None
+        self._func = func
 
     def partition_should_stop(self, latest_report, updated, reports) -> bool:
         self._last = latest_report

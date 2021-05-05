@@ -84,15 +84,19 @@ class TuneDataset:
         return datasets
 
 
-def get_trials_from_row(row: Dict[str, Any]) -> Iterable[Trial]:
-    dfs: Dict[str, Any] = {}
-    for k, v in row.items():
-        if k.startswith(TUNE_DATASET_DF_PREFIX):
-            key = k[len(TUNE_DATASET_DF_PREFIX) :]
-            if v is not None:
-                dfs[key] = pd.read_parquet(v)
-    for params in json.loads(row[TUNE_DATASET_TRIALS]):
-        yield Trial.from_jsondict(params).with_dfs(dfs)
+def get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable[Trial]:
+    if not with_dfs:
+        for params in json.loads(row[TUNE_DATASET_TRIALS]):
+            yield Trial.from_jsondict(params)
+    else:
+        dfs: Dict[str, Any] = {}
+        for k, v in row.items():
+            if k.startswith(TUNE_DATASET_DF_PREFIX):
+                key = k[len(TUNE_DATASET_DF_PREFIX) :]
+                if v is not None:
+                    dfs[key] = pd.read_parquet(v)
+        for params in json.loads(row[TUNE_DATASET_TRIALS]):
+            yield Trial.from_jsondict(params).with_dfs(dfs)
 
 
 class TuneDatasetBuilder:

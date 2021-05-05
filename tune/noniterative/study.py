@@ -1,17 +1,12 @@
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
 from triad import assert_or_throw
+from tune._utils import run_monitored_process
 from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
-from tune.concepts.flow import (
-    NoOpTrailJudge,
-    RemoteTrialJudge,
-    TrialCallback,
-    TrialJudge,
-    TrialReport,
-)
+from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge, TrialReport
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
-from tune.exceptions import TuneCompileError
+from tune.exceptions import TuneCompileError, TuneInterrupted
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
     NonIterativeObjectiveRunner,
@@ -94,24 +89,34 @@ class NonIterativeStudy:
         df: Iterable[Dict[str, Any]],
         entrypoint: Optional[Callable[[str, Dict[str, Any]], Any]] = None,
     ) -> Iterable[Dict[str, Any]]:
-        j: TrialJudge = (
-            NoOpTrailJudge() if entrypoint is None else RemoteTrialJudge(entrypoint)
+        j: Optional[RemoteTrialJudge] = (
+            None if entrypoint is None else RemoteTrialJudge(entrypoint)
         )
         for row in df:
-            reports = self._local_process_row(row, j)
-            for report in reports:
-                j.judge(report)
-                yield report.fill_dict(dict(row))
+            for n, trial in enumerate(get_trials_from_row(row, with_dfs=False)):
+                if j is not None:
+                    if j.can_accept(trial):
+                        try:
+                            report = run_monitored_process(
+                                self._local_process_trial,
+                                [row, n],
+                                {},
+                                lambda: j.can_accept(trial),  # type: ignore
+                                "60sec",
+                            )
+                        except TuneInterrupted:
+                            continue
+                        except Exception:
+                            raise
+                        j.judge(report)
+                        yield report.fill_dict(dict(row))
+                else:
+                    report = self._local_process_trial(row, n)
+                    yield report.fill_dict(dict(row))
 
-    def _local_process_row(
-        self, row: Dict[str, Any], judge: TrialJudge
-    ) -> List[TrialReport]:
-        reports: List[TrialReport] = []
-        for trial in get_trials_from_row(row):
-            if judge.can_accept(trial):
-                report = self._runner.run(self._objective, trial)
-                report = report.with_sort_metric(
-                    self._objective.generate_sort_metric(report.metric)
-                )
-                reports.append(report)
-        return reports
+    def _local_process_trial(self, row: Dict[str, Any], idx: int) -> TrialReport:
+        trial = list(get_trials_from_row(row))[idx]
+        report = self._runner.run(self._objective, trial)
+        return report.with_sort_metric(
+            self._objective.generate_sort_metric(report.metric)
+        )

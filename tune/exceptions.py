@@ -7,3 +7,7 @@ class TuneCompileError(FugueWorkflowCompileError):
 
 class TuneRuntimeError(FugueWorkflowRuntimeError):
     pass
+
+
+class TuneInterrupted(TuneRuntimeError):
+    pass

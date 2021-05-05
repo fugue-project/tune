@@ -1,4 +1,7 @@
-from typing import Callable, Optional
+from tune.constants import TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
+from typing import Any, Callable, Optional
+
+from tune._utils import run_monitored_process
 from tune.concepts.flow import Trial, TrialReport
 
 
@@ -19,6 +22,17 @@ class NonIterativeObjectiveRunner:
         # TODO: how to utilize execution_engine?
         return func.run(trial)
 
+    def run_monitored_process(
+        self,
+        func: NonIterativeObjectiveFunc,
+        trial: Trial,
+        stop_checker: Callable[[], bool],
+        interval: Any = TUNE_STOPPER_DEFAULT_CHECK_INTERVAL,
+    ) -> TrialReport:
+        return run_monitored_process(
+            self.run, [func, trial], {}, stop_checker=stop_checker, interval=interval
+        )
+
 
 def validate_noniterative_objective(
     func: NonIterativeObjectiveFunc,
@@ -27,4 +41,4 @@ def validate_noniterative_objective(
     runner: Optional[NonIterativeObjectiveRunner] = None,
 ) -> None:
     _runner = runner or NonIterativeObjectiveRunner()
-    validator(_runner.run(func, trial))
+    validator(_runner.run_monitored_process(func, trial, lambda: False, "1sec"))

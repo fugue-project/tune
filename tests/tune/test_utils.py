@@ -1,8 +1,19 @@
 import json
+from time import sleep
+from tune.exceptions import TuneInterrupted
 
 import numpy as np
+from pytest import raises
+from triad.utils.convert import to_timedelta
 
-from tune._utils import _EMPTY_ITER, dict_product, normalize_hp, product, safe_iter
+from tune._utils import (
+    _EMPTY_ITER,
+    dict_product,
+    normalize_hp,
+    product,
+    run_monitored_process,
+    safe_iter,
+)
 
 
 def test_normalize_hp():
@@ -76,3 +87,31 @@ def test_dict_product():
     assert [] == res
     res = list(dict_product({"a": []}, safe=False))
     assert [] == res
+
+
+def test_run_monitored_process():
+    # happy case
+    assert 10 == run_monitored_process(t1, [1], {}, lambda: True, "5sec")
+    # stop before responding
+    with raises(TuneInterrupted):
+        run_monitored_process(t1, [1], dict(wait="1sec"), lambda: True, "0.2sec")
+    # non stop before responding
+    assert 10 == run_monitored_process(
+        t1, [1], dict(wait="1sec"), lambda: False, "0.2sec"
+    )
+    with raises(NotImplementedError):
+        run_monitored_process(t2, [], {}, lambda: True, "5sec")
+    assert run_monitored_process(t3, [], {}, lambda: True, "5sec") is None
+
+def t1(a, wait=None):
+    if wait is not None:
+        sleep(to_timedelta(wait).total_seconds())
+    return a * 10
+
+
+def t2():
+    raise NotImplementedError
+
+
+def t3():
+    pass
