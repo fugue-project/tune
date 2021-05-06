@@ -14,7 +14,7 @@ from tune.iterative.objective import IterativeObjectiveFunc
 from tune.noniterative.convert import to_noniterative_objective
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
 )
 from tune.noniterative.stopper import NonIterativeStopper
 
@@ -23,8 +23,8 @@ class TuneObjectFactory:
     def __init__(self):
         self._iterative_objective_converter = self._object_to_iterative_objective
         self._noniterative_objective_converter = self._object_to_noniterative_objective
-        self._noniterative_objective_runner_converter = (
-            self._object_to_noniterative_objective_runner
+        self._noniterative_local_optimizer_converter = (
+            self._object_to_noniterative_local_optimizer
         )
         self._monitor_converter = self._object_to_monitor
         self._stopper_converter = self._object_to_stopper
@@ -40,10 +40,10 @@ class TuneObjectFactory:
     ) -> None:
         self._noniterative_objective_converter = func
 
-    def set_noniterative_objective_runner_converter(
-        self, func: Callable[[Any], NonIterativeObjectiveRunner]
+    def set_noniterative_local_optimizer_converter(
+        self, func: Callable[[Any], NonIterativeObjectiveLocalOptimizer]
     ) -> None:
-        self._noniterative_objective_runner_converter = func
+        self._noniterative_local_optimizer_converter = func
 
     def set_monitor_converter(self, func: Callable[[Any], Optional[Monitor]]) -> None:
         self._monitor_converter = func
@@ -57,10 +57,10 @@ class TuneObjectFactory:
     def make_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
         return self._noniterative_objective_converter(obj)
 
-    def make_noniterative_objective_runner(
+    def make_noniterative_local_optimizer(
         self, obj: Any
-    ) -> NonIterativeObjectiveRunner:
-        return self._noniterative_objective_runner_converter(obj)
+    ) -> NonIterativeObjectiveLocalOptimizer:
+        return self._noniterative_local_optimizer_converter(obj)
 
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
         return self._monitor_converter(obj)
@@ -128,15 +128,15 @@ class TuneObjectFactory:
             f"{obj} can't be converted to non iterative objective function"
         )
 
-    def _object_to_noniterative_objective_runner(
+    def _object_to_noniterative_local_optimizer(
         self, obj: Any
-    ) -> NonIterativeObjectiveRunner:
-        if isinstance(obj, NonIterativeObjectiveRunner):
+    ) -> NonIterativeObjectiveLocalOptimizer:
+        if isinstance(obj, NonIterativeObjectiveLocalOptimizer):
             return obj
         if obj is None:
-            return NonIterativeObjectiveRunner()
+            return NonIterativeObjectiveLocalOptimizer()
         raise TuneCompileError(
-            f"{obj} can't be converted to non iterative objective runner"
+            f"{obj} can't be converted to non iterative objective optimizer"
         )
 
     def _object_to_monitor(self, obj: Any) -> Optional[Monitor]:

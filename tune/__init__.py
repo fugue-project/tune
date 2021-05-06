@@ -32,7 +32,7 @@ from tune.iterative.objective import (
 from tune.noniterative.convert import noniterative_objective, to_noniterative_objective
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
     validate_noniterative_objective,
 )
 from tune.noniterative.stopper import (

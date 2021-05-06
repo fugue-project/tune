@@ -2,7 +2,7 @@ from fugue_dask import DaskExecutionEngine
 from sklearn.datasets import load_diabetes
 from sklearn.linear_model import Lasso, LinearRegression
 from tune import TUNE_OBJECT_FACTORY, Grid, Rand
-from tune_hyperopt.runner import HyperoptRunner
+from tune_hyperopt.optimizer import HyperoptLocalOptimizer
 from tune_sklearn import sk_space, suggest_sk_models, suggest_sk_models_by_cv
 
 # from fugue_spark import SparkExecutionEngine
@@ -30,7 +30,7 @@ def test_suggest(tmpdir):
         "neg_mean_absolute_error",
         top_n=0,
         distributed=False,
-        objective_runner=HyperoptRunner(max_iter=10, seed=0),
+        local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
     )
     # print([x.jsondict for x in result])
     assert 4 == len(result)
@@ -80,7 +80,7 @@ def test_suggest_cv(tmpdir):
         "neg_mean_absolute_error",
         top_n=0,
         distributed=False,
-        objective_runner=HyperoptRunner(max_iter=10, seed=0),
+        local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
     )
     # print([x.jsondict for x in result])
     assert 4 == len(result)

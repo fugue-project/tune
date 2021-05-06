@@ -10,7 +10,7 @@ from tune.constants import TUNE_REPORT_ADD_SCHEMA, TUNE_STOPPER_DEFAULT_CHECK_IN
 from tune.exceptions import TuneCompileError, TuneInterrupted
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
 )
 from tune.noniterative.stopper import NonIterativeStopper
 
@@ -32,10 +32,12 @@ def _make_judge(
 
 class NonIterativeStudy:
     def __init__(
-        self, objective: NonIterativeObjectiveFunc, runner: NonIterativeObjectiveRunner
+        self,
+        objective: NonIterativeObjectiveFunc,
+        optimizer: NonIterativeObjectiveLocalOptimizer,
     ):
         self._objective = objective
-        self._runner = runner
+        self._optimizer = optimizer
 
     def optimize(  # noqa: C901
         self,
@@ -67,7 +69,7 @@ class NonIterativeStudy:
                 ):
                     yield [row[k] for k in out_schema.names]
 
-            # TODO: need to add back execution_engine for engine aware runners
+            # TODO: need to add back execution_engine for engine aware optimizers
             # t._execution_engine = engine  # type:ignore
             return ArrayDataFrame(get_rows(), out_schema)
 
@@ -100,12 +102,12 @@ class NonIterativeStudy:
 
     def _get_distributed(self, distributed: Optional[bool]) -> bool:
         if distributed is None:
-            return self._runner.distributable
+            return self._optimizer.distributable
         if distributed:
             assert_or_throw(
-                self._runner.distributable,
+                self._optimizer.distributable,
                 TuneCompileError(
-                    f"can't distribute non-distributable runner {self._runner}"
+                    f"can't distribute non-distributable optimizer {self._optimizer}"
                 ),
             )
             return True
@@ -149,7 +151,7 @@ class NonIterativeStudy:
 
     def _local_process_trial(self, row: Dict[str, Any], idx: int) -> TrialReport:
         trial = list(get_trials_from_row(row))[idx]
-        report = self._runner.run(self._objective, trial)
+        report = self._optimizer.run(self._objective, trial)
         return report.with_sort_metric(
             self._objective.generate_sort_metric(report.metric)
         )

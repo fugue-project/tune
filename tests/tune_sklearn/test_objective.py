@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from tune import RandInt, Trial
 from tune.constants import SPACE_MODEL_NAME, TUNE_DATASET_DF_DEFAULT_NAME
 from tune.noniterative.objective import validate_noniterative_objective
-from tune_hyperopt import HyperoptRunner
+from tune_hyperopt import HyperoptLocalOptimizer
 
 from tune_sklearn.objective import SKCVObjective
 
@@ -23,7 +23,7 @@ def test_objective(tmpdir):
         dfs={TUNE_DATASET_DF_DEFAULT_NAME: df},
     )
     obj = SKCVObjective(scoring="accuracy")
-    runner = HyperoptRunner(5, 0)
+    optimizer = HyperoptLocalOptimizer(5, 0)
 
     def v(report):
         print(report.jsondict)
@@ -31,7 +31,7 @@ def test_objective(tmpdir):
         assert "cv_scores" in report.metadata
         # assert report.trial.params["max_iter"] >= 2
 
-    validate_noniterative_objective(obj, t, v, runner=runner)
+    validate_noniterative_objective(obj, t, v, optimizer=optimizer)
 
     obj = SKCVObjective(scoring="accuracy", checkpoint_path=str(tmpdir))
 
@@ -42,4 +42,4 @@ def test_objective(tmpdir):
         assert "checkpoint_path" in report.metadata
         # assert report.trial.params["max_iter"] >= 2
 
-    validate_noniterative_objective(obj, t, v2, runner=runner)
+    validate_noniterative_objective(obj, t, v2, optimizer=optimizer)

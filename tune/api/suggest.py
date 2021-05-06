@@ -24,7 +24,7 @@ def suggest_for_noniterative_objective(
     temp_path: str = "",
     partition_keys: Optional[List[str]] = None,
     top_n: int = 1,
-    objective_runner: Any = None,
+    local_optimizer: Any = None,
     monitor: Any = None,
     stopper: Any = None,
     stop_check_interval: Any = None,
@@ -46,7 +46,7 @@ def suggest_for_noniterative_objective(
     study = optimize_noniterative(
         objective=objective,
         dataset=dataset,
-        runner=objective_runner,
+        optimizer=local_optimizer,
         distributed=distributed,
         monitor=monitor,
         stopper=stopper,

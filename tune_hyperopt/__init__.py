@@ -1,3 +1,3 @@
 # flake8: noqa
 
-from tune_hyperopt.runner import HyperoptRunner
+from tune_hyperopt.optimizer import HyperoptLocalOptimizer

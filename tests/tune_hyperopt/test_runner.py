@@ -6,13 +6,13 @@ from tune.noniterative.convert import noniterative_objective
 from tune.noniterative.objective import validate_noniterative_objective
 from tune.concepts.flow import Trial
 
-from tune_hyperopt import HyperoptRunner
+from tune_hyperopt import HyperoptLocalOptimizer
 
 
 def test_hyperopt():
     params = dict(a=Rand(-10.0, 10.0), b=RandInt(-100, 100), c=2.0)
     trial = Trial("a", params, metadata={})
-    h = HyperoptRunner(max_iter=200, seed=0, kwargs_func=_add_conf)
+    h = HyperoptLocalOptimizer(max_iter=200, seed=0, kwargs_func=_add_conf)
 
     @noniterative_objective
     def objective(a, b, c) -> Tuple[float, Dict[str, Any]]:
@@ -24,7 +24,7 @@ def test_hyperopt():
         assert report.params["b"] ** 2 < 2
         assert 2.0 == report.params["c"]
 
-    validate_noniterative_objective(objective, trial, v, runner=h)
+    validate_noniterative_objective(objective, trial, v, optimizer=h)
 
 
 def _add_conf(func, trial):

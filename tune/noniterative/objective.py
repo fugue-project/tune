@@ -13,7 +13,7 @@ class NonIterativeObjectiveFunc:
         raise NotImplementedError
 
 
-class NonIterativeObjectiveRunner:
+class NonIterativeObjectiveLocalOptimizer:
     @property
     def distributable(self) -> bool:
         return True
@@ -38,7 +38,7 @@ def validate_noniterative_objective(
     func: NonIterativeObjectiveFunc,
     trial: Trial,
     validator: Callable[[TrialReport], None],
-    runner: Optional[NonIterativeObjectiveRunner] = None,
+    optimizer: Optional[NonIterativeObjectiveLocalOptimizer] = None,
 ) -> None:
-    _runner = runner or NonIterativeObjectiveRunner()
-    validator(_runner.run_monitored_process(func, trial, lambda: False, "1sec"))
+    _optimizer = optimizer or NonIterativeObjectiveLocalOptimizer()
+    validator(_optimizer.run_monitored_process(func, trial, lambda: False, "1sec"))

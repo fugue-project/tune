@@ -15,17 +15,17 @@ from tune.noniterative.study import NonIterativeStudy
 def optimize_noniterative(
     objective: Any,
     dataset: TuneDataset,
-    runner: Any = None,
+    optimizer: Any = None,
     distributed: Optional[bool] = None,
     monitor: Any = None,
     stopper: Any = None,
     stop_check_interval: Any = None,
 ) -> StudyResult:
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
-    _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
+    _optimizer = TUNE_OBJECT_FACTORY.make_noniterative_local_optimizer(optimizer)
     _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
     _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
-    study = NonIterativeStudy(_objective, _runner)
+    study = NonIterativeStudy(_objective, _optimizer)
     return study.optimize(
         dataset,
         distributed=distributed,
