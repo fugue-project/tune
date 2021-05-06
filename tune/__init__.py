@@ -13,6 +13,7 @@ from tune.api.suggest import (
     suggest_by_continuous_asha,
     suggest_by_hyperband,
     suggest_by_sha,
+    suggest_for_noniterative_objective,
 )
 from tune.concepts.checkpoint import Checkpoint
 from tune.concepts.dataset import StudyResult, TuneDataset, TuneDatasetBuilder

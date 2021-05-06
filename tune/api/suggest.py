@@ -11,8 +11,59 @@ from tune.api.optimize import (
 )
 from tune.concepts.flow import TrialReport
 from tune.concepts.space import Space
-from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
+from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME, TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.exceptions import TuneCompileError
+from tune.api.optimize import optimize_noniterative
+
+
+def suggest_for_noniterative_objective(
+    objective: Any,
+    space: Space,
+    df: Any,
+    df_name: str = TUNE_DATASET_DF_DEFAULT_NAME,
+    temp_path: str = "",
+    partition_keys: Optional[List[str]] = None,
+    top_n: int = 1,
+    objective_runner: Any = None,
+    monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
+    distributed: Optional[bool] = None,
+    shuffle_candidates: bool = True,
+    execution_engine: Any = None,
+    execution_engine_conf: Any = None,
+) -> List[TrialReport]:
+    dag = FugueWorkflow()
+    dataset = TUNE_OBJECT_FACTORY.make_dataset(
+        dag,
+        space,
+        df=df,
+        df_name=df_name,
+        partition_keys=partition_keys,
+        temp_path=temp_path,
+        shuffle=shuffle_candidates,
+    )
+    study = optimize_noniterative(
+        objective=objective,
+        dataset=dataset,
+        runner=objective_runner,
+        distributed=distributed,
+        monitor=monitor,
+        stopper=stopper,
+        stop_check_interval=stop_check_interval,
+    )
+    study.result(top_n).yield_dataframe_as("result")
+
+    rows = list(
+        dag.run(
+            execution_engine,
+            conf=execution_engine_conf,
+        )["result"].as_dict_iterable()
+    )
+    return [
+        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
+        for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
+    ]
 
 
 def suggest_by_sha(

@@ -27,6 +27,8 @@ def suggest_sk_models(
     top_n: int = 1,
     objective_runner: Optional[NonIterativeObjectiveRunner] = None,
     monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
     distributed: Optional[bool] = None,
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
@@ -52,6 +54,8 @@ def suggest_sk_models(
         runner=objective_runner,
         distributed=distributed,
         monitor=monitor,
+        stopper=stopper,
+        stop_check_interval=stop_check_interval,
     )
     study.result(top_n).yield_dataframe_as("result")
 
@@ -80,6 +84,8 @@ def suggest_sk_models_by_cv(
     top_n: int = 1,
     objective_runner: Optional[NonIterativeObjectiveRunner] = None,
     monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
     distributed: Optional[bool] = None,
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
@@ -105,6 +111,8 @@ def suggest_sk_models_by_cv(
         runner=objective_runner,
         distributed=distributed,
         monitor=monitor,
+        stopper=stopper,
+        stop_check_interval=stop_check_interval,
     )
     study.result(top_n).yield_dataframe_as("result")
 

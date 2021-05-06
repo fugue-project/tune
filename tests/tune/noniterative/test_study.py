@@ -2,7 +2,7 @@ from typing import List
 
 import pandas as pd
 from fugue import FugueWorkflow
-from tune import optimize_noniterative
+from tune import optimize_noniterative, suggest_for_noniterative_objective
 from tune.concepts.dataset import TuneDatasetBuilder
 from tune.concepts.flow import Monitor
 from tune.concepts.space import Grid, Space
@@ -96,30 +96,31 @@ def test_study(tmpdir):
 def test_study_with_stopper(tmpdir):
     space = Space(a=Grid(-2, 0, 1))
     input_df = pd.DataFrame([[0, 1], [1, 1], [0, 2]], columns=["a", "b"])
-    dag = FugueWorkflow()
 
-    builder = TuneDatasetBuilder(space, str(tmpdir)).add_df("b", dag.df(input_df))
-    dataset = builder.build(dag, 1, shuffle=False)
-
-    result = optimize_noniterative(
+    result = suggest_for_noniterative_objective(
         objective=objective,
-        dataset=dataset,
+        space=space,
+        df=input_df,
+        df_name="b",
         stopper=n_samples(2),
+        top_n=0,
+        shuffle_candidates=False,
+        temp_path=str(tmpdir),
     )
-    result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
-        assert_metric, params=dict(metrics=[3.0, 7.0])
-    )
+    assert [3.0, 7.0] == [x.metric for x in result]
 
     monitor = M()
-    result = optimize_noniterative(
+    result = suggest_for_noniterative_objective(
         objective=objective,
-        dataset=dataset,
+        space=space,
+        df=input_df,
+        df_name="b",
         stopper=n_samples(2),
         monitor=monitor,
+        top_n=0,
+        shuffle_candidates=False,
+        temp_path=str(tmpdir),
     )
-    result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
-        assert_metric, params=dict(metrics=[3.0, 7.0])
-    )
-    dag.run()
+    assert [3.0, 7.0] == [x.metric for x in result]
 
     assert 2 == len(monitor._reports)

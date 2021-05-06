@@ -77,6 +77,7 @@ class TuneObjectFactory:
         test_df: Any = None,
         test_df_name: str = TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
         partition_keys: Optional[List[str]] = None,
+        shuffle: bool = True,
         temp_path: str = "",
     ) -> TuneDataset:
         assert_or_throw(dataset is not None, TuneCompileError("dataset can't be None"))
@@ -100,7 +101,7 @@ class TuneObjectFactory:
                     wdf = wdf.partition_by(*partition_keys)
                     how = "inner"
                 builder.add_df(test_df_name, wdf, how=how)
-            return builder.build(dag, batch_size=1, shuffle=True)
+            return builder.build(dag, batch_size=1, shuffle=shuffle)
         raise TuneCompileError(f"{dataset} can't be converted to TuneDataset")
 
     def get_path_or_temp(self, path: str) -> str:
