@@ -65,7 +65,6 @@ class NotebookSimpleChart(Monitor):
         import matplotlib.pyplot as plt
         from IPython.display import clear_output
 
-        clear_output()
         df = pd.concat(
             [
                 pd.DataFrame(
@@ -82,6 +81,7 @@ class NotebookSimpleChart(Monitor):
                 for x in self._bins.values()
             ]
         )
+        clear_output()
         self.plot(df)
         plt.show()
         for best in [x.best for x in self._bins.values() if x.best is not None]:

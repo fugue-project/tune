@@ -94,7 +94,7 @@ def test_run_monitored_process():
     assert 10 == run_monitored_process(t1, [1], {}, lambda: True, "5sec")
     # stop before responding
     with raises(TuneInterrupted):
-        run_monitored_process(t1, [1], dict(wait="1sec"), lambda: True, "0.2sec")
+        run_monitored_process(t1, [1], dict(wait="20sec"), lambda: True, "0.2sec")
     # non stop before responding
     assert 10 == run_monitored_process(
         t1, [1], dict(wait="1sec"), lambda: False, "0.2sec"

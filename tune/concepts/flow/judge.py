@@ -84,7 +84,6 @@ class TrialJudge(object):
 
     def reset_monitor(self, monitor: Optional["Monitor"] = None) -> None:
         self._trial_judge_monitor = monitor or Monitor()
-        self._trial_judge_monitor.set_judge(self)
 
     def can_accept(self, trial: Trial) -> bool:  # pragma: no cover
         raise NotImplementedError
@@ -148,14 +147,6 @@ class TrialCallback:
 class Monitor:
     def __init__(self):
         self._judge: Optional[TrialJudge] = None
-
-    def set_judge(self, judge: TrialJudge) -> None:
-        self._judge = judge
-
-    @property
-    def judge(self) -> TrialJudge:
-        assert self._judge is not None
-        return self._judge
 
     def on_report(self, report: TrialReport) -> None:  # pragma: no cover
         pass

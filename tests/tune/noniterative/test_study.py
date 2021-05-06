@@ -8,6 +8,7 @@ from tune.concepts.flow import Monitor
 from tune.concepts.space import Grid, Space
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.noniterative.convert import to_noniterative_objective
+from tune.noniterative.stopper import n_samples
 
 
 def objective(a: float, b: pd.DataFrame) -> float:
@@ -90,3 +91,35 @@ def test_study(tmpdir):
     dag.run()
 
     assert 3 * 3 * 2 == len(monitor._reports)
+
+
+def test_study_with_stopper(tmpdir):
+    space = Space(a=Grid(-2, 0, 1))
+    input_df = pd.DataFrame([[0, 1], [1, 1], [0, 2]], columns=["a", "b"])
+    dag = FugueWorkflow()
+
+    builder = TuneDatasetBuilder(space, str(tmpdir)).add_df("b", dag.df(input_df))
+    dataset = builder.build(dag, 1, shuffle=False)
+
+    result = optimize_noniterative(
+        objective=objective,
+        dataset=dataset,
+        stopper=n_samples(2),
+    )
+    result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
+        assert_metric, params=dict(metrics=[3.0, 7.0])
+    )
+
+    monitor = M()
+    result = optimize_noniterative(
+        objective=objective,
+        dataset=dataset,
+        stopper=n_samples(2),
+        monitor=monitor,
+    )
+    result.result()[[TUNE_REPORT, TUNE_REPORT_METRIC]].output(
+        assert_metric, params=dict(metrics=[3.0, 7.0])
+    )
+    dag.run()
+
+    assert 2 == len(monitor._reports)

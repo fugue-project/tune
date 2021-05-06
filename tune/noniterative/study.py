@@ -5,12 +5,29 @@ from triad import assert_or_throw
 from tune._utils import run_monitored_process
 from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
 from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge, TrialReport
-from tune.constants import TUNE_REPORT_ADD_SCHEMA
+from tune.concepts.flow.judge import Monitor, NoOpTrailJudge
+from tune.constants import TUNE_REPORT_ADD_SCHEMA, TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
 from tune.exceptions import TuneCompileError, TuneInterrupted
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
     NonIterativeObjectiveRunner,
 )
+from tune.noniterative.stopper import NonIterativeStopper
+
+
+def _make_judge(
+    monitor: Optional[Monitor] = None, stopper: Optional[NonIterativeStopper] = None
+) -> Optional[TrialJudge]:
+    if monitor is None and stopper is None:
+        return None
+    if stopper is None and monitor is not None:
+        return NoOpTrailJudge(monitor)
+    if stopper is not None and monitor is None:
+        return stopper
+    if stopper is not None and monitor is not None:
+        stopper.reset_monitor(monitor)
+        return stopper
+    raise NotImplementedError  # pragma: no cover
 
 
 class NonIterativeStudy:
@@ -24,20 +41,29 @@ class NonIterativeStudy:
         self,
         dataset: TuneDataset,
         distributed: Optional[bool] = None,
-        judge: Optional[TrialJudge] = None,
+        monitor: Optional[Monitor] = None,
+        stopper: Optional[NonIterativeStopper] = None,
+        stop_check_interval: Any = None,
     ) -> StudyResult:
         _dist = self._get_distributed(distributed)
         entrypoint: Any = None
+        judge = _make_judge(monitor, stopper)
         if judge is not None:
             cb = TrialCallback(judge)
             entrypoint = cb.entrypoint
+        if stopper is None:
+            _interval: Any = None
+        else:
+            _interval = stop_check_interval or TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
 
         def compute_processor(engine: ExecutionEngine, df: DataFrame) -> DataFrame:
             out_schema = df.schema + TUNE_REPORT_ADD_SCHEMA
 
             def get_rows() -> Iterable[Any]:
                 for row in self._compute_transformer(
-                    df.as_local().as_dict_iterable(), entrypoint=entrypoint
+                    df.as_local().as_dict_iterable(),
+                    entrypoint=entrypoint,
+                    stop_check_interval=_interval,
                 ):
                     yield [row[k] for k in out_schema.names]
 
@@ -64,6 +90,7 @@ class NonIterativeStudy:
                     self._compute_transformer,
                     schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
                     callback=entrypoint,
+                    params=dict(stop_check_interval=_interval),
                 )
             )
 
@@ -88,6 +115,7 @@ class NonIterativeStudy:
         self,
         df: Iterable[Dict[str, Any]],
         entrypoint: Optional[Callable[[str, Dict[str, Any]], Any]] = None,
+        stop_check_interval: Any = None,
     ) -> Iterable[Dict[str, Any]]:
         j: Optional[RemoteTrialJudge] = (
             None if entrypoint is None else RemoteTrialJudge(entrypoint)
@@ -95,14 +123,19 @@ class NonIterativeStudy:
         for row in df:
             for n, trial in enumerate(get_trials_from_row(row, with_dfs=False)):
                 if j is not None:
-                    if j.can_accept(trial):
+                    if stop_check_interval is None:
+                        # monitor only
+                        report = self._local_process_trial(row, n)
+                        j.judge(report)
+                        yield report.fill_dict(dict(row))
+                    elif j.can_accept(trial):
                         try:
                             report = run_monitored_process(
                                 self._local_process_trial,
                                 [row, n],
                                 {},
-                                lambda: j.can_accept(trial),  # type: ignore
-                                "60sec",
+                                lambda: not j.can_accept(trial),  # type: ignore
+                                stop_check_interval,
                             )
                         except TuneInterrupted:
                             continue

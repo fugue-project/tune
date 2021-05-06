@@ -5,7 +5,7 @@ from uuid import uuid4
 from triad import FileSystem
 from tune.api.factory import TUNE_OBJECT_FACTORY
 from tune.concepts.dataset import StudyResult, TuneDataset
-from tune.concepts.flow import NoOpTrailJudge, TrialJudge, TrialReport
+from tune.concepts.flow import TrialReport
 from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.sha import _NonIterativeObjectiveWrapper
 from tune.iterative.study import IterativeStudy
@@ -19,12 +19,20 @@ def optimize_noniterative(
     distributed: Optional[bool] = None,
     monitor: Any = None,
     stopper: Any = None,
+    stop_check_interval: Any = None,
 ) -> StudyResult:
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
     _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
+    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
+    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
     study = NonIterativeStudy(_objective, _runner)
-    judge = _make_noniterative_judge(monitor, stopper)
-    return study.optimize(dataset, distributed=distributed, judge=judge)
+    return study.optimize(
+        dataset,
+        distributed=distributed,
+        monitor=_monitor,
+        stopper=_stopper,
+        stop_check_interval=stop_check_interval,
+    )
 
 
 def optimize_by_sha(
@@ -104,18 +112,3 @@ def optimize_by_continuous_asha(
     FileSystem().makedirs(path, recreate=True)
     study = IterativeStudy(_objective, checkpoint_path=path)
     return study.optimize(dataset, judge=judge)
-
-
-def _make_noniterative_judge(monitor: Any, stopper: Any) -> Optional[TrialJudge]:
-    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
-    if _monitor is None and _stopper is None:
-        return None
-    if _stopper is None and _monitor is not None:
-        return NoOpTrailJudge(_monitor)
-    if _stopper is not None and _monitor is None:
-        return _stopper
-    if _stopper is not None and _monitor is not None:
-        _stopper.reset_monitor(_monitor)
-        return _stopper
-    raise NotImplementedError  # pragma: no cover
