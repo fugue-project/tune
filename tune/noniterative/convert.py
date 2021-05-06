@@ -12,7 +12,7 @@ from triad import assert_or_throw
 from triad.utils.convert import get_caller_global_local_vars, to_function
 from tune.exceptions import TuneCompileError
 from tune.noniterative.objective import NonIterativeObjectiveFunc
-from tune.trial import Trial, TrialReport
+from tune.concepts.flow import Trial, TrialReport
 
 
 def noniterative_objective(

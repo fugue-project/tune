@@ -2,7 +2,7 @@ from threading import RLock
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from triad import to_uuid
-from tune.trial import (
+from tune.concepts.flow import (
     Monitor,
     Trial,
     TrialDecision,

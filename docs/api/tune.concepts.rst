@@ -1,5 +1,11 @@
-tune.space 
-===========
+tune.concepts 
+==============
+
+.. toctree::
+   :maxdepth: 4
+
+   tune.concepts.flow
+   tune.concepts.space
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,18 +27,18 @@ tune.space
 
 
 
-tune.space.parameters
----------------------
+tune.concepts.checkpoint
+------------------------
 
-.. automodule:: tune.space.parameters
+.. automodule:: tune.concepts.checkpoint
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.space.spaces
------------------
+tune.concepts.dataset
+---------------------
 
-.. automodule:: tune.space.spaces
+.. automodule:: tune.concepts.dataset
    :members:
    :undoc-members:
    :show-inheritance:

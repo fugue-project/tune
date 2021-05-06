@@ -15,7 +15,7 @@ def test_spec():
 
 def test_objective():
     def validate(reports):
-        assert reports[-1].metric < 10
+        assert reports[-1].metric < 15
 
     space = keras_space(MockSpec, l1=16, l2=16)
     obj = KerasObjective(_TYPE_DICT)

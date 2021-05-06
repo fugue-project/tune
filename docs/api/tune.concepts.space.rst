@@ -1,5 +1,5 @@
-tune.noniterative 
-==================
+tune.concepts.space 
+====================
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
@@ -21,34 +21,18 @@ tune.noniterative
 
 
 
-tune.noniterative.convert
--------------------------
+tune.concepts.space.parameters
+------------------------------
 
-.. automodule:: tune.noniterative.convert
+.. automodule:: tune.concepts.space.parameters
    :members:
    :undoc-members:
    :show-inheritance:
 
-tune.noniterative.objective
----------------------------
+tune.concepts.space.spaces
+--------------------------
 
-.. automodule:: tune.noniterative.objective
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.noniterative.stopper
--------------------------
-
-.. automodule:: tune.noniterative.stopper
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-tune.noniterative.study
------------------------
-
-.. automodule:: tune.noniterative.study
+.. automodule:: tune.concepts.space.spaces
    :members:
    :undoc-members:
    :show-inheritance:

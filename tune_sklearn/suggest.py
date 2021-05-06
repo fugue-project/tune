@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from fugue import FugueWorkflow
 from tune import (
     TUNE_OBJECT_FACTORY,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
     Space,
     TrialReport,
     optimize_noniterative,
@@ -25,8 +25,10 @@ def suggest_sk_models(
     save_model: bool = False,
     partition_keys: Optional[List[str]] = None,
     top_n: int = 1,
-    objective_runner: Optional[NonIterativeObjectiveRunner] = None,
+    local_optimizer: Optional[NonIterativeObjectiveLocalOptimizer] = None,
     monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
     distributed: Optional[bool] = None,
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
@@ -49,9 +51,11 @@ def suggest_sk_models(
     study = optimize_noniterative(
         objective=objective,
         dataset=dataset,
-        runner=objective_runner,
+        optimizer=local_optimizer,
         distributed=distributed,
         monitor=monitor,
+        stopper=stopper,
+        stop_check_interval=stop_check_interval,
     )
     study.result(top_n).yield_dataframe_as("result")
 
@@ -78,8 +82,10 @@ def suggest_sk_models_by_cv(
     save_model: bool = False,
     partition_keys: Optional[List[str]] = None,
     top_n: int = 1,
-    objective_runner: Optional[NonIterativeObjectiveRunner] = None,
+    local_optimizer: Optional[NonIterativeObjectiveLocalOptimizer] = None,
     monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
     distributed: Optional[bool] = None,
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
@@ -102,9 +108,11 @@ def suggest_sk_models_by_cv(
     study = optimize_noniterative(
         objective=objective,
         dataset=dataset,
-        runner=objective_runner,
+        optimizer=local_optimizer,
         distributed=distributed,
         monitor=monitor,
+        stopper=stopper,
+        stop_check_interval=stop_check_interval,
     )
     study.result(top_n).yield_dataframe_as("result")
 

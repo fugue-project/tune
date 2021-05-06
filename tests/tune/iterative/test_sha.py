@@ -1,11 +1,11 @@
 from typing import Any, Dict, Iterable
 
 from fugue import FugueWorkflow
-from tune.dataset import TuneDatasetBuilder
+from tune.concepts.dataset import TuneDatasetBuilder
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune import optimize_by_sha, optimize_by_hyperband
-from tune.space import Grid, Space
-from tune.trial import TrialReport
+from tune.concepts.space import Grid, Space
+from tune.concepts.flow import TrialReport
 from tune.constants import TUNE_REPORT_METRIC
 
 

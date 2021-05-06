@@ -2,30 +2,32 @@ from typing import Any, Callable, List, Optional
 
 from fugue import FugueWorkflow
 from triad import assert_or_throw
-
+from tune.concepts.dataset import TuneDataset, TuneDatasetBuilder
+from tune.concepts.flow import Monitor
+from tune.concepts.space import Space
 from tune.constants import (
     TUNE_DATASET_DF_DEFAULT_NAME,
     TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
 )
-from tune.dataset import TuneDataset, TuneDatasetBuilder
 from tune.exceptions import TuneCompileError
 from tune.iterative.objective import IterativeObjectiveFunc
+from tune.noniterative.convert import to_noniterative_objective
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
 )
-from tune.space import Space
-from tune.trial import Monitor
+from tune.noniterative.stopper import NonIterativeStopper
 
 
 class TuneObjectFactory:
     def __init__(self):
         self._iterative_objective_converter = self._object_to_iterative_objective
         self._noniterative_objective_converter = self._object_to_noniterative_objective
-        self._noniterative_objective_runner_converter = (
-            self._object_to_noniterative_objective_runner
+        self._noniterative_local_optimizer_converter = (
+            self._object_to_noniterative_local_optimizer
         )
         self._monitor_converter = self._object_to_monitor
+        self._stopper_converter = self._object_to_stopper
         self._tmp = ""
 
     def set_iterative_objective_converter(
@@ -38,10 +40,10 @@ class TuneObjectFactory:
     ) -> None:
         self._noniterative_objective_converter = func
 
-    def set_noniterative_objective_runner_converter(
-        self, func: Callable[[Any], NonIterativeObjectiveRunner]
+    def set_noniterative_local_optimizer_converter(
+        self, func: Callable[[Any], NonIterativeObjectiveLocalOptimizer]
     ) -> None:
-        self._noniterative_objective_runner_converter = func
+        self._noniterative_local_optimizer_converter = func
 
     def set_monitor_converter(self, func: Callable[[Any], Optional[Monitor]]) -> None:
         self._monitor_converter = func
@@ -50,28 +52,21 @@ class TuneObjectFactory:
         self._tmp = path
 
     def make_iterative_objective(self, obj: Any) -> IterativeObjectiveFunc:
-        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
-        if isinstance(obj, IterativeObjectiveFunc):
-            return obj
         return self._iterative_objective_converter(obj)
 
     def make_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
-        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
-        if isinstance(obj, NonIterativeObjectiveFunc):
-            return obj
         return self._noniterative_objective_converter(obj)
 
-    def make_noniterative_objective_runner(
+    def make_noniterative_local_optimizer(
         self, obj: Any
-    ) -> NonIterativeObjectiveRunner:
-        if isinstance(obj, NonIterativeObjectiveRunner):
-            return obj
-        return self._noniterative_objective_runner_converter(obj)
+    ) -> NonIterativeObjectiveLocalOptimizer:
+        return self._noniterative_local_optimizer_converter(obj)
 
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
-        if isinstance(obj, Monitor):
-            return obj
         return self._monitor_converter(obj)
+
+    def make_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
+        return self._stopper_converter(obj)
 
     def make_dataset(
         self,
@@ -82,6 +77,7 @@ class TuneObjectFactory:
         test_df: Any = None,
         test_df_name: str = TUNE_DATASET_VALIDATION_DF_DEFAULT_NAME,
         partition_keys: Optional[List[str]] = None,
+        shuffle: bool = True,
         temp_path: str = "",
     ) -> TuneDataset:
         assert_or_throw(dataset is not None, TuneCompileError("dataset can't be None"))
@@ -105,7 +101,7 @@ class TuneObjectFactory:
                     wdf = wdf.partition_by(*partition_keys)
                     how = "inner"
                 builder.add_df(test_df_name, wdf, how=how)
-            return builder.build(dag, batch_size=1, shuffle=True)
+            return builder.build(dag, batch_size=1, shuffle=shuffle)
         raise TuneCompileError(f"{dataset} can't be converted to TuneDataset")
 
     def get_path_or_temp(self, path: str) -> str:
@@ -115,28 +111,47 @@ class TuneObjectFactory:
         return path
 
     def _object_to_iterative_objective(self, obj: Any) -> IterativeObjectiveFunc:
+        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
+        if isinstance(obj, IterativeObjectiveFunc):
+            return obj
         raise TuneCompileError(
             f"{obj} can't be converted to iterative objective function"
         )
 
     def _object_to_noniterative_objective(self, obj: Any) -> NonIterativeObjectiveFunc:
+        assert_or_throw(obj is not None, TuneCompileError("objective can't be None"))
+        if isinstance(obj, NonIterativeObjectiveFunc):
+            return obj
+        if callable(obj):
+            return to_noniterative_objective(obj)
         raise TuneCompileError(
             f"{obj} can't be converted to non iterative objective function"
         )
 
-    def _object_to_noniterative_objective_runner(
+    def _object_to_noniterative_local_optimizer(
         self, obj: Any
-    ) -> NonIterativeObjectiveRunner:
+    ) -> NonIterativeObjectiveLocalOptimizer:
+        if isinstance(obj, NonIterativeObjectiveLocalOptimizer):
+            return obj
         if obj is None:
-            return NonIterativeObjectiveRunner()
+            return NonIterativeObjectiveLocalOptimizer()
         raise TuneCompileError(
-            f"{obj} can't be converted to non iterative objective runner"
+            f"{obj} can't be converted to non iterative objective optimizer"
         )
 
     def _object_to_monitor(self, obj: Any) -> Optional[Monitor]:
+        if isinstance(obj, Monitor):
+            return obj
         if obj is None:
             return None
         raise TuneCompileError(f"{obj} can't be converted to Monitor")
+
+    def _object_to_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
+        if isinstance(obj, NonIterativeStopper):
+            return obj
+        if obj is None:
+            return None
+        raise TuneCompileError(f"{obj} can't be converted to NonIterativeStopper")
 
 
 TUNE_OBJECT_FACTORY = TuneObjectFactory()

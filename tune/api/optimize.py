@@ -3,29 +3,36 @@ from typing import Any, Callable, List, Optional, Tuple
 from uuid import uuid4
 
 from triad import FileSystem
-
-from tune.dataset import StudyResult, TuneDataset
+from tune.api.factory import TUNE_OBJECT_FACTORY
+from tune.concepts.dataset import StudyResult, TuneDataset
+from tune.concepts.flow import TrialReport
 from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.sha import _NonIterativeObjectiveWrapper
 from tune.iterative.study import IterativeStudy
-
 from tune.noniterative.study import NonIterativeStudy
-from tune.trial import TrialReport
-from tune.factory import TUNE_OBJECT_FACTORY
 
 
 def optimize_noniterative(
     objective: Any,
     dataset: TuneDataset,
-    runner: Any = None,
+    optimizer: Any = None,
     distributed: Optional[bool] = None,
     monitor: Any = None,
+    stopper: Any = None,
+    stop_check_interval: Any = None,
 ) -> StudyResult:
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
-    _runner = TUNE_OBJECT_FACTORY.make_noniterative_objective_runner(runner)
+    _optimizer = TUNE_OBJECT_FACTORY.make_noniterative_local_optimizer(optimizer)
+    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
     _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
-    study = NonIterativeStudy(_objective, _runner)
-    return study.optimize(dataset, distributed=distributed, monitor=_monitor)
+    study = NonIterativeStudy(_objective, _optimizer)
+    return study.optimize(
+        dataset,
+        distributed=distributed,
+        monitor=_monitor,
+        stopper=_stopper,
+        stop_check_interval=stop_check_interval,
+    )
 
 
 def optimize_by_sha(

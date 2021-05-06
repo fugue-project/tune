@@ -4,13 +4,13 @@ import numpy as np
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from tune.noniterative.objective import (
     NonIterativeObjectiveFunc,
-    NonIterativeObjectiveRunner,
+    NonIterativeObjectiveLocalOptimizer,
 )
-from tune.space.parameters import Choice, Rand, RandInt, StochasticExpression
-from tune.trial import Trial, TrialReport
+from tune.concepts.space.parameters import Choice, Rand, RandInt, StochasticExpression
+from tune.concepts.flow import Trial, TrialReport
 
 
-class HyperoptRunner(NonIterativeObjectiveRunner):
+class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
     def __init__(
         self,
         max_iter: int,

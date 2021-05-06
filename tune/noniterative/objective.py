@@ -1,5 +1,8 @@
-from typing import Callable, Optional
-from tune.trial import Trial, TrialReport
+from tune.constants import TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
+from typing import Any, Callable, Optional
+
+from tune._utils import run_monitored_process
+from tune.concepts.flow import Trial, TrialReport
 
 
 class NonIterativeObjectiveFunc:
@@ -10,7 +13,7 @@ class NonIterativeObjectiveFunc:
         raise NotImplementedError
 
 
-class NonIterativeObjectiveRunner:
+class NonIterativeObjectiveLocalOptimizer:
     @property
     def distributable(self) -> bool:
         return True
@@ -19,12 +22,23 @@ class NonIterativeObjectiveRunner:
         # TODO: how to utilize execution_engine?
         return func.run(trial)
 
+    def run_monitored_process(
+        self,
+        func: NonIterativeObjectiveFunc,
+        trial: Trial,
+        stop_checker: Callable[[], bool],
+        interval: Any = TUNE_STOPPER_DEFAULT_CHECK_INTERVAL,
+    ) -> TrialReport:
+        return run_monitored_process(
+            self.run, [func, trial], {}, stop_checker=stop_checker, interval=interval
+        )
+
 
 def validate_noniterative_objective(
     func: NonIterativeObjectiveFunc,
     trial: Trial,
     validator: Callable[[TrialReport], None],
-    runner: Optional[NonIterativeObjectiveRunner] = None,
+    optimizer: Optional[NonIterativeObjectiveLocalOptimizer] = None,
 ) -> None:
-    _runner = runner or NonIterativeObjectiveRunner()
-    validator(_runner.run(func, trial))
+    _optimizer = optimizer or NonIterativeObjectiveLocalOptimizer()
+    validator(_optimizer.run_monitored_process(func, trial, lambda: False, "1sec"))

@@ -4,11 +4,11 @@ from typing import Any, Dict, Iterable
 from fugue import FugueWorkflow
 from tune import optimize_by_continuous_asha
 from tune.constants import TUNE_REPORT_METRIC
-from tune.dataset import TuneDatasetBuilder
+from tune.concepts.dataset import TuneDatasetBuilder
 from tune.iterative.asha import ASHAJudge, RungHeap
 from tune.iterative.objective import IterativeObjectiveFunc
-from tune.space import Grid, Space
-from tune.trial import Monitor, Trial, TrialReport
+from tune.concepts.space import Grid, Space
+from tune.concepts.flow import Monitor, Trial, TrialReport
 
 
 def test_rung_heap():

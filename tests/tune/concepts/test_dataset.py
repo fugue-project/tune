@@ -17,10 +17,10 @@ from tune.constants import (
     TUNE_DATASET_TRIALS,
     TUNE_TEMP_PATH,
 )
-from tune.dataset import TuneDatasetBuilder, _to_trail_row, TuneDataset
-from tune.space import Grid, Rand
-from tune.space.spaces import Space
-from tune.trial import Trial
+from tune.concepts.dataset import TuneDatasetBuilder, _to_trail_row, TuneDataset
+from tune.concepts.space import Grid, Rand
+from tune.concepts.space.spaces import Space
+from tune.concepts.flow import Trial
 
 
 def test_builder(tmpdir):
