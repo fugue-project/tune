@@ -34,3 +34,10 @@ from tune.noniterative.objective import (
     NonIterativeObjectiveRunner,
     validate_noniterative_objective,
 )
+from tune.noniterative.stopper import (
+    NonIterativeStopper,
+    n_samples,
+    n_updates,
+    no_update_period,
+    small_improvement,
+)
