@@ -10,7 +10,7 @@ from tests.tune_tensorflow.mock import MockSpec
 def test_spec():
     spec = MockSpec(dict(l1=16, l2=16), {})
     metric = spec.compute_sort_metric(epochs=10)
-    assert metric < 10
+    assert metric < 15
 
 
 def test_objective():
