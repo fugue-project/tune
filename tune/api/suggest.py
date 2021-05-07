@@ -19,7 +19,7 @@ from tune.api.optimize import optimize_noniterative
 def suggest_for_noniterative_objective(
     objective: Any,
     space: Space,
-    df: Any,
+    df: Any = None,
     df_name: str = TUNE_DATASET_DF_DEFAULT_NAME,
     temp_path: str = "",
     partition_keys: Optional[List[str]] = None,
