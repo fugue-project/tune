@@ -42,7 +42,7 @@ setup(
             "optuna",
             "seaborn",
             "tensorflow",
-            "ipython",
+            "fugue[notebook]",
             "plotly",
             "scikit-learn",
         ],
