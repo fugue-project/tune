@@ -3,11 +3,14 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import optuna
 from optuna.study import Study
-from tune.concepts.flow import Trial, TrialReport
-from tune.concepts.space.parameters import Rand, StochasticExpression
-from tune.noniterative.objective import (
+from tune import (
     NonIterativeObjectiveFunc,
     NonIterativeObjectiveLocalOptimizer,
+    Rand,
+    RandInt,
+    StochasticExpression,
+    Trial,
+    TrialReport,
 )
 
 
@@ -60,7 +63,11 @@ def _convert(
 ) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
     for k, v in params.items():
-        if isinstance(v, Rand):
+        if isinstance(v, RandInt):
+            result[k] = trial.suggest_int(
+                name=k, low=v.low, high=v.high, step=v.q, log=v.log
+            )
+        elif isinstance(v, Rand):
             result[k] = trial.suggest_float(
                 name=k, low=v.low, high=v.high, step=v.q, log=v.log
             )

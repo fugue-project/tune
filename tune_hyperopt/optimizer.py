@@ -8,6 +8,7 @@ from tune.noniterative.objective import (
 )
 from tune.concepts.space.parameters import Choice, Rand, RandInt, StochasticExpression
 from tune.concepts.flow import Trial, TrialReport
+from math import floor
 
 
 class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
@@ -83,8 +84,19 @@ def _convert_rand(k: str, v: Rand) -> Any:
             return hp.uniform(k, v.low, v.high)
         else:
             return hp.loguniform(k, v.low, v.high)
-    raise NotImplementedError(k, v)  # pragma: no cover
+    else:
+        high = _round(v.high - v.low, v.q, v.include_high)
+        if not v.log:
+            return hp.quniform(k, 0, high, q=v.q) + v.low
+        else:
+            return hp.qloguniform(k, 0, high, q=v.q) + v.low
 
 
 def _convert_choice(k: str, v: Choice) -> Any:
     return hp.choice(k, v.values)
+
+
+def _round(v: Any, q: Any, include_high: bool) -> Any:
+    if include_high:
+        return floor((v + 1e-8) / q) * q
+    return floor((v - 1e-8) / q) * q

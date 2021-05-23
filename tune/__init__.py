@@ -24,7 +24,7 @@ from tune.concepts.flow import (
     TrialReport,
     TrialReportLogger,
 )
-from tune.concepts.space import Choice, Grid, Rand, RandInt, Space
+from tune.concepts.space import Choice, Grid, Rand, RandInt, Space, StochasticExpression
 from tune.iterative.objective import (
     IterativeObjectiveFunc,
     validate_iterative_objective,

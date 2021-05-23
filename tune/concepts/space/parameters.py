@@ -207,10 +207,12 @@ class RandInt(Rand):
         self,
         low: int,
         high: int,
+        q: int = 1,
         log: bool = False,
         include_high: bool = True,
     ):
-        super().__init__(low, high, q=1, log=log, include_high=include_high)
+        assert_or_throw(q > 0, f"{q}<=0")
+        super().__init__(low, high, q=q, log=log, include_high=include_high)
 
     @property
     def jsondict(self) -> Dict[str, Any]:
@@ -218,6 +220,7 @@ class RandInt(Rand):
             _expr_="randint",
             low=self.low,
             high=self.high,
+            q=self.q,
             log=self.log,
             include_high=self.include_high,
         )
