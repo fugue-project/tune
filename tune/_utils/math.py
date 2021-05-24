@@ -71,5 +71,22 @@ def uniform_to_choice(
         value, 1, len(choices), log=log, include_high=True, base=base
     )
     if isinstance(idx, int):
-        return choices[idx]
-    return [choices[x] for x in idx]
+        return choices[idx - 1]
+    return [choices[x - 1] for x in idx]
+
+
+def normal_to_continuous(value: Any, mean: float, sigma: float) -> Any:
+    return value * sigma + mean
+
+
+def normal_to_discrete(value: Any, mean: float, sigma: float, q: float) -> Any:
+    return np.round(value * sigma / q) * q + mean
+
+
+def normal_to_integers(
+    value: Any, mean: int, sigma: float, q: int = 1
+) -> Union[int, List[int]]:
+    res = normal_to_discrete(value, mean=mean, sigma=sigma, q=q)
+    if np.isscalar(res):
+        return int(res)
+    return [int(x) for x in res]

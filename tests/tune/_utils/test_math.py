@@ -1,11 +1,14 @@
 import numpy as np
 from scipy import stats
 from tune._utils import (
+    assert_close,
+    normal_to_continuous,
+    normal_to_discrete,
+    normal_to_integers,
     uniform_to_choice,
     uniform_to_continuous,
     uniform_to_discrete,
     uniform_to_integers,
-    assert_close,
 )
 
 
@@ -88,3 +91,47 @@ def test_uniform_to_integers():
         res = uniform_to_integers(values, 1, 5, q=3, include_high=ih)
         assert set(res) == set([1, 4])
         assert sum(1 if v == 4 else 0 for v in res) >= 480  # close to 33%
+
+
+def test_uniform_to_choice():
+    assert "a" == uniform_to_choice(0.5, ["a"])
+
+    np.random.seed(0)
+    values = np.random.uniform(0, 1.0, 1000)
+    res = uniform_to_choice(values, ["a", "b", "c", "d"])
+    for c in ["a", "b", "c", "d"]:
+        assert sum(1 if v == c else 0 for v in res) >= 230  # close to 25%
+
+
+def test_normal_to_continuous():
+    np.random.seed(0)
+    values = np.random.normal(0, 1.0, 100000)
+    res = normal_to_continuous(values, 10, 15)
+    t = stats.kstest(res, "norm", args=(10, 15))
+    assert t.pvalue > 0.4
+
+
+def test_normal_to_discrete():
+    np.random.seed(0)
+    values = np.random.normal(0, 1.0, 100000)
+    res = normal_to_discrete(values, 0.3, 3.0, 0.0001)
+    t = stats.kstest(res, "norm", args=(0.3, 3.0))
+    assert t.pvalue > 0.4
+
+    res = normal_to_discrete(values, 0.1, 0.9, q=0.3)
+    res = [x for x in res if x >= -0.9 and x <= 0.9]
+    assert_close([-0.8, -0.5, -0.2, 0.1, 0.4, 0.7], res)
+
+
+def test_normal_to_integers():
+    assert 17 == normal_to_integers(0, 17, 19)
+
+    np.random.seed(0)
+    values = np.random.normal(0, 1.0, 1000)
+
+    res = normal_to_integers(values, 17, 19)
+    assert 17 in res
+
+    res = normal_to_integers(values, 17, 19, q=3)
+    res = [x for x in res if x >= 10 and x <= 26]
+    assert_close([11, 14, 17, 20, 23, 26], res)
