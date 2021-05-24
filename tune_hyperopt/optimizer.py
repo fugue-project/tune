@@ -1,3 +1,4 @@
+from tune._utils.math import adjust_high
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
@@ -8,7 +9,6 @@ from tune.noniterative.objective import (
 )
 from tune.concepts.space.parameters import Choice, Rand, RandInt, StochasticExpression
 from tune.concepts.flow import Trial, TrialReport
-from math import floor
 
 
 class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
@@ -25,13 +25,13 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._kwargs_func = kwargs_func
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
-        static_params, stochastic_params = self._split(trial.params)
+        static_params, stochastic_params, postprocess = self._split(trial.params)
         stochastic_keys = list(stochastic_params.keys())
         if len(stochastic_keys) == 0:
             return func.run(trial)
 
         def obj(args) -> Dict[str, Any]:
-            params = {k: v for k, v in zip(stochastic_keys, args)}
+            params = {k: postprocess[k](v) for k, v in zip(stochastic_keys, args)}
             params.update(static_params)
             report = func.run(trial.with_params(params))
             return {
@@ -54,49 +54,56 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         fmin(obj, space=list(stochastic_params.values()), **kwargs)
         return trials.best_trial["result"]["report"]
 
-    def _split(self, kwargs: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _split(
+        self, kwargs: Dict[str, Any]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
         static_params: Dict[str, Any] = {}
         stochastic_params: Dict[str, Any] = {}
+        postprocess: Dict[str, Any] = {}
         for k, v in kwargs.items():
             if isinstance(v, StochasticExpression):
                 if isinstance(v, RandInt):
-                    stochastic_params[k] = _convert_randint(k, v)
+                    stochastic_params[k], postprocess[k] = _convert_randint(k, v)
                 elif isinstance(v, Rand):
-                    stochastic_params[k] = _convert_rand(k, v)
+                    stochastic_params[k], postprocess[k] = _convert_rand(k, v)
                 elif isinstance(v, Choice):
-                    stochastic_params[k] = _convert_choice(k, v)
+                    stochastic_params[k], postprocess[k] = _convert_choice(k, v)
                 else:
+                    # TODO: normal rand and normal randint
                     raise NotImplementedError(v)  # pragma: no cover
             else:
                 static_params[k] = v
-        return static_params, stochastic_params
+        return static_params, stochastic_params, postprocess
 
 
 def _convert_randint(k: str, v: RandInt) -> Any:
+    _high = adjust_high(
+        0, v.high - v.low, v.q, include_high=v.include_high  # type:ignore
+    )
+    n = int(np.round(_high / v.q))
     if not v.log:
-        return hp.randint(k, v.low, v.high + (1 if v.include_high else 0))
-    raise NotImplementedError(k, v)  # pragma: no cover
+        return hp.randint(k, 0, n) * v.q + v.low, lambda x: int(np.round(x))
+    return (
+        hp.qloguniform(k, np.log(v.q), np.log(_high), q=v.q) + v.low - v.q,
+        lambda x: int(np.round(x)),
+    )
 
 
 def _convert_rand(k: str, v: Rand) -> Any:
     if v.q is None:
         if not v.log:
-            return hp.uniform(k, v.low, v.high)
+            return hp.uniform(k, v.low, v.high), lambda x: x
         else:
-            return hp.loguniform(k, v.low, v.high)
+            return hp.loguniform(k, np.log(v.low), np.log(v.high)), lambda x: x
     else:
-        high = _round(v.high - v.low, v.q, v.include_high)
+        _high = adjust_high(0, v.high - v.low, v.q, include_high=v.include_high)
+        n = int(np.round(_high / v.q))
         if not v.log:
-            return hp.quniform(k, 0, high, q=v.q) + v.low
+            return hp.randint(k, 0, n) * v.q + v.low, lambda x: x
         else:
-            return hp.qloguniform(k, 0, high, q=v.q) + v.low
+            _high = max(0, _high - v.q)
+            return hp.qloguniform(k, 0, np.log(_high), q=v.q) + v.low, lambda x: x
 
 
 def _convert_choice(k: str, v: Choice) -> Any:
-    return hp.choice(k, v.values)
-
-
-def _round(v: Any, q: Any, include_high: bool) -> Any:
-    if include_high:
-        return floor((v + 1e-8) / q) * q
-    return floor((v - 1e-8) / q) * q
+    return hp.choice(k, v.values), lambda x: x

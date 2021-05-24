@@ -32,12 +32,7 @@ def uniform_to_discrete(
 ) -> Any:
     if low >= high:
         return low if np.isscalar(value) else np.full(np.shape(value))
-    _high = low + np.floor((high - low) / q + _IGNORABLE_ERROR) * q
-    if abs(_high - high) < _IGNORABLE_ERROR:
-        if include_high:
-            _high = high + q
-    else:
-        _high += q
+    _high = adjust_high(low, high, q, include_high=include_high)
     _value = uniform_to_continuous(value, low, _high, log=log, base=base)
     return np.floor((_value - low) / q) * q + low
 
@@ -90,3 +85,13 @@ def normal_to_integers(
     if np.isscalar(res):
         return int(res)
     return [int(x) for x in res]
+
+
+def adjust_high(low: float, high: float, q: float, include_high: bool):
+    _high = low + np.floor((high - low) / q + _IGNORABLE_ERROR) * q
+    if abs(_high - high) < _IGNORABLE_ERROR:
+        if include_high:
+            _high = high + q
+    else:
+        _high += q
+    return _high

@@ -49,11 +49,17 @@ def test_choice():
 
 
 def test_rand():
-    with raises(AssertionError):
+    with raises(ValueError):
         Rand(1.0, 0.9)
 
-    with raises(AssertionError):
+    with raises(ValueError):
+        Rand(1.0, 10, q=-0.1)
+
+    with raises(ValueError):
         Rand(1.0, 1.0, include_high=False)
+
+    with raises(ValueError):
+        Rand(0.0, 1.0, log=True)  # for log, low>=1.0
 
     v = Rand(1.0, 1.0, q=0.1, log=False)
     assert 1.0 == v.generate()
@@ -94,6 +100,9 @@ def test_rand():
 
 
 def test_randint():
+    with raises(ValueError):
+        RandInt(0, 10, log=True)  # for log, low>=1.0
+
     v = RandInt(10, 20, log=False)
     assert v.generate(0) == v.generate(0)
     assert v.generate(0) != v.generate(1)
@@ -120,10 +129,10 @@ def test_randint():
 
 
 def test_normal_rand():
-    with raises(AssertionError):
+    with raises(ValueError):
         NormalRand(1.0, 0.0)
 
-    with raises(AssertionError):
+    with raises(ValueError):
         NormalRand(1.0, -1.0)
 
     v = NormalRand(0.05, 0.2)
@@ -160,7 +169,7 @@ def test_normal_randint():
 def test_encode_decode_params():
     s1 = Space(
         a=Grid(1, 2),
-        b=Rand(0, 1.0, 0.2, log=True),
+        b=Rand(1.0, 7.1, 0.2, log=True),
         c=Choice(1, 2, 3),
         d=[Grid(1, 2), Rand(0, 2.0)],
         e={"x": "xx", "y": Choice("a", "b")},

@@ -1,17 +1,17 @@
-import math
 from threading import RLock
 from typing import Any, Callable, Dict, List, Tuple
 from unittest import TestCase
 
 from tune import (
+    Choice,
     NonIterativeObjectiveLocalOptimizer,
     Rand,
     RandInt,
+    StochasticExpression,
     Trial,
     noniterative_objective,
 )
 from tune._utils import assert_close
-from tune.concepts.space.parameters import StochasticExpression
 from tune.noniterative.objective import validate_noniterative_objective
 
 
@@ -24,30 +24,105 @@ class NonIterativeObjectiveLocalOptimizerTests(object):
         def make_optimizer(self, **kwargs: Any) -> NonIterativeObjectiveLocalOptimizer:
             raise NotImplementedError
 
-        def _test_rand(self):
+        def test_choice(self):
+            d = dict(a=1, b=1, c=1)
+            values = self._generate_values(Choice("a", "b", "c"), lambda x: d[x])
+            assert len(values) > 0
+            assert all(x in ["a", "b", "c"] for x in values)
+            assert all(c in values for c in ["a", "b", "c"])
+
+        def test_rand(self):
+            # common case
             values = self._generate_values(Rand(-2.0, 3.0), lambda x: x ** 2)
             assert len(values) > 0
             assert all(x >= -2.0 and x <= 3.0 for x in values)
 
+            # with q, and range%q == 0
             values = self._generate_values(Rand(-2.0, 3.0, q=2.5), lambda x: x ** 2)
             assert_close(values, [-2.0, 0.5, 3.0])
 
-            values = self._generate_values(Rand(-2.0, 3.0, q=3.0), lambda x: x ** 2)
-            assert_close(values, [-2.0, 1.0])
-
-            values = self._generate_values(Rand(-2.0, 3.0, log=True), lambda x: x ** 2)
-            assert all(
-                x >= math.exp(-2.0) - 1e-5 and x <= math.exp(3) + 1e-5 for x in values
+            values = self._generate_values(
+                Rand(-2.0, 3.0, q=2.5, include_high=False), lambda x: x ** 2
             )
+            assert_close(values, [-2.0, 0.5])
 
-        def _test_randint(self):
-            values = self._generate_values(RandInt(-2, 3), lambda x: x ** 2)
-            assert_close(values, [-2, -1, 0, 1, 2, 3])
-            assert all(isinstance(x, int) for x in values)
+            # with q, and range%q != 0
+            for ih in [True, False]:
+                values = self._generate_values(
+                    Rand(-2.0, 3.0, q=3.0, include_high=ih), lambda x: x ** 2
+                )
+                assert_close(values, [-2.0, 1.0])
 
-            values = self._generate_values(RandInt(-2, 3, 2), lambda x: x ** 2)
-            assert_close(values, [-2, 0, 2])
-            assert all(isinstance(x, int) for x in values)
+            # with log
+            values = self._generate_values(Rand(1.0, 3.0, log=True), lambda x: x ** 2)
+            assert all(x >= 1.0 and x <= 3.0 for x in values)
+
+            # with log and q, and range%q == 0
+            values = self._generate_values(
+                Rand(1.0, 6.0, q=2.5, log=True), lambda x: x ** 2
+            )
+            assert_close(values, [1.0, 3.5, 6.0])
+
+            values = self._generate_values(
+                Rand(1.0, 6.0, q=2.5, log=True, include_high=False), lambda x: x ** 2
+            )
+            assert_close(values, [1.0, 3.5])
+
+            # with log and q, and range%q != 0
+            for ih in [True, False]:
+                values = self._generate_values(
+                    Rand(1.0, 6.0, q=3.0, log=True, include_high=ih), lambda x: x ** 2
+                )
+                assert_close(values, [1.0, 4.0])
+
+        def test_randint(self):
+            for log in [True, False]:
+                # common case
+                values = self._generate_values(RandInt(1, 3, log=log), lambda x: x ** 2)
+                assert_close(values, [1, 2, 3])
+                assert all(isinstance(x, int) for x in values)
+
+                values = self._generate_values(
+                    RandInt(1, 3, include_high=False, log=log), lambda x: x ** 2
+                )
+                assert_close(values, [1, 2])
+
+                # with q, range % q != 0
+                for ih in [True, False]:
+                    values = self._generate_values(
+                        RandInt(1, 6, 2, include_high=ih, log=log), lambda x: x ** 2
+                    )
+                    assert_close(values, [1, 3, 5])
+                    assert all(isinstance(x, int) for x in values)
+
+                # with q, range % q == 0
+                values = self._generate_values(
+                    RandInt(1, 5, 2, log=log), lambda x: x ** 2
+                )
+                assert_close(values, [1, 3, 5])
+
+                values = self._generate_values(
+                    RandInt(1, 5, 2, include_high=False, log=log), lambda x: x ** 2
+                )
+                assert_close(values, [1, 3])
+
+        def test_optimization_dummy(self):
+            params = dict(a=1, b=2, c=3)
+            trial = Trial("a", params, metadata={})
+            o = self.make_optimizer(max_iter=5)
+
+            @noniterative_objective
+            def objective(a, b, c) -> Tuple[float, Dict[str, Any]]:
+                return a ** 2 + b ** 2 + c, dict(a="x")
+
+            def v(report):
+                assert 1 == report.params["a"]
+                assert 2 == report.params["b"]
+                assert 3 == report.params["c"]
+                assert report.metric == 8
+                assert "x" == report.metadata["a"]
+
+            validate_noniterative_objective(objective, trial, v, optimizer=o)
 
         def test_optimization(self):
             params = dict(a=Rand(-10.0, 10.0), b=RandInt(-100, 100), c=2.0)

@@ -1,4 +1,5 @@
 from threading import RLock
+from tune.concepts.space.parameters import Choice
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import optuna
@@ -12,6 +13,7 @@ from tune import (
     Trial,
     TrialReport,
 )
+from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
 
 
 class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
@@ -64,13 +66,41 @@ def _convert(
     result: Dict[str, Any] = {}
     for k, v in params.items():
         if isinstance(v, RandInt):
-            result[k] = trial.suggest_int(
-                name=k, low=v.low, high=v.high, step=v.q, log=v.log
-            )
+            if v.log and v.q is not None:
+                value = trial.suggest_float(name=k, low=0, high=1.0)
+                result[k] = uniform_to_integers(
+                    value,
+                    low=v.low,
+                    high=v.high,
+                    q=v.q,  # type: ignore
+                    log=True,
+                    include_high=v.include_high,
+                )
+            else:
+                _high: Any = v.high if v.include_high else v.high - 1
+                result[k] = trial.suggest_int(
+                    name=k, low=v.low, high=_high, step=v.q, log=v.log
+                )
         elif isinstance(v, Rand):
-            result[k] = trial.suggest_float(
-                name=k, low=v.low, high=v.high, step=v.q, log=v.log
-            )
-        else:
+            if v.log and v.q is not None:
+                value = trial.suggest_float(name=k, low=0, high=1.0)
+                result[k] = uniform_to_discrete(
+                    value,
+                    low=v.low,
+                    high=v.high,
+                    q=v.q,
+                    log=True,
+                    include_high=v.include_high,
+                )
+            else:
+                _high = v.high
+                if v.q is not None and not v.include_high:
+                    _high -= _IGNORABLE_ERROR
+                result[k] = trial.suggest_float(
+                    name=k, low=v.low, high=_high, step=v.q, log=v.log
+                )
+        elif isinstance(v, Choice):
+            result[k] = trial.suggest_categorical(name=k, choices=v.values)
+        else:  # pragma: no cover
             raise NotImplementedError
     return result

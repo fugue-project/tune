@@ -134,9 +134,17 @@ class Rand(RandBase):
         include_high: bool = True,
     ):
         if include_high:
-            assert_or_throw(high >= low, f"{high} < {low}")
+            assert_or_throw(high >= low, ValueError(f"{high} < {low}"))
         else:
-            assert_or_throw(high > low, f"{high} <= {low}")
+            assert_or_throw(high > low, ValueError(f"{high} <= {low}"))
+        assert_or_throw(q is None or q > 0, ValueError(q))
+        if log:
+            assert_or_throw(
+                low >= 1.0,
+                ValueError(
+                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
+                ),
+            )
         self.low = low
         self.high = high
         self.include_high = include_high
@@ -194,9 +202,17 @@ class RandInt(RandBase):
         include_high: bool = True,
     ):
         if include_high:
-            assert_or_throw(high >= low, f"{high} < {low}")
+            assert_or_throw(high >= low, ValueError(f"{high} < {low}"))
         else:
-            assert_or_throw(high > low, f"{high} <= {low}")
+            assert_or_throw(high > low, ValueError(f"{high} <= {low}"))
+        assert_or_throw(q > 0, ValueError(q))
+        if log:
+            assert_or_throw(
+                low >= 1.0,
+                ValueError(
+                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
+                ),
+            )
         self.low = low
         self.high = high
         self.include_high = include_high
@@ -246,7 +262,8 @@ class NormalRand(RandBase):
         sigma: float,
         q: Optional[float] = None,
     ):
-        assert_or_throw(sigma > 0, f"{sigma}<=0")
+        assert_or_throw(sigma > 0, ValueError(sigma))
+        assert_or_throw(q is None or q > 0, ValueError(q))
         self.mu = mu
         self.sigma = sigma
         super().__init__(q)
@@ -287,8 +304,8 @@ class NormalRandInt(RandBase):
         sigma: float,
         q: int = 1,
     ):
-        assert_or_throw(sigma > 0, f"{sigma}<=0")
-        assert_or_throw(q > 0, f"{q}<=0")
+        assert_or_throw(sigma > 0, ValueError(sigma))
+        assert_or_throw(q > 0, ValueError(q))
         self.mu = mu
         self.sigma = sigma
         self.q = q
