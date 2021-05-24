@@ -19,6 +19,8 @@ docs:
 	rm -rf docs/api
 	rm -rf docs/build
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_hyperopt/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_optuna/
 	sphinx-build -b html docs/ docs/build/
 
 lint:
