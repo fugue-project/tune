@@ -1,8 +1,15 @@
-from math import floor
 from typing import Any, Dict, Iterable, List, Optional
 
 import numpy as np
 from triad import assert_or_throw, to_uuid
+from tune._utils.math import (
+    normal_to_continuous,
+    normal_to_discrete,
+    normal_to_integers,
+    uniform_to_continuous,
+    uniform_to_discrete,
+    uniform_to_integers,
+)
 
 
 class Grid(object):
@@ -106,16 +113,6 @@ class RandBase(StochasticExpression):
         self.q = q
         self.log = log
 
-    def distribution_func(self, seed: Any) -> float:  # pragma: no cover
-        """The distribution function generating a random variable.
-        Override this method in derived classes
-
-        :param seed: if set, it will be used to call :func:`~np:numpy.random.seed`
-          , defaults to None
-        :return: a float number
-        """
-        raise NotImplementedError
-
 
 class Rand(RandBase):
     """Continuous uniform random variables
@@ -137,9 +134,17 @@ class Rand(RandBase):
         include_high: bool = True,
     ):
         if include_high:
-            assert_or_throw(high >= low, f"{high} < {low}")
+            assert_or_throw(high >= low, ValueError(f"{high} < {low}"))
         else:
-            assert_or_throw(high > low, f"{high} <= {low}")
+            assert_or_throw(high > low, ValueError(f"{high} <= {low}"))
+        assert_or_throw(q is None or q > 0, ValueError(q))
+        if log:
+            assert_or_throw(
+                low >= 1.0,
+                ValueError(
+                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
+                ),
+            )
         self.low = low
         self.high = high
         self.include_high = include_high
@@ -158,43 +163,28 @@ class Rand(RandBase):
             res["q"] = self.q
         return res
 
-    def distribution_func(self, seed: Any) -> float:
-        if self.low == self.high:
-            assert_or_throw(
-                self.include_high,
-                f"high {self.high} equals low but include_high = False",
-            )
-            return self.low
+    def generate(self, seed: Any = None) -> float:
         if seed is not None:
             np.random.seed(seed)
-        return np.random.uniform(self.low, self.high)
-
-    def generate(self, seed: Any = None) -> float:
-        high = self.high
-        low = self.low
-        while True:
-            v = self.distribution_func(seed)
-            if self.log:
-                v = float(np.exp(v))
-                low = np.exp(self.low)
-                high = np.exp(self.high) + 0.0000001
-            if low == high:
-                return low
-            if self.q is not None:
-                v = low + self._round((v - low) / self.q) * self.q
-            v = float(v)
-            if (self.include_high and v <= high) or (
-                not self.include_high and v < high
-            ):
-                return v
-
-    def _round(self, v: Any) -> Any:
-        if self.include_high:
-            return np.round(v)
-        return floor(v)
+        value = np.random.uniform()
+        if self.q is None:
+            return float(
+                uniform_to_continuous(value, self.low, self.high, log=self.log)
+            )
+        else:
+            return float(
+                uniform_to_discrete(
+                    value,
+                    self.low,
+                    self.high,
+                    q=self.q,
+                    log=self.log,
+                    include_high=self.include_high,
+                )
+            )
 
 
-class RandInt(Rand):
+class RandInt(RandBase):
     """Uniform distributed random integer values
 
     :param low: range low bound (inclusive)
@@ -207,10 +197,26 @@ class RandInt(Rand):
         self,
         low: int,
         high: int,
+        q: int = 1,
         log: bool = False,
         include_high: bool = True,
     ):
-        super().__init__(low, high, q=1, log=log, include_high=include_high)
+        if include_high:
+            assert_or_throw(high >= low, ValueError(f"{high} < {low}"))
+        else:
+            assert_or_throw(high > low, ValueError(f"{high} <= {low}"))
+        assert_or_throw(q > 0, ValueError(q))
+        if log:
+            assert_or_throw(
+                low >= 1.0,
+                ValueError(
+                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
+                ),
+            )
+        self.low = low
+        self.high = high
+        self.include_high = include_high
+        super().__init__(q, log)
 
     @property
     def jsondict(self) -> Dict[str, Any]:
@@ -218,19 +224,32 @@ class RandInt(Rand):
             _expr_="randint",
             low=self.low,
             high=self.high,
+            q=self.q,
             log=self.log,
             include_high=self.include_high,
         )
 
-    def generate(self, seed: Any = None) -> int:
-        return int(np.round(super().generate(seed)))
+    def generate(self, seed: Any = None) -> float:
+        if seed is not None:
+            np.random.seed(seed)
+        value = np.random.uniform()
+        return int(
+            uniform_to_integers(  # type: ignore
+                value,
+                self.low,
+                self.high,
+                q=int(self.q),  # type: ignore
+                log=self.log,
+                include_high=self.include_high,
+            )
+        )
 
 
 class NormalRand(RandBase):
     """Continuous normally distributed random variables
 
-    :param loc: mean of the normal distribution
-    :param scale: standard deviation of the normal distribution
+    :param mu: mean of the normal distribution
+    :param sigma: standard deviation of the normal distribution
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
     :param log: whether to apply ``exp`` to the random variable so that the logarithm
@@ -239,71 +258,80 @@ class NormalRand(RandBase):
 
     def __init__(
         self,
-        loc: float,
-        scale: float,
+        mu: float,
+        sigma: float,
         q: Optional[float] = None,
-        log: bool = False,
     ):
-        assert_or_throw(scale > 0, f"{scale}<=0")
-        self.loc = loc
-        self.scale = scale
-        super().__init__(q, log)
+        assert_or_throw(sigma > 0, ValueError(sigma))
+        assert_or_throw(q is None or q > 0, ValueError(q))
+        self.mu = mu
+        self.sigma = sigma
+        super().__init__(q)
 
     @property
     def jsondict(self) -> Dict[str, Any]:
         res = dict(
             _expr_="randn",
-            loc=self.loc,
-            scale=self.scale,
-            log=self.log,
+            mu=self.mu,
+            sigma=self.sigma,
         )
         if self.q is not None:
             res["q"] = self.q
         return res
 
     def generate(self, seed: Any = None) -> float:
-        v = self.distribution_func(seed)
-        if self.log:
-            v = float(np.exp(v))
-        if self.q is not None:
-            v = self.loc + np.round((v - self.loc) / self.q) * self.q
-        v = float(v)
-        return v
-
-    def distribution_func(self, seed: Any) -> float:
         if seed is not None:
             np.random.seed(seed)
-        return np.random.normal(self.loc, self.scale)
+        value = np.random.normal()
+        if self.q is not None:
+            return normal_to_discrete(value, mean=self.mu, sigma=self.sigma, q=self.q)
+        else:
+            return normal_to_continuous(value, mean=self.mu, sigma=self.sigma)
 
 
-class NormalRandInt(NormalRand):
+class NormalRandInt(RandBase):
     """Normally distributed random integer values
 
-    :param loc: mean of the normal distribution
-    :param scale: standard deviation of the normal distribution
+    :param mu: mean of the normal distribution
+    :param sigma: standard deviation of the normal distribution
     :param log: whether to apply ``exp`` to the random variable so that the logarithm
       of the return value is uniformly distributed, defaults to False
     """
 
     def __init__(
         self,
-        loc: int,
-        scale: float,
-        log: bool = False,
+        mu: int,
+        sigma: float,
+        q: int = 1,
     ):
-        super().__init__(loc, scale, q=1, log=log)
+        assert_or_throw(sigma > 0, ValueError(sigma))
+        assert_or_throw(q > 0, ValueError(q))
+        self.mu = mu
+        self.sigma = sigma
+        self.q = q
+        super().__init__(q)
 
     @property
     def jsondict(self) -> Dict[str, Any]:
         return dict(
             _expr_="randnint",
-            loc=self.loc,
-            scale=self.scale,
-            log=self.log,
+            mu=self.mu,
+            sigma=self.sigma,
+            q=self.q,
         )
 
     def generate(self, seed: Any = None) -> int:
-        return int(np.round(super().generate(seed)))
+        if seed is not None:
+            np.random.seed(seed)
+        value = np.random.normal()
+        return int(
+            normal_to_integers(  # type: ignore
+                value,
+                mean=self.mu,
+                sigma=self.sigma,
+                q=self.q,  # type: ignore
+            )
+        )
 
 
 def encode_params(value: Any):
