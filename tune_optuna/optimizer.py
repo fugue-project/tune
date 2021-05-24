@@ -1,5 +1,4 @@
 from threading import RLock
-from tune.concepts.space.parameters import Choice
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import optuna
@@ -14,6 +13,7 @@ from tune import (
     TrialReport,
 )
 from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
+from tune.concepts.space.parameters import Choice
 
 
 class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
