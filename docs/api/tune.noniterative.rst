@@ -1,6 +1,10 @@
 tune.noniterative 
 ==================
 
+.. |SpaceTutorial| replace:: :ref:`Space Tutorial </notebooks/space.ipynb>`
+.. |Trial| replace:: :class:`~tune.concepts.flow.trial.Trial`
+.. |SortMetric| replace:: :meth:`tune.concepts.flow.report.TrialReport.sort_metric`
+
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`
 .. |DataFrameLikeObject| replace:: :ref:`DataFrame like object <tutorial:/tutorials/x-like.ipynb#dataframe>`
@@ -18,7 +22,6 @@ tune.noniterative
 .. |FugueSQLTutorial| replace:: :ref:`the Fugue SQL Tutorial <tutorial:/tutorials/sql.ipynb>`
 .. |DataFrameTutorial| replace:: :ref:`the DataFrame Tutorial <tutorial:/tutorials/schema_dataframes.ipynb#dataframe>`
 .. |ExecutionEngineTutorial| replace:: :ref:`the ExecutionEngine Tutorial <tutorial:/tutorials/execution_engine.ipynb>`
-
 
 
 tune.noniterative.convert

@@ -44,10 +44,11 @@ class TuneDataset:
     :param dfs: the names of the dataframes
     :param keys: the common partition keys of all dataframes
 
-    :Notice:
+    .. attention::
 
-    Do not construct this class directly, please read
-    :ref:`TuneDataset </notebooks/tune_dataset.ipynb>` to find the right way
+        Do not construct this class directly, please read
+        :ref:`TuneDataset Tutorial </notebooks/tune_dataset.ipynb>`
+        to find the right way
     """
 
     def __init__(self, data: WorkflowDataFrame, dfs: List[str], keys: List[str]):
@@ -57,29 +58,56 @@ class TuneDataset:
 
     @property
     def data(self) -> WorkflowDataFrame:
+        """the Fugue :class:`~fugue.workflow.workflow.WorkflowDataFrame`
+        containing all required dataframes
+        """
         return self._data
 
     @property
     def dfs(self) -> List[str]:
+        """All dataframe names (you can also find them part of the
+        column names of :meth:`.data` )
+        """
         return self._dfs
 
     @property
     def keys(self) -> List[str]:
+        """Partition keys (columns) of :meth:`.data`"""
         return self._keys
 
-    def divide(self, weights: List[float], seed: Any) -> List["TuneDataset"]:
+    def split(self, weights: List[float], seed: Any) -> List["TuneDataset"]:
+        """Split the dataset randomly to small partitions. This is useful for
+        some algorithms such as Hyperband, because it needs different subset to
+        run successive halvings with different parameters.
+
+        :param weights: a list of numeric values. The length represents the number
+          of splitd partitions, and the values represents the proportion of each
+          partition
+        :param seed: random seed for the split
+
+        :returns: a list of sub-datasets
+
+        .. code-block:: python
+
+            # randomly split the data to two partitions 25% and 75%
+            dataset.split([1, 3], seed=0)
+            # same because weights will be normalized
+            dataset.split([10, 30], seed=0)
+
+        """
+
         def label(df: pd.DataFrame) -> pd.DataFrame:
             if seed is not None:
                 np.random.seed(seed)
             w = np.array(weights)
             p = w / np.sum(w)
-            df["__tune_divide_id_"] = np.random.choice(len(weights), df.shape[0], p=p)
+            df["__tune_split_id_"] = np.random.choice(len(weights), df.shape[0], p=p)
             return df.reset_index(drop=True)
 
         def select(df: pd.DataFrame, n: int) -> pd.DataFrame:
             return (
-                df[df["__tune_divide_id_"] == n]
-                .drop(["__tune_divide_id_"], axis=1)
+                df[df["__tune_split_id_"] == n]
+                .drop(["__tune_split_id_"], axis=1)
                 .reset_index(drop=True)
             )
 
@@ -89,7 +117,7 @@ class TuneDataset:
             datasets.append(
                 TuneDataset(
                     temp.transform(
-                        select, schema="*-__tune_divide_id_", params=dict(n=i)
+                        select, schema="*-__tune_split_id_", params=dict(n=i)
                     ),
                     self.dfs,
                     self.keys,
@@ -98,22 +126,15 @@ class TuneDataset:
         return datasets
 
 
-def get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable[Trial]:
-    if not with_dfs:
-        for params in json.loads(row[TUNE_DATASET_TRIALS]):
-            yield Trial.from_jsondict(params)
-    else:
-        dfs: Dict[str, Any] = {}
-        for k, v in row.items():
-            if k.startswith(TUNE_DATASET_DF_PREFIX):
-                key = k[len(TUNE_DATASET_DF_PREFIX) :]
-                if v is not None:
-                    dfs[key] = pd.read_parquet(v)
-        for params in json.loads(row[TUNE_DATASET_TRIALS]):
-            yield Trial.from_jsondict(params).with_dfs(dfs)
-
-
 class TuneDatasetBuilder:
+    """Builder of :class:`~.TuneDataset`, for details please read
+    :ref:`TuneDataset Tutorial </notebooks/tune_dataset.ipynb>`
+
+    :param space: searching space, see |SpaceTutorial|
+    :param path: temp path to store searialized dataframe partitions
+      , defaults to ""
+    """
+
     def __init__(self, space: Space, path: str = ""):
         self._dfs_spec: List[Tuple[str, WorkflowDataFrame, str]] = []
         self._space = space
@@ -122,6 +143,28 @@ class TuneDatasetBuilder:
     def add_df(
         self, name: str, df: WorkflowDataFrame, how: str = ""
     ) -> "TuneDatasetBuilder":
+        """Add a dataframe to the dataset
+
+        :param name: name of the dataframe, it will also create a
+          ``__tune_df__<name>`` column in the dataset dataframe
+        :param df: the dataframe to add.
+        :param how: join type, can accept ``semi``, ``left_semi``,
+          ``anti``, ``left_anti``, ``inner``, ``left_outer``,
+          ``right_outer``, ``full_outer``, ``cross``
+        :returns: the builder itself
+
+        .. note::
+
+            For the first dataframe you add, ``how`` should be empty.
+            From the second dataframe you add, ``how`` must be set.
+
+        .. note::
+
+            If ``df`` is prepartitioned, the partition key will be used to
+            join with the added dataframes. Read
+            :ref:`TuneDataset Tutorial </notebooks/tune_dataset.ipynb>`
+            for more details
+        """
         assert_or_throw(
             not any(r[0] == name for r in self._dfs_spec),
             TuneCompileError(name + " already exists"),
@@ -139,6 +182,15 @@ class TuneDatasetBuilder:
         return self
 
     def add_dfs(self, dfs: WorkflowDataFrames, how: str = "") -> "TuneDatasetBuilder":
+        """Add multiple dataframes with the same join type
+
+        :param dfs: dictionary like dataframe collection. The keys
+          will be used as the dataframe names
+        :param how: join type, can accept ``semi``, ``left_semi``,
+          ``anti``, ``left_anti``, ``inner``, ``left_outer``,
+          ``right_outer``, ``full_outer``, ``cross``
+        :returns: the builder itself
+        """
         assert_or_throw(dfs.has_key, "all datarames must be named")
         for k, v in dfs.items():
             if len(self._dfs_spec) == 0:
@@ -154,6 +206,17 @@ class TuneDatasetBuilder:
         shuffle: bool = True,
         trial_metadata: Optional[Dict[str, Any]] = None,
     ) -> TuneDataset:
+        """Build :class:`~.TuneDataset`, for details please read
+        :ref:`TuneDataset Tutorial </notebooks/tune_dataset.ipynb>`
+
+        :param wf: the workflow associated with the dataset
+        :param batch_size: how many configurations as a batch, defaults to 1
+        :param shuffle: whether to shuffle the entire dataset, defaults to True.
+          This is to make the tuning process more even, it will look better. It
+          should have slight benefit on speed, no effect on result.
+        :param trial_metadata: metadata to pass to each |Trial|, defaults to None
+        :return: the dataset for tuning
+        """
         space = self._space_to_df(wf=wf, batch_size=batch_size, shuffle=shuffle)
         if len(self._dfs_spec) == 0:
             res = space
@@ -242,6 +305,16 @@ class TuneDatasetBuilder:
 
 
 class StudyResult:
+    """A collection of the input :class:`~.TuneDataset` and the tuning result
+
+    :param dataset: input dataset for tuning
+    :param result: tuning result as a dataframe
+
+    .. attention::
+
+        Do not construct this class directly.
+    """
+
     def __init__(self, dataset: TuneDataset, result: WorkflowDataFrame):
         self._dataset = dataset
         self._result = (
@@ -252,6 +325,12 @@ class StudyResult:
         )
 
     def result(self, best_n: int = 0) -> WorkflowDataFrame:
+        """Get the top n results sorted by |SortMetric|
+
+        :param best_n: number of result to get, defaults to 0.
+          if `<=0` then it will return the entire result
+        :return: result subset
+        """
         if best_n <= 0:
             return self._result
         if len(self._dataset.keys) == 0:
@@ -262,12 +341,28 @@ class StudyResult:
             ).take(best_n)
 
     def next_tune_dataset(self, best_n: int = 0) -> TuneDataset:
+        """Convert the result back to a new :class:`~.TuneDataset` to be
+        used by the next steps.
+
+        :param best_n: top n result to extract, defaults to 0 (entire result)
+        :return: a new dataset for tuning
+        """
         data = self.result(best_n).drop(
             [TUNE_REPORT_ID, TUNE_REPORT_METRIC, TUNE_REPORT], if_exists=True
         )
         return TuneDataset(data, dfs=self._dataset.dfs, keys=self._dataset.keys)
 
     def union_with(self, other: "StudyResult") -> None:
+        """Union with another result set and update itself
+
+        :param other: the other result dataset
+
+        .. note::
+            This method also removes duplicated reports based on
+            :meth:`tune.concepts.flow.trial.Trial.trial_id`. Each
+            trial will have only the best report in the updated
+            result
+        """
         self._result = (
             self._result.union(other._result)
             .partition_by(TUNE_REPORT_ID, presort=TUNE_REPORT_METRIC)
@@ -289,3 +384,18 @@ def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, A
     data[TUNE_DATASET_TRIALS] = json.dumps(list(trials.values()))
     del data[TUNE_DATASET_PARAMS_PREFIX]
     return data
+
+
+def _get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable[Trial]:
+    if not with_dfs:
+        for params in json.loads(row[TUNE_DATASET_TRIALS]):
+            yield Trial.from_jsondict(params)
+    else:
+        dfs: Dict[str, Any] = {}
+        for k, v in row.items():
+            if k.startswith(TUNE_DATASET_DF_PREFIX):
+                key = k[len(TUNE_DATASET_DF_PREFIX) :]
+                if v is not None:
+                    dfs[key] = pd.read_parquet(v)
+        for params in json.loads(row[TUNE_DATASET_TRIALS]):
+            yield Trial.from_jsondict(params).with_dfs(dfs)

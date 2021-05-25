@@ -68,7 +68,7 @@ def optimize_by_hyperband(
 ) -> StudyResult:
     _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
     weights = [float(p[0][1]) for p in plans]
-    datasets = dataset.divide(weights, seed=0)
+    datasets = dataset.split(weights, seed=0)
     result: Any = None
     for d, plan in zip(datasets, plans):
         r = optimize_by_sha(

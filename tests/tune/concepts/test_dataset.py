@@ -97,7 +97,7 @@ def test_dataset(tmpdir):
 
     dag = FugueWorkflow()
     dataset = builder.build(dag)
-    ds = dataset.divide([4, 1], 0)
+    ds = dataset.split([4, 1], 0)
     assert 2 == len(ds)
     ds[0].data.yield_dataframe_as("a")
     ds[1].data.yield_dataframe_as("b")
