@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.0.7
+
+-   [Optuna integration](https://github.com/fugue-project/tune/issues/23) and make Optuna and Hyperopt consistent
+-   Make test coverage [100](https://github.com/fugue-project/tune/issues/16)
+
 ## 0.0.6
 
 -   [Early stop](https://github.com/fugue-project/tune/issues/22) for non iterative
