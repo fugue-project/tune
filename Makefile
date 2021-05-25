@@ -21,6 +21,10 @@ docs:
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_hyperopt/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_optuna/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_sklearn/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_tensorflow/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_notebook/
+	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_test/
 	sphinx-build -b html docs/ docs/build/
 
 lint:

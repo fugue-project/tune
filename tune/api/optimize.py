@@ -23,7 +23,7 @@ def optimize_noniterative(
 ) -> StudyResult:
     _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
     _optimizer = TUNE_OBJECT_FACTORY.make_noniterative_local_optimizer(optimizer)
-    _stopper = TUNE_OBJECT_FACTORY.make_stopper(stopper)
+    _stopper = TUNE_OBJECT_FACTORY.make_noniterative_stopper(stopper)
     _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
     study = NonIterativeStudy(_objective, _optimizer)
     return study.optimize(

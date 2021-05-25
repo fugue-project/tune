@@ -2,18 +2,19 @@ import json
 from typing import Any, List, Optional, Tuple
 
 from fugue import FugueWorkflow
+from fugue.exceptions import FugueDataFrameError
 from triad import assert_or_throw
 from tune.api.factory import TUNE_OBJECT_FACTORY
 from tune.api.optimize import (
     optimize_by_continuous_asha,
     optimize_by_hyperband,
     optimize_by_sha,
+    optimize_noniterative,
 )
 from tune.concepts.flow import TrialReport
 from tune.concepts.space import Space
 from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME, TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.exceptions import TuneCompileError
-from tune.api.optimize import optimize_noniterative
 
 
 def suggest_for_noniterative_objective(
@@ -54,16 +55,11 @@ def suggest_for_noniterative_objective(
     )
     study.result(top_n).yield_dataframe_as("result")
 
-    rows = list(
-        dag.run(
-            execution_engine,
-            conf=execution_engine_conf,
-        )["result"].as_dict_iterable()
+    return _run(
+        dag=dag,
+        execution_engine=execution_engine,
+        execution_engine_conf=execution_engine_conf,
     )
-    return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
-        for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
-    ]
 
 
 def suggest_by_sha(
@@ -104,16 +100,11 @@ def suggest_by_sha(
     )
     study.result(top_n).yield_dataframe_as("result")
 
-    rows = list(
-        dag.run(
-            execution_engine,
-            conf=execution_engine_conf,
-        )["result"].as_dict_iterable()
+    return _run(
+        dag=dag,
+        execution_engine=execution_engine,
+        execution_engine_conf=execution_engine_conf,
     )
-    return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
-        for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
-    ]
 
 
 def suggest_by_hyperband(
@@ -154,16 +145,11 @@ def suggest_by_hyperband(
     )
     study.result(top_n).yield_dataframe_as("result")
 
-    rows = list(
-        dag.run(
-            execution_engine,
-            conf=execution_engine_conf,
-        )["result"].as_dict_iterable()
+    return _run(
+        dag=dag,
+        execution_engine=execution_engine,
+        execution_engine_conf=execution_engine_conf,
     )
-    return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
-        for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
-    ]
 
 
 def suggest_by_continuous_asha(
@@ -202,13 +188,26 @@ def suggest_by_continuous_asha(
     )
     study.result(top_n).yield_dataframe_as("result")
 
-    rows = list(
-        dag.run(
-            execution_engine,
-            conf=execution_engine_conf,
-        )["result"].as_dict_iterable()
+    return _run(
+        dag=dag,
+        execution_engine=execution_engine,
+        execution_engine_conf=execution_engine_conf,
     )
-    return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
-        for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
-    ]
+
+
+def _run(
+    dag: FugueWorkflow, execution_engine: Any, execution_engine_conf: Any
+) -> List[TrialReport]:
+    try:
+        rows = list(
+            dag.run(
+                execution_engine,
+                conf=execution_engine_conf,
+            )["result"].as_dict_iterable()
+        )
+        return [
+            TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
+            for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
+        ]
+    except FugueDataFrameError as e:
+        raise e.__cause__ or e.__context__ or e
