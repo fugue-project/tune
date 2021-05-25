@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Iterable, Optional
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
 from triad import assert_or_throw
 from tune._utils import run_monitored_process
-from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
+from tune.concepts.dataset import StudyResult, TuneDataset, _get_trials_from_row
 from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge, TrialReport
 from tune.concepts.flow.judge import Monitor, NoOpTrailJudge
 from tune.constants import TUNE_REPORT_ADD_SCHEMA, TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
@@ -123,7 +123,7 @@ class NonIterativeStudy:
             None if entrypoint is None else RemoteTrialJudge(entrypoint)
         )
         for row in df:
-            for n, trial in enumerate(get_trials_from_row(row, with_dfs=False)):
+            for n, trial in enumerate(_get_trials_from_row(row, with_dfs=False)):
                 if j is not None:
                     if stop_check_interval is None:
                         # monitor only
@@ -150,7 +150,7 @@ class NonIterativeStudy:
                     yield report.fill_dict(dict(row))
 
     def _local_process_trial(self, row: Dict[str, Any], idx: int) -> TrialReport:
-        trial = list(get_trials_from_row(row))[idx]
+        trial = list(_get_trials_from_row(row))[idx]
         report = self._optimizer.run(self._objective, trial)
         return report.with_sort_metric(
             self._objective.generate_sort_metric(report.metric)

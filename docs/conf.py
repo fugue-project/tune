@@ -42,6 +42,8 @@ extensions = [
     "nbsphinx",
 ]
 
+add_module_names = False
+
 nbsphinx_execute = "never"
 
 autodoc_typehints = "description"

@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Iterable
 
 from triad import FileSystem
 from tune.constants import TUNE_REPORT_ADD_SCHEMA
-from tune.concepts.dataset import StudyResult, TuneDataset, get_trials_from_row
+from tune.concepts.dataset import StudyResult, TuneDataset, _get_trials_from_row
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge
 
@@ -30,7 +30,7 @@ class IterativeStudy:
     ) -> Iterable[Dict[str, Any]]:
         ck_fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
         for row in df:
-            for trial in get_trials_from_row(row):
+            for trial in _get_trials_from_row(row):
                 rjudge = RemoteTrialJudge(entrypoint)
                 self._objective.copy().run(trial, rjudge, ck_fs)
                 if rjudge.report is not None:
