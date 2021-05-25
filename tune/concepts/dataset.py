@@ -36,6 +36,19 @@ from tune.concepts.flow import Trial
 
 
 class TuneDataset:
+    """A Fugue :class:`~fugue.workflow.workflow.WorkflowDataFrame` with metadata
+    representing all dataframes required for a tuning task.
+
+    :param data: the Fugue :class:`~fugue.workflow.workflow.WorkflowDataFrame`
+      containing all required dataframes
+    :param dfs: the names of the dataframes
+    :param keys: the common partition keys of all dataframes
+
+    :Notice:
+
+    Please read :ref:`TuneDataset </notebooks/tune_dataset.ipynb>`
+    """
+
     def __init__(self, data: WorkflowDataFrame, dfs: List[str], keys: List[str]):
         self._data = data.persist()
         self._dfs = dfs

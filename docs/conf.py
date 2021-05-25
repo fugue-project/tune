@@ -39,7 +39,10 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autodoc.typehints",
     "sphinx_rtd_theme",
+    "nbsphinx",
 ]
+
+nbsphinx_execute = "never"
 
 autodoc_typehints = "description"
 
@@ -80,6 +83,7 @@ master_doc = "index"
 
 intersphinx_mapping = {
     "triad": ("https://triad.readthedocs.io/en/latest", None),
+    "fugue": ("https://fugue.readthedocs.io/en/latest", None),
     "tutorial": ("https://fugue-tutorials.readthedocs.io/en/latest", None),
     "pa": ("https://arrow.apache.org/docs", None),
     "fs": ("https://docs.pyfilesystem.org/en/latest", None),

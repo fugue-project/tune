@@ -92,7 +92,10 @@ class TuneObjectFactory:
             )
             return dataset
         if isinstance(dataset, Space):
-            path = self.get_path_or_temp(temp_path)
+            if df is None and test_df is None:
+                path = ""
+            else:
+                path = self.get_path_or_temp(temp_path)
             builder = TuneDatasetBuilder(dataset, path)
             if df is not None:
                 wdf = dag.df(df)
