@@ -140,7 +140,7 @@ class _PerPartition:
 
     def get_budget(self, trial: Trial, rung: int) -> float:
         if rung >= len(self._parent.schedule) or not self.can_accept(trial):
-            return 0.0
+            return 0.0  # pragma: no cover
         return self._parent.schedule[rung][0]
 
     def judge(self, report: TrialReport) -> TrialDecision:
