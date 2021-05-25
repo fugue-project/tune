@@ -46,7 +46,8 @@ class TuneDataset:
 
     :Notice:
 
-    Please read :ref:`TuneDataset </notebooks/tune_dataset.ipynb>`
+    Do not construct this class directly, please read
+    :ref:`TuneDataset </notebooks/tune_dataset.ipynb>` to find the right way
     """
 
     def __init__(self, data: WorkflowDataFrame, dfs: List[str], keys: List[str]):
