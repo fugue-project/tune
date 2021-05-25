@@ -1,3 +1,5 @@
+from tune.concepts.dataset import TuneDataset
+from fugue.workflow.workflow import FugueWorkflow
 from pytest import raises
 from tune.api.factory import TuneObjectFactory
 from tune.concepts.flow.judge import Monitor
@@ -9,11 +11,27 @@ from tune.noniterative.objective import (
     NonIterativeObjectiveLocalOptimizer,
 )
 from tune.noniterative.stopper import NonIterativeStopper
+
 from tune_optuna.optimizer import OptunaLocalOptimizer
+import pandas as pd
+from tune import Space
 
 
 def _nobjective(a: int) -> float:
     return 0.0
+
+
+def test_dataset(tmpdir):
+    factory = TuneObjectFactory()
+    factory.set_temp_path(str(tmpdir))
+    df = pd.DataFrame([[0]], columns=["a"])
+    dag = FugueWorkflow()
+    data = factory.make_dataset(dag, Space(a=1, b=1), df=df)
+    assert isinstance(data, TuneDataset)
+    assert factory.make_dataset(dag, data) is data
+    # TODO: the unit test is not complete, but it's covered by other functions
+    with raises(TuneCompileError):
+        factory.make_dataset(dag, 1)
 
 
 def test_temp_path():
