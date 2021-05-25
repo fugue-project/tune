@@ -9,7 +9,6 @@ help:
 	@echo "	 test		run all tests with coverage (assumes venv is present)"
 
 devenv:
-	apt-get install -y pandoc
 	pip3 install -r requirements.txt
 	pre-commit install
 
