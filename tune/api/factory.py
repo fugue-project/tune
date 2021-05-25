@@ -45,6 +45,11 @@ class TuneObjectFactory:
     ) -> None:
         self._noniterative_local_optimizer_converter = func
 
+    def set_noniterative_stopper_converter(
+        self, func: Callable[[Any], NonIterativeStopper]
+    ) -> None:
+        self._stopper_converter = func
+
     def set_monitor_converter(self, func: Callable[[Any], Optional[Monitor]]) -> None:
         self._monitor_converter = func
 
@@ -65,7 +70,7 @@ class TuneObjectFactory:
     def make_monitor(self, obj: Any) -> Optional[Monitor]:
         return self._monitor_converter(obj)
 
-    def make_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
+    def make_noniterative_stopper(self, obj: Any) -> Optional[NonIterativeStopper]:
         return self._stopper_converter(obj)
 
     def make_dataset(
