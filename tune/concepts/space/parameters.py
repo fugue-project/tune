@@ -13,7 +13,8 @@ from tune._utils.math import (
 
 
 class Grid(object):
-    """Grid search, every value will be used
+    """Grid search, every value will be used.
+    Please read |SpaceTutorial|.
 
     :param args: values for the grid search
     """
@@ -36,7 +37,9 @@ class Grid(object):
 
 
 class StochasticExpression(object):
-    """Stochastic search base class"""
+    """Stochastic search base class.
+    Please read |SpaceTutorial|.
+    """
 
     @property
     def jsondict(self) -> Dict[str, Any]:  # pragma: no cover
@@ -56,16 +59,24 @@ class StochasticExpression(object):
         raise NotImplementedError
 
     def generate_many(self, n: int, seed: Any = None) -> List[Any]:
+        """Generate ``n`` randomly chosen values
+
+        :param n: number of random values to generate
+        :param seed: random seed, defaults to None
+        :return: a list of values
+        """
         if seed is not None:
             np.random.seed(seed)
         return [self.generate() for _ in range(n)]
 
     def __uuid__(self) -> str:
+        """Unique id for the expression"""
         return to_uuid(self.jsondict)
 
 
 class Choice(StochasticExpression):
-    """A random choice of values
+    """A random choice of values.
+    Please read |SpaceTutorial|.
 
     :param args: values to choose from
     """
@@ -95,12 +106,13 @@ class Choice(StochasticExpression):
 
 
 class RandBase(StochasticExpression):
-    """Base class for continuous random variables
+    """Base class for continuous random variables.
+    Please read |SpaceTutorial|.
 
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
-    :param log: whether to apply ``exp`` to the random variable so that the logarithm
-      of the return value is uniformly distributed, defaults to False
+    :param log: whether to do uniform sampling in log space, defaults to False.
+      If True, lower values get higher chance to be sampled
     """
 
     def __init__(
@@ -115,14 +127,15 @@ class RandBase(StochasticExpression):
 
 
 class Rand(RandBase):
-    """Continuous uniform random variables
+    """Continuous uniform random variables.
+    Please read |SpaceTutorial|.
 
     :param low: range low bound (inclusive)
     :param high: range high bound (exclusive)
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
-    :param log: whether to apply ``exp`` to the random variable so that the logarithm
-      of the return value is uniformly distributed, defaults to False
+    :param log: whether to do uniform sampling in log space, defaults to False.
+      If True, ``low`` must be ``>=1`` and lower values get higher chance to be sampled
     """
 
     def __init__(
@@ -185,12 +198,13 @@ class Rand(RandBase):
 
 
 class RandInt(RandBase):
-    """Uniform distributed random integer values
+    """Uniform distributed random integer values.
+    Please read |SpaceTutorial|.
 
     :param low: range low bound (inclusive)
     :param high: range high bound (exclusive)
-    :param log: whether to apply ``exp`` to the random variable so that the logarithm
-      of the return value is uniformly distributed, defaults to False
+    :param log: whether to do uniform sampling in log space, defaults to False.
+      If True, ``low`` must be ``>=1`` and lower values get higher chance to be sampled
     """
 
     def __init__(
@@ -246,14 +260,13 @@ class RandInt(RandBase):
 
 
 class NormalRand(RandBase):
-    """Continuous normally distributed random variables
+    """Continuous normally distributed random variables.
+    Please read |SpaceTutorial|.
 
     :param mu: mean of the normal distribution
     :param sigma: standard deviation of the normal distribution
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
-    :param log: whether to apply ``exp`` to the random variable so that the logarithm
-      of the return value is uniformly distributed, defaults to False
     """
 
     def __init__(
@@ -290,12 +303,11 @@ class NormalRand(RandBase):
 
 
 class NormalRandInt(RandBase):
-    """Normally distributed random integer values
+    """Normally distributed random integer values.
+    Please read |SpaceTutorial|.
 
     :param mu: mean of the normal distribution
     :param sigma: standard deviation of the normal distribution
-    :param log: whether to apply ``exp`` to the random variable so that the logarithm
-      of the return value is uniformly distributed, defaults to False
     """
 
     def __init__(
@@ -334,23 +346,23 @@ class NormalRandInt(RandBase):
         )
 
 
-def encode_params(value: Any):
+def _encode_params(value: Any):
     if isinstance(value, StochasticExpression):
         return value.jsondict
     elif isinstance(value, str):
         return value
     elif isinstance(value, list):
-        return [encode_params(v) for v in value]
+        return [_encode_params(v) for v in value]
     elif isinstance(value, dict):
-        return {k: encode_params(v) for k, v in value.items()}
+        return {k: _encode_params(v) for k, v in value.items()}
     return value
 
 
-def decode_params(value: Any) -> Any:
+def _decode_params(value: Any) -> Any:
     if isinstance(value, str):
         return value
     elif isinstance(value, list):
-        return [decode_params(v) for v in value]
+        return [_decode_params(v) for v in value]
     elif isinstance(value, dict):
         if "_expr_" in value:
             e = value.pop("_expr_")
@@ -366,6 +378,6 @@ def decode_params(value: Any) -> Any:
                 return NormalRandInt(**value)
             raise ValueError(e)  # pragma: no cover
         else:
-            return {k: decode_params(v) for k, v in value.items()}
+            return {k: _decode_params(v) for k, v in value.items()}
     else:
         return value

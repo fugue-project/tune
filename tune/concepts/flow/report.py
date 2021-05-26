@@ -5,7 +5,7 @@ from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from triad.utils.convert import to_datetime
-from tune.concepts.space.parameters import decode_params, encode_params
+from tune.concepts.space.parameters import _decode_params, _encode_params
 from tune.concepts.flow.trial import Trial
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 
@@ -31,7 +31,7 @@ class TrialReport:
         if params is None:
             self._params = trial.params
         else:
-            self._params = params if raw else decode_params(params)
+            self._params = params if raw else _decode_params(params)
         self._metadata = metadata or {}
         self._log_time = datetime.now() if log_time is None else to_datetime(log_time)
 
@@ -122,7 +122,7 @@ class TrialReport:
         return {
             "trial": self.trial.jsondict,
             "metric": self.metric,
-            "params": encode_params(self.params),
+            "params": _encode_params(self.params),
             "metadata": self.metadata,
             "cost": self.cost,
             "rung": self.rung,

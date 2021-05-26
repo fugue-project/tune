@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from tune.concepts.space.parameters import decode_params, encode_params
+from tune.concepts.space.parameters import _decode_params, _encode_params
 
 
 class Trial:
@@ -14,7 +14,7 @@ class Trial:
         raw: bool = False,
     ):
         self._trial_id = trial_id
-        self._params = params if raw else decode_params(params)
+        self._params = params if raw else _decode_params(params)
         self._metadata = metadata or {}
         self._keys = keys or []
         self._dfs = dfs or {}
@@ -60,7 +60,7 @@ class Trial:
 
     def with_params(self, params: Dict[str, Any], raw: bool = False) -> "Trial":
         t = self.copy()
-        t._params = params if raw else decode_params(params)
+        t._params = params if raw else _decode_params(params)
         return t
 
     @property
@@ -71,7 +71,7 @@ class Trial:
     def jsondict(self) -> Dict[str, Any]:
         return {
             "trial_id": self.trial_id,
-            "params": encode_params(self.params),
+            "params": _encode_params(self.params),
             "metadata": self.metadata,
             "keys": self.keys,
         }

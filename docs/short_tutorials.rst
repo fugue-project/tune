@@ -5,4 +5,5 @@ Short Tutorials
 
     notebooks/space
     notebooks/tune_dataset
+    notebooks/checkpoint
     
