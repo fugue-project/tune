@@ -346,7 +346,7 @@ class NormalRandInt(RandBase):
         )
 
 
-def _encode_params(value: Any):
+def _encode_params(value: Any) -> Any:
     if isinstance(value, StochasticExpression):
         return value.jsondict
     elif isinstance(value, str):
