@@ -13,7 +13,7 @@ from tune.concepts.space import (
     RandInt,
     Space,
 )
-from tune.concepts.space.parameters import decode_params
+from tune.concepts.space.parameters import _decode_params
 from tune._utils import assert_close
 
 
@@ -166,7 +166,7 @@ def test_normal_randint():
     assert 6 not in actual
 
 
-def test_encode_decode_params():
+def test_encode__decode_params():
     s1 = Space(
         a=Grid(1, 2),
         b=Rand(1.0, 7.1, 0.2, log=True),
@@ -177,7 +177,7 @@ def test_encode_decode_params():
         g=NormalRand(0.1, 1.0, q=0.1),
         h=NormalRandInt(0.1, 1.0),
     )
-    actual = [decode_params(x) for x in s1.encode()]
+    actual = [_decode_params(x) for x in s1.encode()]
     assert list(s1) == actual
     for x in s1.encode():
         print(json.dumps(x, indent=2))

@@ -12,6 +12,10 @@ class NonIterativeObjectiveFunc:
     def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
         raise NotImplementedError
 
+    def safe_run(self, trial: Trial) -> TrialReport:
+        report = self.run(trial)
+        return report.with_sort_metric(self.generate_sort_metric(report.metric))
+
 
 class NonIterativeObjectiveLocalOptimizer:
     @property
@@ -20,7 +24,7 @@ class NonIterativeObjectiveLocalOptimizer:
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
         # TODO: how to utilize execution_engine?
-        return func.run(trial)
+        return func.safe_run(trial)
 
     def run_monitored_process(
         self,

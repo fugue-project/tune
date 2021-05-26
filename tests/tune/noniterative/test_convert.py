@@ -14,18 +14,20 @@ def test_to_noniterative_objective():
     func = to_noniterative_objective(f1)
     assert func.min_better
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
-    report = func.run(trial)
+    report = func.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
+    assert report.sort_metric == -10
     assert report.params == trial.params
     assert report.metadata == {}
 
     func = to_noniterative_objective("f1", min_better=False)
     assert not func.min_better
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
-    report = func.run(trial)
+    report = func.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
+    assert report.sort_metric == 10
     assert report.params == trial.params
     assert report.metadata == {}
 
@@ -36,7 +38,7 @@ def test_to_noniterative_objective():
 
     func = to_noniterative_objective(f2)
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
-    report = func.run(trial)
+    report = func.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
     assert report.params == trial.params
@@ -49,7 +51,7 @@ def test_to_noniterative_objective():
 
     func = to_noniterative_objective(f3)
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
-    report = func.run(trial)
+    report = func.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
     assert report.params == dict(a=1)
@@ -76,14 +78,14 @@ def test_noniterative_objective():
 
     assert isinstance(f1, NonIterativeObjectiveFunc)
     trial = Trial("abc", dict(b=20, a=10), dict(c=3))
-    report = f1.run(trial)
+    report = f1.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
     assert report.params == trial.params
     assert report.metadata == {}
 
     func = to_noniterative_objective("f1")
-    report = func.run(trial)
+    report = func.safe_run(trial)
     assert report.trial is trial
     assert report.metric == -10
     assert report.params == trial.params

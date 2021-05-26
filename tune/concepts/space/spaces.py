@@ -4,10 +4,48 @@ from typing import Any, Dict, Iterable, List, Tuple, no_type_check
 import numpy as np
 from triad import assert_or_throw
 from tune._utils import dict_product, product
-from tune.concepts.space.parameters import Grid, StochasticExpression, encode_params
+from tune.concepts.space.parameters import Grid, StochasticExpression, _encode_params
 
 
 class Space(object):
+    """Search space. Please read |SpaceTutorial|.
+
+    :param kwargs: parameters in the search space
+
+    .. code-block:: python
+
+        Space(a=1, b=1)  # static space
+        Space(a=1, b=Grid(1,2), c=Grid("a", "b"))  # grid search
+        Space(a=1, b=Grid(1,2), c=Rand(0, 1))  # grid search + level 2 search
+        Space(a=1, b=Grid(1,2), c=Rand(0, 1)).sample(10, sedd=0)  # grid + random search
+
+        # union
+        Space(a=1, b=Grid(2,3)) + Space(b=Rand(1,5)).sample(10)
+
+        # cross product
+        Space(a=1, b=Grid(2,3)) * Space(c=Rand(1,5), d=Grid("a","b"))
+
+        # combo (grid + random + level 2)
+        space1 = Space(a=1, b=Grid(2,4))
+        space2 = Space(b=RandInt(10, 20))
+        space3 = Space(c=Rand(0,1)).sample(10)
+        space = (space1 + space2) * space3
+
+    .. code-block:: python
+
+        assert Space(a=1, b=Rand(0,1)).has_random_parameter
+        assert not Space(a=1, b=Rand(0,1)).sample(10).has_random_parameter
+        assert not Space(a=1, b=Grid(0,1)).has_random_parameter
+        assert not Space(a=1, b=1).has_random_parameter
+
+        # get all configurations
+        space = Space(a=Grid(2,4), b=Rand(0,1)).sample(100)
+        for conf in space:
+            print(conf)
+        all_conf = list(space)
+
+    """
+
     def __init__(self, **kwargs: Any):
         self._value = deepcopy(kwargs)
         self._grid: List[Tuple[Any, Any, Grid]] = []
@@ -32,14 +70,59 @@ class Space(object):
 
     @property
     def has_random_parameter(self):
+        """Whether the space contains any
+        :class:`~tune.concepts.space.parameters.StochasticExpression`
+        """
         return len(self._rand) > 0
 
     def sample(self, n: int, seed: Any = None) -> "Space":
+        """Draw random samples from the current space.
+        Please read |SpaceTutorial|.
+
+        :param n: number of samples to draw
+        :param seed: random seed, defaults to None
+        :return: a new Space containing all samples
+
+        .. note::
+
+            * it only applies to
+              :class:`~tune.concepts.space.parameters.StochasticExpression`
+            * if :meth:`~.has_random_parameter` is False, then it will return
+              the original space
+            * After sampling, no
+              :class:`~tune.concepts.space.parameters.StochasticExpression`
+              will exist in the new space.
+
+        """
         if n <= 0 or not self.has_random_parameter:
             return self
         if seed is not None:
             np.random.seed(seed)
         return VerticalSpace(*self._sample_to_spaces(n))
+
+    def encode(self) -> Iterable[Any]:
+        """Extract all configurations from the current space
+        and encode them to be json serializable
+
+        :return: a list of json serializable objects
+        """
+        for s in self:  # type: ignore
+            yield _encode_params(s)
+
+    def __mul__(self, other: Any) -> "HorizontalSpace":
+        """Operator ``*``"""
+        return HorizontalSpace(self, other)
+
+    def __add__(self, other: Any) -> "VerticalSpace":
+        """Operator ``+``"""
+        return VerticalSpace(self, other)
+
+    def __radd__(self, other: Any) -> "Space":
+        """Operator ``+``, this is to make compatible with ``sum``"""
+        assert_or_throw(
+            other is None or (isinstance(other, int) and other == 0), ValueError(other)
+        )
+        return self
 
     def _sample_to_spaces(self, n: int) -> List["Space"]:
         spaces: List["Space"] = []
@@ -54,22 +137,6 @@ class Space(object):
                 parent[key] = orig
             spaces.append(space)
         return spaces
-
-    def encode(self) -> Iterable[Any]:
-        for s in self:  # type: ignore
-            yield encode_params(s)
-
-    def __mul__(self, other: Any) -> "HorizontalSpace":
-        return HorizontalSpace(self, other)
-
-    def __add__(self, other: Any) -> "VerticalSpace":
-        return VerticalSpace(self, other)
-
-    def __radd__(self, other: Any) -> "Space":
-        assert_or_throw(
-            other is None or (isinstance(other, int) and other == 0), ValueError(other)
-        )
-        return self
 
     def _search(self, parent: Any, key: Any) -> None:
         node = parent[key]
@@ -86,6 +153,15 @@ class Space(object):
 
 
 class HorizontalSpace(Space):
+    """Space from cross product.
+
+    .. attention::
+
+        Do not use this class directly, please use
+        :class:`~.Space` and operator ``*`` instead. Read |SpaceTutorial|.
+
+    """
+
     def __init__(self, *args: Any, **kwargs: Any):
         self._spaces: List[VerticalSpace] = []
         for x in args:
@@ -125,6 +201,15 @@ class HorizontalSpace(Space):
 
 
 class VerticalSpace(Space):
+    """Space from union.
+
+    .. attention::
+
+        Do not use this class directly, please use
+        :class:`~.Space` and operator ``+`` instead. Read |SpaceTutorial|.
+
+    """
+
     def __init__(self, *args: Any):
         self._spaces: List[Space] = []
         for x in args:
@@ -139,6 +224,7 @@ class VerticalSpace(Space):
 
     @property
     def spaces(self) -> List[Space]:
+        """Spaces that unioned together"""
         return self._spaces
 
     def __iter__(self) -> Iterable[Dict[str, Any]]:

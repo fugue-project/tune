@@ -10,6 +10,6 @@ Tune Documentation
    :maxdepth: 3
 
    introduction
+   top_api
    api
    short_tutorials
-

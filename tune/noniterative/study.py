@@ -151,7 +151,4 @@ class NonIterativeStudy:
 
     def _local_process_trial(self, row: Dict[str, Any], idx: int) -> TrialReport:
         trial = list(_get_trials_from_row(row))[idx]
-        report = self._optimizer.run(self._objective, trial)
-        return report.with_sort_metric(
-            self._objective.generate_sort_metric(report.metric)
-        )
+        return self._optimizer.run(self._objective, trial)

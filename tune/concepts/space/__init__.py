@@ -8,7 +8,7 @@ from tune.concepts.space.parameters import (
     Rand,
     RandInt,
     StochasticExpression,
-    decode_params,
-    encode_params,
+    _decode_params,
+    _encode_params,
 )
 from tune.concepts.space.spaces import HorizontalSpace, Space, VerticalSpace

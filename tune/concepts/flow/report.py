@@ -5,12 +5,36 @@ from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from triad.utils.convert import to_datetime
-from tune.concepts.space.parameters import decode_params, encode_params
+from tune.concepts.space.parameters import _decode_params, _encode_params
 from tune.concepts.flow.trial import Trial
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 
 
 class TrialReport:
+    """The result from running the objective. It is immutable.
+
+    :param trial: the original trial sent to the objective
+    :param metric: the raw metric from the objective output
+    :param params: updated parameters based on the trial input, defaults to None.
+      If none, it means the params from the trial was not updated
+    :param metadata: metadata from the objective output, defaults to None
+    :param cost: cost to run the objective, defaults to 1.0
+    :param rung: number of rungs in the current objective, defaults to 0. This is
+      for iterative problems
+    :param sort_metric: the metric for comparison, defaults to None. It must be
+      smaller better. If not set, it implies the ``metric`` is ``sort_metric`` and
+      it is smaller better
+    :param raw: whether the ``params`` (if not None) is raw or encoded,
+      defaults to False
+    :param log_time: the time generating this report, defaults to None. If None, current
+      time will be used
+
+    .. attention::
+
+        This class is not for users to construct directly.
+
+    """
+
     def __init__(
         self,
         trial: Trial,
@@ -31,11 +55,20 @@ class TrialReport:
         if params is None:
             self._params = trial.params
         else:
-            self._params = params if raw else decode_params(params)
+            self._params = params if raw else _decode_params(params)
         self._metadata = metadata or {}
         self._log_time = datetime.now() if log_time is None else to_datetime(log_time)
 
     def copy(self) -> "TrialReport":
+        """Copy the current object.
+
+        :return: the copied object
+
+        .. note::
+            This is shallow copy, but it is also used by `__deepcopy__`
+            of this object. This is because we disable deepcopy
+            of TrialReport.
+        """
         return TrialReport(
             trial=self.trial,
             metric=self.metric,
@@ -49,68 +82,105 @@ class TrialReport:
         )
 
     def __copy__(self) -> "TrialReport":
+        """Shallow copy"""
         return self.copy()
 
     def __deepcopy__(self, memo: Any) -> "TrialReport":
+        """(Enforced) shallow copy"""
         return self.copy()
 
     @property
     def log_time(self) -> datetime:
+        """The time generating this report"""
         return self._log_time
 
     def reset_log_time(self) -> "TrialReport":
+        """Reset :meth:`~.log_time` to now"""
         res = self.copy()
         res._log_time = datetime.now()
         return res
 
     @property
     def trial(self) -> Trial:
+        """The original trial sent to the objective"""
         return self._trial
 
     @property
     def trial_id(self) -> str:
+        """:meth:`tune.concepts.flow.trial.Trial.trial_id`"""
         return self.trial.trial_id
 
     @property
     def metric(self) -> float:
+        """The raw metric from the objective output"""
         return self._metric
 
     @property
     def sort_metric(self) -> float:
+        """The metric for comparison"""
         return self._sort_metric
 
     @property
     def cost(self) -> float:
+        """The cost to run the objective"""
         return self._cost
 
     @property
     def rung(self) -> int:
+        """The number of rungs in the current objective, defaults to 0. This is
+        for iterative problems
+        """
         return self._rung
 
     @property
     def params(self) -> Dict[str, Any]:
+        """The parameters used by the objective to generate the
+        :meth:`~.metric`
+        """
         return self._params
 
     @property
     def metadata(self) -> Dict[str, Any]:
+        """The metadata from the objective output"""
         return self._metadata
 
     def with_cost(self, cost: float) -> "TrialReport":
+        """Construct a new report object with the new ``cost``
+
+        :param cost: new cost
+        :return: a new object with the updated value
+        """
         t = self.copy()
         t._cost = cost
         return t
 
     def with_rung(self, rung: int) -> "TrialReport":
+        """Construct a new report object with the new ``rung``
+
+        :param rung: new rung
+        :return: a new object with the updated value
+        """
         t = self.copy()
         t._rung = rung
         return t
 
     def with_sort_metric(self, sort_metric: Any) -> "TrialReport":
+        """Construct a new report object with the new ``sort_metric``
+
+        :param sort_metric: new sort_metric
+        :return: a new object with the updated value
+        """
         t = self.copy()
         t._sort_metric = float(sort_metric)
         return t
 
     def generate_sort_metric(self, min_better: bool, digits: int) -> "TrialReport":
+        """Construct a new report object with the new derived``sort_metric``
+
+        :param min_better: whether the current :meth:`~.metric` is smaller better
+        :param digits: number of digits to keep in ``sort_metric``
+        :return: a new object with the updated value
+        """
         t = self.copy()
         t._sort_metric = (
             round(self.metric, digits) if min_better else -round(self.metric, digits)
@@ -119,10 +189,11 @@ class TrialReport:
 
     @property
     def jsondict(self) -> Dict[str, Any]:
+        """Json serializable python dict of this object"""
         return {
             "trial": self.trial.jsondict,
             "metric": self.metric,
-            "params": encode_params(self.params),
+            "params": _encode_params(self.params),
             "metadata": self.metadata,
             "cost": self.cost,
             "rung": self.rung,
@@ -132,10 +203,25 @@ class TrialReport:
 
     @staticmethod
     def from_jsondict(data: Dict[str, Any]) -> "TrialReport":
+        """Construct a TrailReport object from a json serializable python dict
+
+        :param data: the python dict
+
+        .. note::
+
+            This is the counterpart of :meth:`~.jsondict`. They are designed
+            for communication purposes.
+        """
         trial = Trial.from_jsondict(data.pop("trial"))
         return TrialReport(trial=trial, **data)
 
     def fill_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Fill a row of :class:`~tune.concepts.dataset.StudyResult` with
+        the report information
+
+        :param data: a row (as dict) from :class:`~tune.concepts.dataset.StudyResult`
+        :return: the updated ``data``
+        """
         data[TUNE_REPORT_ID] = self.trial_id
         data[TUNE_REPORT_METRIC] = self.sort_metric
         data[TUNE_REPORT] = json.dumps(self.jsondict)
