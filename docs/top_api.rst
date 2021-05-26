@@ -11,8 +11,8 @@ Top Level API Reference
 .. contents::
    :local:
 
-Space Concept
--------------
+The Space Concept
+-----------------
 
 Space
 ~~~~~
@@ -69,6 +69,26 @@ General Non-Iterative Problems
 .. autofunction:: tune.api.optimize.optimize_noniterative
    :noindex:
 
+Level 2 Optimizers
+------------------
+
+Hyperopt
+~~~~~~~~
+
+.. autoclass:: tune_hyperopt.optimizer.HyperoptLocalOptimizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
+Optuna
+~~~~~~~~
+
+.. autoclass:: tune_optuna.optimizer.OptunaLocalOptimizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
 
 General Iterative Problems
 --------------------------
