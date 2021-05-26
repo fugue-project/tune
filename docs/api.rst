@@ -1,5 +1,5 @@
-API Reference
-==============
+Complete API Reference
+======================
 
 .. toctree::
 

@@ -14,6 +14,7 @@ tune
 .. |SortMetric| replace:: :meth:`tune.concepts.flow.report.TrialReport.sort_metric`
 .. |TrialObject| replace:: :class:`~tune.concepts.flow.trial.Trial`
 .. |TrialReportObject| replace:: :class:`~tune.concepts.flow.report.TrialReport`
+.. |NonIterativeObjective| replace:: a :class:`~tune.noniterative.objective.NonIterativeObjectiveFunc` compatible object, please read :ref:`Non-Iterative Objective Explained </notebooks/noniterative_objective.ipynb>`
 
 .. |SchemaLikeObject| replace:: :ref:`Schema like object <tutorial:/tutorials/x-like.ipynb#schema>`
 .. |ParamsLikeObject| replace:: :ref:`Parameters like object <tutorial:/tutorials/x-like.ipynb#parameters>`

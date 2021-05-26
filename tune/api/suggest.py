@@ -34,6 +34,25 @@ def suggest_for_noniterative_objective(
     execution_engine: Any = None,
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
+    """[summary]
+
+    :param objective: |NonIterativeObjective|
+    :param space: search space, please read |SpaceTutorial|
+    :param df: [description], defaults to None
+    :param df_name: [description], defaults to TUNE_DATASET_DF_DEFAULT_NAME
+    :param temp_path: [description], defaults to ""
+    :param partition_keys: [description], defaults to None
+    :param top_n: [description], defaults to 1
+    :param local_optimizer: [description], defaults to None
+    :param monitor: [description], defaults to None
+    :param stopper: [description], defaults to None
+    :param stop_check_interval: [description], defaults to None
+    :param distributed: [description], defaults to None
+    :param shuffle_candidates: [description], defaults to True
+    :param execution_engine: [description], defaults to None
+    :param execution_engine_conf: [description], defaults to None
+    :return: [description]
+    """
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,
