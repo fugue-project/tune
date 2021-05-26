@@ -153,7 +153,7 @@ class Space(object):
 
 
 class HorizontalSpace(Space):
-    """Space after cross product.
+    """Space from cross product.
 
     .. attention::
 
@@ -201,7 +201,7 @@ class HorizontalSpace(Space):
 
 
 class VerticalSpace(Space):
-    """Space after union.
+    """Space from union.
 
     .. attention::
 
