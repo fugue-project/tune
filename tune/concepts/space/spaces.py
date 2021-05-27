@@ -8,7 +8,10 @@ from tune.concepts.space.parameters import Grid, StochasticExpression, _encode_p
 
 
 class Space(object):
-    """Search space. Please read |SpaceTutorial|.
+    """Search space object
+
+    .. important::
+        Please read |SpaceTutorial|.
 
     :param kwargs: parameters in the search space
 
