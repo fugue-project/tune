@@ -30,9 +30,6 @@ Top Level API Reference
 .. |DataFrameTutorial| replace:: :ref:`the DataFrame Tutorial <tutorial:/tutorials/schema_dataframes.ipynb#dataframe>`
 .. |ExecutionEngineTutorial| replace:: :ref:`the ExecutionEngine Tutorial <tutorial:/tutorials/execution_engine.ipynb>`
 
-.. contents::
-   :local:
-
 The Space Concept
 -----------------
 

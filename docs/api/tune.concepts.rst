@@ -2,6 +2,7 @@ tune.concepts
 ==============
 
 .. toctree::
+   :hidden:
    :maxdepth: 4
 
    tune.concepts.flow

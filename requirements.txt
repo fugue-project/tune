@@ -13,6 +13,7 @@ pytest-mock
 pytest-spark
 sphinx>=2.4.0
 sphinx-rtd-theme
+furo
 sphinx-autodoc-typehints
 nbsphinx
 flask
