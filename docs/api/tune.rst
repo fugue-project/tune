@@ -2,6 +2,7 @@ tune
 =====
 
 .. toctree::
+   :hidden:
    :maxdepth: 4
 
    tune.api
