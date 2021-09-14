@@ -61,9 +61,9 @@ def test_rand():
     with raises(ValueError):
         Rand(0.0, 1.0, log=True)  # for log, low>=1.0
 
-    v = Rand(1.0, 1.0, q=0.1, log=False)
-    assert 1.0 == v.generate()
-    assert 1.0 == v.generate(10)
+    v = Rand(0.1, 0.1, q=0.1, log=False)
+    assert 0.1 == v.generate()
+    assert 0.1 == v.generate(10)
 
     v = Rand(1.0, 1.0, q=0.1, log=True)
     assert 1.0 == v.generate()
@@ -89,13 +89,13 @@ def test_rand():
     assert v.generate(0) != v.generate(1)
     assert_close([x / 10 for x in range(10, 21)], v.generate_many(100, 0))
 
-    v = Rand(1.0, 2.0, log=True, include_high=False)
+    v = Rand(0.1, 2.0, log=True, include_high=False)
     assert v.generate(0) == v.generate(0)
     assert v.generate(0) != v.generate(1)
     res = v.generate_many(10000, 0)
     for x in res:
-        assert x >= 1.0 and x <= 2.0
-    t = stats.kstest(np.log(res), "uniform", args=(np.log(1), np.log(2) - np.log(1)))
+        assert x >= 0.1 and x <= 2.0
+    t = stats.kstest(np.log(res), "uniform", args=(np.log(0.1), np.log(2) - np.log(0.1)))
     assert t.pvalue > 0.4
 
 

@@ -54,8 +54,8 @@ class NonIterativeObjectiveLocalOptimizerTests(object):
                 assert_close(values, [-2.0, 1.0])
 
             # with log
-            values = self._generate_values(Rand(1.0, 3.0, log=True), lambda x: x ** 2)
-            assert all(x >= 1.0 and x <= 3.0 for x in values)
+            values = self._generate_values(Rand(0.1, 3.0, log=True), lambda x: x ** 2)
+            assert all(x >= 0.1 and x <= 3.0 for x in values)
 
             # with log and q, and range%q == 0
             values = self._generate_values(

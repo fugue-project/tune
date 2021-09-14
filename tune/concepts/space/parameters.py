@@ -154,9 +154,7 @@ class Rand(RandBase):
         if log:
             assert_or_throw(
                 low > 0.0,
-                ValueError(
-                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
-                ),
+                ValueError(f"for log sampling, low ({low}) must be greater than 0.0"),
             )
         self.low = low
         self.high = high
