@@ -23,7 +23,8 @@ class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
 
     def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
         judge = _NonIterativeJudgeWrapper(self._budget)
-        fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
+        base_fs = FileSystem()
+        fs = base_fs.makedirs(self._checkpoint_path, recreate=True)
         self._func = self._func.copy()
         self._func.run(trial, judge=judge, checkpoint_basedir_fs=fs)
         return judge.report

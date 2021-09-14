@@ -153,7 +153,7 @@ class Rand(RandBase):
         assert_or_throw(q is None or q > 0, ValueError(q))
         if log:
             assert_or_throw(
-                low >= 1.0,
+                low > 0.0,
                 ValueError(
                     f"for log sampling, low ({low}) must be greater or equal to 1.0"
                 ),
