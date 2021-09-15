@@ -135,7 +135,7 @@ class Rand(RandBase):
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
     :param log: whether to do uniform sampling in log space, defaults to False.
-      If True, ``low`` must be ``>=1`` and lower values get higher chance to be sampled
+      If True, ``low`` must be positive and lower values get higher chance to be sampled
     """
 
     def __init__(

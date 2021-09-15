@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.0.8
+
+-   Fixed the [lower bound](https://github.com/fugue-project/tune/issues/43) of Rand expression
+
 ## 0.0.7
 
 -   [Optuna integration](https://github.com/fugue-project/tune/issues/23) and make Optuna and Hyperopt consistent
