@@ -97,7 +97,8 @@ def validate_iterative_objective(
     monitor: Optional[Monitor] = None,
 ) -> None:
     path = checkpoint_path if checkpoint_path != "" else tempfile.gettempdir()
-    basefs = FileSystem().makedirs(os.path.join(path, str(uuid4())), recreate=True)
+    _basefs = FileSystem()
+    basefs = _basefs.makedirs(os.path.join(path, str(uuid4())), recreate=True)
     j = _Validator(monitor, budgets, continuous=continuous)
     if continuous:
         f = pickle.loads(pickle.dumps(func)).copy()

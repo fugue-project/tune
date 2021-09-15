@@ -28,7 +28,8 @@ class IterativeStudy:
         df: Iterable[Dict[str, Any]],
         entrypoint: Callable[[str, Dict[str, Any]], Any],
     ) -> Iterable[Dict[str, Any]]:
-        ck_fs = FileSystem().makedirs(self._checkpoint_path, recreate=True)
+        fs = FileSystem()
+        ck_fs = fs.makedirs(self._checkpoint_path, recreate=True)
         for row in df:
             for trial in _get_trials_from_row(row):
                 rjudge = RemoteTrialJudge(entrypoint)

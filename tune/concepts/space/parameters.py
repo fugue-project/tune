@@ -135,7 +135,7 @@ class Rand(RandBase):
     :param q: step between adjacent values, if set, the value will be rounded
       using ``q``, defaults to None
     :param log: whether to do uniform sampling in log space, defaults to False.
-      If True, ``low`` must be ``>=1`` and lower values get higher chance to be sampled
+      If True, ``low`` must be positive and lower values get higher chance to be sampled
     """
 
     def __init__(
@@ -153,10 +153,8 @@ class Rand(RandBase):
         assert_or_throw(q is None or q > 0, ValueError(q))
         if log:
             assert_or_throw(
-                low >= 1.0,
-                ValueError(
-                    f"for log sampling, low ({low}) must be greater or equal to 1.0"
-                ),
+                low > 0.0,
+                ValueError(f"for log sampling, low ({low}) must be greater than 0.0"),
             )
         self.low = low
         self.high = high
