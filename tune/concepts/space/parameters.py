@@ -111,6 +111,18 @@ class Choice(StochasticExpression):
         return value  # pragma: no cover
 
 
+class TransitionChoice(Choice):
+    """An ordered random choice of values.
+    Please read |SpaceTutorial|.
+
+    :param args: values to choose from
+    """
+
+    @property
+    def jsondict(self) -> Dict[str, Any]:
+        return dict(_expr_="tchoice", values=self.values)
+
+
 class RandBase(StochasticExpression):
     """Base class for continuous random variables.
     Please read |SpaceTutorial|.
@@ -362,7 +374,7 @@ def _encode_params(value: Any) -> Any:
     return value
 
 
-def _decode_params(value: Any) -> Any:
+def _decode_params(value: Any) -> Any:  # noqa: C901
     if isinstance(value, str):
         return value
     elif isinstance(value, list):
@@ -372,6 +384,8 @@ def _decode_params(value: Any) -> Any:
             e = value.pop("_expr_")
             if e == "choice":  # TODO: embeded rand is not supported
                 return Choice(*value["values"])
+            if e == "tchoice":
+                return TransitionChoice(*value["values"])
             if e == "rand":
                 return Rand(**value)
             if e == "randint":

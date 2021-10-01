@@ -8,6 +8,7 @@ from tune.concepts.space.parameters import (
     Rand,
     RandInt,
     StochasticExpression,
+    TransitionChoice,
     _decode_params,
     _encode_params,
 )

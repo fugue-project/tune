@@ -8,6 +8,7 @@ from tune.concepts.space import (
     Choice,
     Rand,
     RandInt,
+    TransitionChoice,
     TuningParametersTemplate,
 )
 from tune.noniterative.objective import (
@@ -66,6 +67,8 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
                 res.append(_convert_randint(k, v))
             elif isinstance(v, Rand):
                 res.append(_convert_rand(k, v))
+            elif isinstance(v, TransitionChoice):
+                res.append(_convert_transition_choice(k, v))
             elif isinstance(v, Choice):
                 res.append(_convert_choice(k, v))
             else:
@@ -85,6 +88,10 @@ def _convert_randint(k: str, v: RandInt) -> Any:
         hp.qloguniform(k, np.log(v.q), np.log(_high), q=v.q) + v.low - v.q,
         lambda x: int(np.round(x)),
     )
+
+
+def _convert_transition_choice(k: str, v: TransitionChoice) -> Any:
+    return hp.randint(k, 0, len(v.values)), lambda x: v.values[int(np.round(x))]
 
 
 def _convert_rand(k: str, v: Rand) -> Any:

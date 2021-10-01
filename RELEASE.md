@@ -2,6 +2,7 @@
 
 ## 0.0.9
 
+-   Add [TransitionChoice](https://github.com/fugue-project/tune/issues/46)
 -   Enable local optimizers (optuna and hyperopt) to handle [nested data structures](https://github.com/fugue-project/tune/issues/44)
 
 ## 0.0.8

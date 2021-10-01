@@ -60,6 +60,15 @@ Choice
    :show-inheritance:
    :noindex:
 
+TransitionChoice
+~~~~~~~~~~~~~~~~
+
+.. autoclass:: tune.concepts.space.parameters.TransitionChoice
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
 Rand
 ~~~~
 

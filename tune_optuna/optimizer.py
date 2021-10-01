@@ -4,15 +4,17 @@ from typing import Any, Callable, Dict, List, Optional
 import optuna
 from optuna.study import Study
 from tune import (
+    Choice,
     NonIterativeObjectiveFunc,
     NonIterativeObjectiveLocalOptimizer,
     Rand,
     RandInt,
+    TransitionChoice,
     Trial,
     TrialReport,
 )
 from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
-from tune.concepts.space import Choice, TuningParametersTemplate
+from tune.concepts.space import TuningParametersTemplate
 
 
 class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
@@ -84,6 +86,10 @@ def _convert(
                 result[k] = trial.suggest_float(
                     name=k, low=v.low, high=_high, step=v.q, log=v.log
                 )
+        elif isinstance(v, TransitionChoice):
+            result[k] = v.values[
+                trial.suggest_int(name=k, low=0, high=len(v.values) - 1)
+            ]
         elif isinstance(v, Choice):
             result[k] = trial.suggest_categorical(name=k, choices=v.values)
         else:  # pragma: no cover

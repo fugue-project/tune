@@ -8,6 +8,7 @@ from tune import (
     Rand,
     RandInt,
     StochasticExpression,
+    TransitionChoice,
     Trial,
     noniterative_objective,
 )
@@ -27,6 +28,15 @@ class NonIterativeObjectiveLocalOptimizerTests:
         def test_choice(self):
             d = dict(a=1, b=1, c=1)
             values = self._generate_values(Choice("a", "b", "c"), lambda x: d[x])
+            assert len(values) > 0
+            assert all(x in ["a", "b", "c"] for x in values)
+            assert all(c in values for c in ["a", "b", "c"])
+
+        def test_transition_choice(self):
+            d = dict(a=1, b=1, c=1)
+            values = self._generate_values(
+                TransitionChoice("a", "b", "c"), lambda x: d[x]
+            )
             assert len(values) > 0
             assert all(x in ["a", "b", "c"] for x in values)
             assert all(c in values for c in ["a", "b", "c"])

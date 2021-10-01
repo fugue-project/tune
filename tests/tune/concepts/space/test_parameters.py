@@ -4,6 +4,7 @@ import numpy as np
 from pytest import raises
 from scipy import stats
 from triad import to_uuid
+from tune._utils import assert_close
 from tune.concepts.space import (
     Choice,
     Grid,
@@ -12,9 +13,9 @@ from tune.concepts.space import (
     Rand,
     RandInt,
     Space,
+    TransitionChoice,
 )
 from tune.concepts.space.parameters import _decode_params
-from tune._utils import assert_close
 
 
 def test_grid():
@@ -45,6 +46,26 @@ def test_choice():
     assert json.loads(json.dumps({"x": v.generate(0)}))["x"] <= 3
 
     v = Choice("a", "b", "c")
+    assert isinstance(json.loads(json.dumps({"x": v.generate(0)}))["x"], str)
+
+
+def test_transition_choice():
+    raises(ValueError, lambda: TransitionChoice())
+    v = TransitionChoice("a", "b", "c")
+    assert v.generate(0) == v.generate(0)
+    assert v.generate(0) != v.generate(1)
+    assert v.generate_many(20, 0) == v.generate_many(20, 0)
+    assert v.generate_many(20, 0) != v.generate_many(20, 1)
+    actual = set(v.generate_many(20, 0))
+    assert set(["a", "b", "c"]) == actual
+
+    assert to_uuid(v) != to_uuid(Grid("a", "b", "c"))
+    assert v != Grid("a", "b", "c")
+
+    v = TransitionChoice(1, 2, 3)
+    assert json.loads(json.dumps({"x": v.generate(0)}))["x"] <= 3
+
+    v = TransitionChoice("a", "b", "c")
     assert isinstance(json.loads(json.dumps({"x": v.generate(0)}))["x"], str)
 
 
@@ -95,7 +116,9 @@ def test_rand():
     res = v.generate_many(10000, 0)
     for x in res:
         assert x >= 0.1 and x <= 2.0
-    t = stats.kstest(np.log(res), "uniform", args=(np.log(0.1), np.log(2) - np.log(0.1)))
+    t = stats.kstest(
+        np.log(res), "uniform", args=(np.log(0.1), np.log(2) - np.log(0.1))
+    )
     assert t.pvalue > 0.4
 
 
