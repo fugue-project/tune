@@ -12,7 +12,13 @@ from tune._utils.math import (
 )
 
 
-class Grid(object):
+class TuningParameterExpression:
+    """Base class of all tuning parameter expressions"""
+
+    pass
+
+
+class Grid(TuningParameterExpression):
     """Grid search, every value will be used.
     Please read |SpaceTutorial|.
 
@@ -36,7 +42,7 @@ class Grid(object):
         return to_uuid("grid", self._values)
 
 
-class StochasticExpression(object):
+class StochasticExpression(TuningParameterExpression):
     """Stochastic search base class.
     Please read |SpaceTutorial|.
     """

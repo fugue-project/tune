@@ -1,5 +1,5 @@
 from threading import RLock
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional
 
 import optuna
 from optuna.study import Study
@@ -8,12 +8,11 @@ from tune import (
     NonIterativeObjectiveLocalOptimizer,
     Rand,
     RandInt,
-    StochasticExpression,
     Trial,
     TrialReport,
 )
 from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
-from tune.concepts.space.parameters import Choice
+from tune.concepts.space import Choice, TuningParametersTemplate
 
 
 class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
@@ -24,15 +23,14 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._create_study = create_study or optuna.create_study
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
-        static_params, stochastic_params = _split(trial.params)
-        if len(stochastic_params) == 0:
+        template = TuningParametersTemplate(trial.params)
+        if len(template.params) == 0:
             return func.run(trial)
         lock = RLock()
         best_report: List[TrialReport] = []
 
         def obj(otrial: optuna.trial.Trial) -> float:
-            params = _convert(otrial, stochastic_params)
-            params.update(static_params)
+            params = template.fill_dict(_convert(otrial, template), copy=True)
             report = func.run(trial.with_params(params))
             with lock:
                 if len(best_report) == 0:
@@ -47,24 +45,11 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         return best_report[0]
 
 
-def _split(
-    kwargs: Dict[str, Any]
-) -> Tuple[Dict[str, Any], Dict[str, StochasticExpression]]:
-    static_params: Dict[str, Any] = {}
-    stochastic_params: Dict[str, Any] = {}
-    for k, v in kwargs.items():
-        if isinstance(v, StochasticExpression):
-            stochastic_params[k] = v
-        else:
-            static_params[k] = v
-    return static_params, stochastic_params
-
-
 def _convert(
-    trial: optuna.trial.Trial, params: Dict[str, StochasticExpression]
+    trial: optuna.trial.Trial, template: TuningParametersTemplate
 ) -> Dict[str, Any]:
     result: Dict[str, Any] = {}
-    for k, v in params.items():
+    for k, v in template.params_dict.items():
         if isinstance(v, RandInt):
             if v.log and v.q is not None:
                 value = trial.suggest_float(name=k, low=0, high=1.0)

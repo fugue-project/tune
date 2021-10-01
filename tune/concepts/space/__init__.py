@@ -12,3 +12,4 @@ from tune.concepts.space.parameters import (
     _encode_params,
 )
 from tune.concepts.space.spaces import HorizontalSpace, Space, VerticalSpace
+from tune.concepts.space.utils import TuningParametersTemplate

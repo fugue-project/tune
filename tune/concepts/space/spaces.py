@@ -7,7 +7,7 @@ from tune._utils import dict_product, product
 from tune.concepts.space.parameters import Grid, StochasticExpression, _encode_params
 
 
-class Space(object):
+class Space:
     """Search space object
 
     .. important::
@@ -243,7 +243,7 @@ class VerticalSpace(Space):
         return [VerticalSpace(*args) for args in zip(*lists)]
 
 
-class _SpaceValue(object):
+class _SpaceValue:
     def __init__(self, value: Any):
         self.value = value
 

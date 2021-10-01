@@ -73,7 +73,7 @@ class TrialDecision:
         return TrialDecision(report=report, **data)
 
 
-class TrialJudge(object):
+class TrialJudge:
     def __init__(self, monitor: Optional["Monitor"] = None):
         self.reset_monitor(monitor)
 

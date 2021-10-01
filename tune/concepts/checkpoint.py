@@ -8,7 +8,7 @@ from triad import assert_or_throw
 _CHECKPOINT_STATE_FILE = "STATE"
 
 
-class Checkpoint(object):
+class Checkpoint:
     """An abstraction for tuning checkpoint
 
     :param fs: the file system
@@ -47,7 +47,7 @@ class Checkpoint(object):
         return NewCheckpoint(self)
 
 
-class NewCheckpoint(object):
+class NewCheckpoint:
     """A helper class for adding new checkpoints
 
     :param checkpoint: the parent checkpoint
