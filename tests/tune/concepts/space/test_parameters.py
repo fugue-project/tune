@@ -199,6 +199,7 @@ def test_encode__decode_params():
         f=RandInt(0, 10, log=False),
         g=NormalRand(0.1, 1.0, q=0.1),
         h=NormalRandInt(0.1, 1.0),
+        i=TransitionChoice(1, 2, 3, "x"),
     )
     actual = [_decode_params(x) for x in s1.encode()]
     assert list(s1) == actual
