@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.0.9
+
+-   Enable local optimizers (optuna and hyperopt) to handle [nested data structures](https://github.com/fugue-project/tune/issues/44)
+
 ## 0.0.8
 
 -   Fixed the [lower bound](https://github.com/fugue-project/tune/issues/43) of Rand expression
