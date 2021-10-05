@@ -32,6 +32,7 @@ from tune.concepts.space import (
     Space,
     StochasticExpression,
     TransitionChoice,
+    TuningParametersTemplate,
 )
 from tune.iterative.objective import (
     IterativeObjectiveFunc,

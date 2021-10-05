@@ -47,11 +47,3 @@ tune.concepts.space.spaces
    :undoc-members:
    :show-inheritance:
 
-tune.concepts.space.utils
--------------------------
-
-.. automodule:: tune.concepts.space.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-

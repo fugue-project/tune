@@ -375,11 +375,10 @@ def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, A
     key_names = sorted(k for k in data.keys() if not k.startswith(TUNE_PREFIX))
     keys = [data[k] for k in key_names]
     trials: Dict[str, Dict[str, Any]] = {}
-    for param in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
-        p = ParamDict(sorted(((k, v) for k, v in param.items()), key=lambda x: x[0]))
-        tid = to_uuid(keys, p)
+    for params in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
+        tid = to_uuid(keys, params)
         trials[tid] = Trial(
-            trial_id=tid, params=p, metadata=metadata, keys=keys
+            trial_id=tid, params=params, metadata=metadata, keys=keys
         ).jsondict
     data[TUNE_DATASET_TRIALS] = json.dumps(list(trials.values()))
     del data[TUNE_DATASET_PARAMS_PREFIX]

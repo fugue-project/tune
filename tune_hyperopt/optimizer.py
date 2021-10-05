@@ -31,13 +31,13 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._kwargs_func = kwargs_func
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
-        template = TuningParametersTemplate(trial.params)
-        if len(template.params) == 0:
+        template = trial.params
+        if template.empty:
             return func.run(trial)
         proc = self._process(template)
 
         def obj(args) -> Dict[str, Any]:
-            params = template.fill([p[1](v) for p, v in zip(proc, args)], copy=True)
+            params = template.fill([p[1](v) for p, v in zip(proc, args)])
             report = func.run(trial.with_params(params))
             return {
                 "loss": report.sort_metric,

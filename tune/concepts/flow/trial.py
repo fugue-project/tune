@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
-from tune.concepts.space.parameters import _decode_params, _encode_params
+from tune.concepts.space import to_template
+from tune.concepts.space.parameters import TuningParametersTemplate
 
 
 class Trial:
@@ -8,15 +9,15 @@ class Trial:
     It is immutable.
 
     :param trial_id: the unique id for a trial
-    :param params: parameters for tuning
+    :param params: parameters for tuning, an object convertible to
+      ``TuningParametersTemplate`` by
+      :func:`~tune.concepts.space.parameters.to_template`
     :param metadata: metadata for tuning, defaults to None. It is set
       during the construction of :class:`~.tune.concepts.dataset.TuneDataset`
     :param keys: partitions keys of the
       :class:`~.tune.concepts.dataset.TuneDataset`, defaults to None
     :param dfs: dataframes extracted from
       :class:`~.tune.concepts.dataset.TuneDataset`, defaults to None
-    :param raw: if True, ``params`` were not encoded, otherwise,
-      ``params`` were encoded to json serializable, defaults to False
 
     .. attention::
 
@@ -28,14 +29,13 @@ class Trial:
     def __init__(
         self,
         trial_id: str,
-        params: Dict[str, Any],
+        params: Any,
         metadata: Optional[Dict[str, Any]] = None,
         keys: Optional[List[str]] = None,
         dfs: Optional[Dict[str, Any]] = None,
-        raw: bool = False,
     ):
         self._trial_id = trial_id
-        self._params = params if raw else _decode_params(params)
+        self._params = to_template(params)
         self._metadata = metadata or {}
         self._keys = keys or []
         self._dfs = dfs or {}
@@ -56,7 +56,6 @@ class Trial:
             metadata=self._metadata,
             keys=self._keys,
             dfs=self._dfs,
-            raw=True,
         )
 
     def __copy__(self) -> "Trial":
@@ -73,7 +72,7 @@ class Trial:
         return self._trial_id
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> TuningParametersTemplate:
         """Parameters for tuning"""
         return self._params
 
@@ -104,16 +103,14 @@ class Trial:
         t._dfs = dfs
         return t
 
-    def with_params(self, params: Dict[str, Any], raw: bool = False) -> "Trial":
+    def with_params(self, params: Any) -> "Trial":
         """Set parameters for the trial, a new Trial object will
         be constructed and with the new ``params``
 
         :param params: parameters for tuning
-        :param raw: if True, ``params`` were not encoded, otherwise,
-          ``params`` were encoded to json serializable, defaults to False
         """
         t = self.copy()
-        t._params = params if raw else _decode_params(params)
+        t._params = to_template(params)
         return t
 
     @property
@@ -126,7 +123,7 @@ class Trial:
         """Json serializable python dict of this object"""
         return {
             "trial_id": self.trial_id,
-            "params": _encode_params(self.params),
+            "params": self.params.encode(),
             "metadata": self.metadata,
             "keys": self.keys,
         }

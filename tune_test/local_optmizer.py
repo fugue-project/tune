@@ -126,9 +126,9 @@ class NonIterativeObjectiveLocalOptimizerTests:
                 return a ** 2 + b ** 2 + c, dict(a="x")
 
             def v(report):
-                assert 1 == report.params["a"]
-                assert 2 == report.params["b"]
-                assert 3 == report.params["c"]
+                assert 1 == report.params.simple_value["a"]
+                assert 2 == report.params.simple_value["b"]
+                assert 3 == report.params.simple_value["c"]
                 assert report.metric == 8
                 assert "x" == report.metadata["a"]
 
@@ -146,9 +146,9 @@ class NonIterativeObjectiveLocalOptimizerTests:
             def v(report):
                 print(report.metric)
                 assert report.metric < 7
-                assert report.params["a"] ** 2 < 2
-                assert report.params["b"] ** 2 < 2
-                assert 2.0 == report.params["c"]
+                assert report.params.simple_value["a"] ** 2 < 2
+                assert report.params.simple_value["b"] ** 2 < 2
+                assert 2.0 == report.params.simple_value["c"]
                 assert "x" == report.metadata["a"]
 
             validate_noniterative_objective(objective, trial, v, optimizer=o)
@@ -165,9 +165,9 @@ class NonIterativeObjectiveLocalOptimizerTests:
             def v(report):
                 print(report.metric)
                 assert report.metric < 7
-                assert report.params["a"]["x"] ** 2 < 2
-                assert report.params["b"][0] ** 2 < 2
-                assert 2.0 == report.params["c"][0]
+                assert report.params.simple_value["a"]["x"] ** 2 < 2
+                assert report.params.simple_value["b"][0] ** 2 < 2
+                assert 2.0 == report.params.simple_value["c"][0]
                 assert "x" == report.metadata["a"]
 
             validate_noniterative_objective(objective, trial, v, optimizer=o)

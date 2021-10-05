@@ -28,7 +28,7 @@ class F(IterativeObjectiveFunc):
 
     def run_single_iteration(self):
         trial = self.current_trial
-        metric = self._all[trial.params["a"]][self._it]
+        metric = self._all[trial.params.simple_value["a"]][self._it]
         self._it += 1
         return TrialReport(trial, metric=metric)
 

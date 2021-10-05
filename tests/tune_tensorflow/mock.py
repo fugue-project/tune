@@ -13,7 +13,7 @@ class MockSpec(KerasTrainingSpec):
         ) = boston_housing.load_data()
 
     def get_model(self):
-        l1, l2 = self.params["l1"], self.params["l2"]
+        l1, l2 = self.params.simple_value["l1"], self.params.simple_value["l2"]
         model = models.Sequential()
         model.add(
             layers.Dense(l1, activation="relu", input_shape=(self.train_data.shape[1],))

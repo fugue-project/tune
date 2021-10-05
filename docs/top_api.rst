@@ -42,6 +42,15 @@ Space
    :show-inheritance:
    :noindex:
 
+TuningParametersTemplate
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: tune.concepts.space.parameters.TuningParametersTemplate
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :noindex:
+
 Grid
 ~~~~
 

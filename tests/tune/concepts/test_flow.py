@@ -3,8 +3,6 @@ from time import sleep
 
 import numpy as np
 import pandas as pd
-
-from tune.concepts.space import Rand
 from tune.concepts.flow import (
     Trial,
     TrialDecision,
@@ -12,6 +10,7 @@ from tune.concepts.flow import (
     TrialReportHeap,
     TrialReportLogger,
 )
+from tune.concepts.space import Rand, TuningParametersTemplate
 
 
 def test_trial():
@@ -44,10 +43,8 @@ def test_copy():
 def test_encode_decode():
     p = {"a": 1, "b": Rand(1, 2)}
     trial = Trial("abc", p, {}, keys=["x", "y"], dfs={"v": ""})
-    d = trial.jsondict
-    assert isinstance(d["params"]["b"], dict)
-    t = Trial.from_jsondict(d)
-    assert isinstance(t.params["b"], Rand)
+    t = Trial.from_jsondict(trial.jsondict)
+    assert isinstance(t.params, TuningParametersTemplate)
     assert ["x", "y"] == t.keys
     assert {} == t.dfs  # dfs will not be serialized
 
@@ -194,7 +191,7 @@ def test_trial_decision():
 
     d2 = TrialDecision.from_jsondict(decision.jsondict)
     assert d2.trial_id == trial.trial_id
-    assert Rand(0, 3) == d2.report.params["c"]
+    # assert Rand(0, 3) == d2.report.params["c"]
     assert decision.should_stop
     assert decision.should_checkpoint
     assert {"x": 1} == decision.metadata

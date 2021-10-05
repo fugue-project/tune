@@ -117,7 +117,7 @@ def test_to_trial_row():
     }
     res1 = _to_trail_row(data1, {"m": 1})
     trials1 = [Trial(**p) for p in json.loads(res1[TUNE_DATASET_TRIALS])]
-    assert 2 == len(trials1)
+    assert 3 == len(trials1)  # order matters in params
     data2 = {
         "a": 1,
         "b": 2,

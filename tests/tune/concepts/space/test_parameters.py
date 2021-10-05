@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pandas as pd
 from pytest import raises
 from scipy import stats
 from triad import to_uuid
@@ -12,10 +13,10 @@ from tune.concepts.space import (
     NormalRandInt,
     Rand,
     RandInt,
-    Space,
     TransitionChoice,
+    TuningParametersTemplate,
+    to_template,
 )
-from tune.concepts.space.parameters import _decode_params
 
 
 def test_grid():
@@ -48,6 +49,11 @@ def test_choice():
     v = Choice("a", "b", "c")
     assert isinstance(json.loads(json.dumps({"x": v.generate(0)}))["x"], str)
 
+    v2 = Choice("a", "b", "c")
+    v3 = Choice("a", "b", "d")
+    assert to_uuid(v) == to_uuid(v2)
+    assert to_uuid(v2) != to_uuid(v3)
+
 
 def test_transition_choice():
     raises(ValueError, lambda: TransitionChoice())
@@ -67,6 +73,11 @@ def test_transition_choice():
 
     v = TransitionChoice("a", "b", "c")
     assert isinstance(json.loads(json.dumps({"x": v.generate(0)}))["x"], str)
+
+    v2 = TransitionChoice("a", "b", "c")
+    v3 = Choice("a", "b", "c")
+    assert to_uuid(v) == to_uuid(v2)
+    assert to_uuid(v2) != to_uuid(v3)
 
 
 def test_rand():
@@ -121,6 +132,12 @@ def test_rand():
     )
     assert t.pvalue > 0.4
 
+    v1 = Rand(1.0, 2.0, q=0.1, log=False)
+    v2 = Rand(1.0, 2.0, log=False, q=0.1)
+    v3 = Rand(1.0, 2.0, log=False)
+    assert to_uuid(v1) == to_uuid(v2)
+    assert to_uuid(v1) != to_uuid(v3)
+
 
 def test_randint():
     with raises(ValueError):
@@ -150,6 +167,12 @@ def test_randint():
     actual = set(v.generate_many(1000, 0))
     assert set(range(3, 21)) == actual
 
+    v1 = RandInt(1, 20, q=2)
+    v2 = RandInt(1, 20, q=2)
+    v3 = Rand(1, 20, q=2)
+    assert to_uuid(v1) == to_uuid(v2)
+    assert to_uuid(v1) != to_uuid(v3)
+
 
 def test_normal_rand():
     with raises(ValueError):
@@ -171,6 +194,11 @@ def test_normal_rand():
     actual = [x for x in v.generate_many(1000, 0) if x >= -0.155 and x <= 0.255]
     assert_close([-0.15, -0.05, 0.05, 0.15, 0.25], actual)
 
+    v2 = NormalRand(0.05, 0.2, q=0.1)
+    v3 = Rand(0.05, 0.2, q=0.1)
+    assert to_uuid(v) == to_uuid(v2)
+    assert to_uuid(v) != to_uuid(v3)
+
 
 def test_normal_randint():
     v = NormalRandInt(5, 2)
@@ -188,20 +216,218 @@ def test_normal_randint():
         assert x in actual
     assert 6 not in actual
 
+    v2 = NormalRandInt(5, 2, q=3)
+    v3 = NormalRand(5, 2, q=3)
+    assert to_uuid(v) == to_uuid(v2)
+    assert to_uuid(v) != to_uuid(v3)
 
-def test_encode__decode_params():
-    s1 = Space(
-        a=Grid(1, 2),
-        b=Rand(1.0, 7.1, 0.2, log=True),
-        c=Choice(1, 2, 3),
-        d=[Grid(1, 2), Rand(0, 2.0)],
-        e={"x": "xx", "y": Choice("a", "b")},
-        f=RandInt(0, 10, log=False),
-        g=NormalRand(0.1, 1.0, q=0.1),
-        h=NormalRandInt(0.1, 1.0),
-        i=TransitionChoice(1, 2, 3, "x"),
+
+def test_tuning_parameters_template():
+    data = dict(a=1)
+    e = make_template(data)
+    assert e.empty
+    assert not e.has_grid
+    assert not e.has_stochastic
+
+    data = dict(a=Rand(0, 1))
+    e = make_template(data)
+    assert not e.empty
+    assert not e.has_grid
+    assert e.has_stochastic
+
+    data = dict(a=Grid(0, 1))
+    e = make_template(data)
+    assert not e.empty
+    assert e.has_grid
+    assert not e.has_stochastic
+
+    data = dict(
+        a=Rand(0, 1),
+        b=Grid(2, 3),
+        c=dict(
+            a=Rand(10, 20), b=[dict(x=Rand(100, 200))], c=[1, Rand(1000, 2000)], d=None
+        ),
+        d=None,
     )
-    actual = [_decode_params(x) for x in s1.encode()]
-    assert list(s1) == actual
-    for x in s1.encode():
-        print(json.dumps(x, indent=2))
+    e = make_template(data)
+    assert not e.empty
+    assert e.has_grid
+    assert e.has_stochastic
+    assert [
+        Rand(0, 1),
+        Grid(2, 3),
+        Rand(10, 20),
+        Rand(100, 200),
+        Rand(1000, 2000),
+    ] == e.params
+    res = e.fill([0.5, 2, 10.5, 100.5, 1000.5])
+    res2 = e.fill([0.55, 2, 10.55, 100.5, 1000.5])
+    assert (
+        dict(
+            a=0.5,
+            b=2,
+            c=dict(a=10.5, b=[dict(x=100.5)], c=[1, 1000.5], d=None),
+            d=None,
+        )
+        == res
+    )
+    assert res2 is not res
+    assert (
+        dict(
+            a=0.55,
+            b=2,
+            c=dict(a=10.55, b=[dict(x=100.5)], c=[1, 1000.5], d=None),
+            d=None,
+        )
+        == res2
+    )
+
+    # extract and fill by dicts
+    data = dict(
+        a=Rand(0, 1),
+        b=dict(x=[Grid(2, 3)]),
+    )
+    e = make_template(data)
+    assert dict(p0=Rand(0, 1), p1=Grid(2, 3)) == e.params_dict
+    assert dict(a=0.5, b=dict(x=[2])) == e.fill_dict(dict(p1=2, p0=0.5))
+
+    # same express in template
+    expr = Rand(0, 1)
+    data = dict(a=expr, b=dict(x=expr), c=Rand(2, 4))
+    e = make_template(data)
+    assert dict(p0=Rand(0, 1), p1=Rand(2, 4)) == e.params_dict
+    assert dict(a=0.5, b=dict(x=0.5), c=2) == e.fill_dict(dict(p1=2, p0=0.5))
+
+    # special objects
+    e = make_template(dict(a=Rand(0, 1), b=pd.DataFrame([[0]])))
+
+
+def test_template_eq():
+    data1 = make_template(dict())
+    data2 = make_template(dict())
+    assert data1 == data2
+
+    data1 = make_template(dict(a=1, b=2))
+    data2 = make_template(dict(a=1, b=2))
+    data3 = make_template(dict(a=1, b=3))
+    assert data1 == data2
+    assert data1 != data3
+
+    data1 = make_template(dict(a=1, b=Grid(0, 1)))
+    data2 = make_template(dict(a=1, b=Grid(0, 1)))
+    data3 = make_template(dict(a=1, b=Grid(0, 2)))
+    assert data1 == data2
+    assert data1 != data3
+
+    u = Grid(0, 1)
+    v = Grid(0, 1)
+    data1 = make_template(dict(a=1, b=u, c=u))
+    data2 = dict(a=1, b=v, c=v)
+    data3 = dict(a=1, b=u, c=v)
+    assert data1 == data2
+    assert data1 != data3
+    assert data2 == data1
+    assert data3 != data1
+
+
+def test_template_product():
+    data = make_template(dict())
+    assert [dict()] == list(data.product_grid())
+
+    data = make_template(dict(a=1, b=2))
+    assert [dict(a=1, b=2)] == list(data.product_grid())
+
+    data = make_template(dict(a=1, b=Grid(0, 1)))
+    assert [dict(a=1, b=0), dict(a=1, b=1)] == list(data.product_grid())
+
+    u = Grid(0, 1)
+    data = make_template(dict(a=u, b=1, c=[u], d=Grid(0, 1)))
+    assert [
+        dict(a=0, b=1, c=[0], d=0),
+        dict(a=0, b=1, c=[0], d=1),
+        dict(a=1, b=1, c=[1], d=0),
+        dict(a=1, b=1, c=[1], d=1),
+    ] == list(data.product_grid())
+
+    data = make_template(dict(a=1, b=Grid(0, 1), c=Rand(0, 1)))
+    assert [dict(a=1, b=0, c=Rand(0, 1)), dict(a=1, b=1, c=Rand(0, 1))] == list(
+        data.product_grid()
+    )
+
+
+def test_template_sample():
+    data = make_template(dict())
+    raises(ValueError, lambda: list(data.sample(0, 0)))
+    raises(ValueError, lambda: list(data.sample(-1, 0)))
+    assert [dict()] == list(data.sample(100, 0))
+
+    data = make_template(dict(a=1, b=2))
+    assert [dict(a=1, b=2)] == list(data.sample(100, 0))
+
+    data = make_template(dict(a=1, b=Rand(0, 1)))
+    assert list(data.sample(10, 0)) == list(data.sample(10, 0))
+    assert list(data.sample(10, 0)) != list(data.sample(10, 1))
+    a = list(data.sample(10, 0))
+    assert 10 == len(a)
+    assert all(x.template["b"] >= 0 and x.template["b"] <= 1 for x in a)
+    assert all(x.empty for x in a)
+    assert all(not x.has_grid for x in a)
+    assert all(not x.has_stochastic for x in a)
+
+    u = Rand(0, 1)
+    data = make_template(dict(a=1, b=u, c=Grid(0, 1), d=[u]))
+    a = list(data.sample(10, 0))
+    assert 10 == len(a)
+    assert all(x.template["b"] >= 0 and x.template["b"] <= 1 for x in a)
+    assert all(x.template["d"][0] == x.template["b"] for x in a)
+    assert all(not x.empty for x in a)
+    assert all(x.has_grid for x in a)
+    assert all(not x.has_stochastic for x in a)
+
+
+def test_template_concat():
+    u = Grid(0, 1)
+    t1 = TuningParametersTemplate(dict(a=1, b=u, c=Grid(2, 3)))
+    t2 = TuningParametersTemplate(dict(d=2, e=u, f=Grid(2, 3)))
+    t = t1.concat(t2)
+    assert dict(a=1, b=u, c=Grid(2, 3), d=2, e=u, f=Grid(2, 3)) == t
+    assert dict(a=1, b=0, c=2) == t1.fill([0, 2])
+    assert dict(d=2, e=1, f=3) == t2.fill([1, 3])
+    assert dict(a=1, b=1, c=2, d=2, e=1, f=3) == t.fill([1, 2, 3])
+
+    raises(ValueError, lambda: t.concat(t1))
+
+
+def test_template_misc():
+    # to_template
+    t = to_template(dict(a=1, b=Grid(0, 1)))
+    assert isinstance(t, TuningParametersTemplate)
+    t2 = to_template(t)
+    assert t is t2
+    t3 = to_template(t.encode())
+    assert t == t3
+
+    raises(ValueError, lambda: to_template(123))
+
+    # uuid
+    u = Grid(0, 1)
+    t1 = make_template(dict(a=1, b=u, c=Grid(0, 1)))
+    t2 = make_template(dict(a=1, b=u, c=Grid(0, 1)))
+    t3 = make_template(dict(a=1, b=u, c=u))
+    t4 = make_template(dict(a=1, b=u, c=u))
+    assert to_uuid(t1) == to_uuid(t2)
+    assert to_uuid(t2) != to_uuid(t3)
+    assert to_uuid(t3) == to_uuid(t4)
+
+    # simple value
+    u = Grid(0, 1)
+    t1 = make_template(dict(a=1, b=u, c=Grid(0, 1)))
+    raises(ValueError, lambda: t1.simple_value)
+
+    t2 = make_template(dict(a=1, b=2))
+    dict(a=1, b=2) == t2.simple_value
+
+
+def make_template(d):
+    x = TuningParametersTemplate(d).encode()
+    return TuningParametersTemplate.decode(x)

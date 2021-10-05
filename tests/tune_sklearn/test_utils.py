@@ -22,4 +22,4 @@ def test_sk_space():
         )
     )
     assert 2 == len(rows)
-    assert "sklearn.linear_model._base.LinearRegression" == rows[0][SPACE_MODEL_NAME]
+    assert "sklearn.linear_model._base.LinearRegression" == rows[0].simple_value[SPACE_MODEL_NAME]

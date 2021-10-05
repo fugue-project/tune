@@ -4,15 +4,16 @@ from typing import Any, Dict, List, Tuple
 from fs.base import FS as FSBase
 from tensorflow import keras
 from triad import FileSystem
+from tune.concepts.space import to_template, TuningParametersTemplate
 
 
 class KerasTrainingSpec:
-    def __init__(self, params: Dict[str, Any], dfs: Dict[str, Any]):
-        self._params = params
+    def __init__(self, params: Any, dfs: Dict[str, Any]):
+        self._params = to_template(params)
         self._dfs = dfs
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> TuningParametersTemplate:
         return self._params
 
     @property

@@ -9,8 +9,7 @@ from tune.concepts.space.parameters import (
     RandInt,
     StochasticExpression,
     TransitionChoice,
-    _decode_params,
-    _encode_params,
+    TuningParametersTemplate,
+    to_template,
 )
-from tune.concepts.space.spaces import HorizontalSpace, Space, VerticalSpace
-from tune.concepts.space.utils import TuningParametersTemplate
+from tune.concepts.space.spaces import Space

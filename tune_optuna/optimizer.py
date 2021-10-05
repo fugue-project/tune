@@ -25,14 +25,14 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._create_study = create_study or optuna.create_study
 
     def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
-        template = TuningParametersTemplate(trial.params)
+        template = trial.params
         if len(template.params) == 0:
             return func.run(trial)
         lock = RLock()
         best_report: List[TrialReport] = []
 
         def obj(otrial: optuna.trial.Trial) -> float:
-            params = template.fill_dict(_convert(otrial, template), copy=True)
+            params = template.fill_dict(_convert(otrial, template))
             report = func.run(trial.with_params(params))
             with lock:
                 if len(best_report) == 0:

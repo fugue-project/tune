@@ -111,7 +111,7 @@ def suggest_by_sha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
@@ -156,7 +156,7 @@ def suggest_by_hyperband(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
@@ -200,7 +200,7 @@ def suggest_by_continuous_asha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
