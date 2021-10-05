@@ -16,6 +16,7 @@ from tune.concepts.space import (
     TransitionChoice,
     TuningParametersTemplate,
     to_template,
+    FuncParam,
 )
 
 
@@ -222,6 +223,25 @@ def test_normal_randint():
     assert to_uuid(v) != to_uuid(v3)
 
 
+def test_func_param():
+    def tf(*args, x, y):
+        return sum(args) + x + y
+
+    f1 = FuncParam(tf, 4, x=1, y=2)
+    assert 7 == f1()
+    f2 = FuncParam(tf, 4, x=1, y=2)
+    f3 = FuncParam(tf, 5, x=1, y=2)
+    assert f1 == f2
+    assert f1 != f3
+    assert to_uuid(f1) == to_uuid(f2)
+    assert to_uuid(f1) != to_uuid(f3)
+    f1[0] = 5
+    f1["y"] = 3
+    assert 5 == f1[0]
+    assert 3 == f1["y"]
+    assert 9 == f1()
+
+
 def test_tuning_parameters_template():
     data = dict(a=1)
     e = make_template(data)
@@ -300,6 +320,16 @@ def test_tuning_parameters_template():
 
     # special objects
     e = make_template(dict(a=Rand(0, 1), b=pd.DataFrame([[0]])))
+
+    # func
+    def tf(*args, x):
+        return sum(args) + x[0]
+
+    u = Grid(0, 1)
+    e = make_template(dict(a=1, b=[FuncParam(tf, Rand(0, 1), u, x=[u])]))
+    assert e.has_grid
+    assert e.has_stochastic
+    assert dict(a=1, b=[2.5]) == e.fill([0.5, 1])
 
 
 def test_template_eq():
@@ -421,11 +451,20 @@ def test_template_misc():
 
     # simple value
     u = Grid(0, 1)
-    t1 = make_template(dict(a=1, b=u, c=Grid(0, 1)))
+    t1 = make_template(dict(a=1, b=u, c=Grid(0, 1), d=FuncParam(lambda x: x + 1, u)))
     raises(ValueError, lambda: t1.simple_value)
+    assert [
+        dict(a=1, b=0, c=0, d=1),
+        dict(a=1, b=0, c=1, d=1),
+        dict(a=1, b=1, c=0, d=2),
+        dict(a=1, b=1, c=1, d=2),
+    ] == list(t1.product_grid())
 
     t2 = make_template(dict(a=1, b=2))
     dict(a=1, b=2) == t2.simple_value
+
+    t2 = make_template(dict(a=1, b=FuncParam(lambda x: x + 1, x=2)))
+    assert dict(a=1, b=3) == t2.simple_value
 
 
 def make_template(d):

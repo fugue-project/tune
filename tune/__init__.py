@@ -26,6 +26,7 @@ from tune.concepts.flow import (
 )
 from tune.concepts.space import (
     Choice,
+    FuncParam,
     Grid,
     Rand,
     RandInt,

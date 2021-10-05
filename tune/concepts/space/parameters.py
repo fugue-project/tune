@@ -1,10 +1,11 @@
 import base64
-import pickle
+import cloudpickle
 from copy import deepcopy
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 from triad import assert_or_throw, to_uuid
+from triad.utils.convert import get_full_type_path
 from tune._utils import product
 from tune._utils.math import (
     normal_to_continuous,
@@ -365,6 +366,73 @@ class NormalRandInt(RandBase):
         )
 
 
+class FuncParam:
+    """Function paramter. It defers the function call after all its parameters
+    are no longer tuning parameters
+
+    :param func: function to generate parameter value
+    :param args: list arguments
+    :param kwargs: key-value arguments
+
+    .. code-block:: python
+
+        s = Space(a=1, b=FuncParam(lambda x, y: x + y, x=Grid(0, 1), y=Grid(3, 4)))
+        assert [
+            dict(a=1, b=3),
+            dict(a=1, b=4),
+            dict(a=1, b=4),
+            dict(a=1, b=5),
+        ] == list(s)
+    """
+
+    def __init__(self, func: Callable, *args: Any, **kwargs: Any):
+        self._func = func
+        self._args = list(args)
+        self._kwargs = dict(kwargs)
+
+    def __uuid__(self) -> str:
+        """Unique id for this expression"""
+        return to_uuid(get_full_type_path(self._func), self._args, self._kwargs)
+
+    def __call__(self) -> Any:
+        """Call the function to generate value"""
+        return self._func(*self._args, **self._kwargs)
+
+    def __setitem__(self, key: Any, item: Any) -> None:
+        """Update argument value
+
+        :param key: key to set, if int, then set in ``args`` else set in ``kwargs``
+        :param item: value to use
+        """
+        if isinstance(key, int):
+            self._args[key] = item
+        else:
+            self._kwargs[key] = item
+
+    def __getitem__(self, key: Any) -> Any:
+        """Get argument value
+
+        :param key: key to get, if int, then get in ``args`` else get in ``kwargs``
+        :return: the correspondent value
+        """
+        if isinstance(key, int):
+            return self._args[key]
+        else:
+            return self._kwargs[key]
+
+    def __eq__(self, other: Any) -> bool:
+        """Whether the expression equals to the other one
+
+        :param other: another ``FuncParam``
+        :return: whether they are equal
+        """
+        return (
+            self._func is other._func
+            and self._args == other._args
+            and self._kwargs == other._kwargs
+        )
+
+
 class _MapUnit:
     def __init__(self, expr: TuningParameterExpression):
         self.expr = expr
@@ -418,6 +486,7 @@ class TuningParametersTemplate:
         self._units: List[_MapUnit] = []
         self._has_grid = False
         self._has_stochastic = False
+        self._func_positions: List[List[Any]] = []
         self._template: Dict[str, Any] = self._copy(raw, [], {})
         self._uuid = ""
 
@@ -434,6 +503,7 @@ class TuningParametersTemplate:
             and self._has_stochastic == o._has_stochastic
             and self._template == o._template
             and self._units == o._units
+            and self._func_positions == o._func_positions
         )
 
     def __uuid__(self):
@@ -456,7 +526,9 @@ class TuningParametersTemplate:
         will be raised
         """
         assert_or_throw(self.empty, ValueError("template contains tuning expressions"))
-        return self._template
+        if len(self._func_positions) == 0:
+            return self._template
+        return self._fill_funcs(deepcopy(self._template))
 
     @property
     def empty(self) -> bool:
@@ -505,7 +577,7 @@ class TuningParametersTemplate:
             for path in u.positions:
                 self._fill_path(template, path, params[i])
             i += 1
-        return template
+        return self._fill_funcs(template)
 
     def fill_dict(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Fill the original data structure with dictionary of values
@@ -521,12 +593,12 @@ class TuningParametersTemplate:
 
     def encode(self) -> str:
         """Convert the template to a base64 string"""
-        return base64.b64encode(pickle.dumps(self)).decode("ascii")
+        return base64.b64encode(cloudpickle.dumps(self)).decode("ascii")
 
     @staticmethod
     def decode(data: str) -> "TuningParametersTemplate":
         """Retrieve the template from a base64 string"""
-        return pickle.loads(base64.b64decode(data.encode("ascii")))  # type: ignore
+        return cloudpickle.loads(base64.b64decode(data.encode("ascii")))  # type: ignore
 
     def product_grid(self) -> Iterable["TuningParametersTemplate"]:
         """cross product all grid parameters
@@ -595,6 +667,7 @@ class TuningParametersTemplate:
         res._has_grid = self._has_grid | other._has_grid
         res._has_stochastic = self._has_stochastic | other._has_stochastic
         res._template = dict(self._template)
+        res._func_positions = self._func_positions + other._func_positions
         for k, v in other._template.items():
             assert_or_throw(
                 k not in res._template,
@@ -609,6 +682,18 @@ class TuningParametersTemplate:
                 else:
                     res._units.append(u.copy())
         return res
+
+    def _fill_funcs(self, obj: Dict[str, Any]) -> Dict[str, Any]:
+        def realize_func(path: List[Any]) -> None:
+            r: Any = obj
+            for p in path[:-1]:
+                r = r[p]
+            r[path[-1]] = r[path[-1]]()
+
+        for path in self._func_positions:
+            realize_func(path)
+
+        return obj
 
     def _copy(self, src: Any, keys: List[Any], idx: Dict[int, _MapUnit]) -> Any:
         if isinstance(src, dict):
@@ -631,6 +716,11 @@ class TuningParametersTemplate:
                 else:
                     adest.append(self._copy(src[i], nk, idx))
             return adest
+        elif isinstance(src, FuncParam):
+            self._func_positions.append(keys)
+            args = self._copy(src._args, keys, idx)
+            kwargs = self._copy(src._kwargs, keys, idx)
+            return FuncParam(src._func, *args, **kwargs)
         else:
             return src
 
@@ -674,6 +764,11 @@ class TuningParametersTemplate:
             t._template = new_template
             t._has_grid = has_grid
             t._has_stochastic = has_stochastic
+            t._func_positions = self._func_positions
+
+            if t.empty and len(t._func_positions) > 0:
+                t._template = t._fill_funcs(t._template)
+                t._func_positions = []
             yield t
 
 

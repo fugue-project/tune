@@ -2,6 +2,7 @@
 
 from tune.concepts.space.parameters import (
     Choice,
+    FuncParam,
     Grid,
     NormalRand,
     NormalRandInt,
