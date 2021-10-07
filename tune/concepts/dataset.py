@@ -1,4 +1,3 @@
-import json
 import os
 import pickle
 import random
@@ -19,7 +18,9 @@ from fugue import (
     WorkflowDataFrames,
 )
 from triad import ParamDict, assert_or_throw, to_uuid
-
+from tune._utils import from_base64, to_base64
+from tune.concepts.flow import Trial
+from tune.concepts.space import Space
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
     TUNE_DATASET_PARAMS_PREFIX,
@@ -31,8 +32,6 @@ from tune.constants import (
     TUNE_TEMP_PATH,
 )
 from tune.exceptions import TuneCompileError
-from tune.concepts.space import Space
-from tune.concepts.flow import Trial
 
 
 class TuneDataset:
@@ -374,21 +373,18 @@ class StudyResult:
 def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
     key_names = sorted(k for k in data.keys() if not k.startswith(TUNE_PREFIX))
     keys = [data[k] for k in key_names]
-    trials: Dict[str, Dict[str, Any]] = {}
+    trials: Dict[str, Trial] = {}
     for params in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
         tid = to_uuid(keys, params)
-        trials[tid] = Trial(
-            trial_id=tid, params=params, metadata=metadata, keys=keys
-        ).jsondict
-    data[TUNE_DATASET_TRIALS] = json.dumps(list(trials.values()))
+        trials[tid] = Trial(trial_id=tid, params=params, metadata=metadata, keys=keys)
+    data[TUNE_DATASET_TRIALS] = to_base64(list(trials.values()))
     del data[TUNE_DATASET_PARAMS_PREFIX]
     return data
 
 
 def _get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable[Trial]:
     if not with_dfs:
-        for params in json.loads(row[TUNE_DATASET_TRIALS]):
-            yield Trial.from_jsondict(params)
+        yield from from_base64(row[TUNE_DATASET_TRIALS])
     else:
         dfs: Dict[str, Any] = {}
         for k, v in row.items():
@@ -396,5 +392,5 @@ def _get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable
                 key = k[len(TUNE_DATASET_DF_PREFIX) :]
                 if v is not None:
                     dfs[key] = pd.read_parquet(v)
-        for params in json.loads(row[TUNE_DATASET_TRIALS]):
-            yield Trial.from_jsondict(params).with_dfs(dfs)
+        for params in from_base64(row[TUNE_DATASET_TRIALS]):
+            yield params.with_dfs(dfs)

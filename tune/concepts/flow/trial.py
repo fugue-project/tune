@@ -58,6 +58,16 @@ class Trial:
             dfs=self._dfs,
         )
 
+    def __repr__(self) -> str:
+        return repr(
+            dict(
+                trial_id=self._trial_id,
+                params=self._params,
+                metadata=self._metadata,
+                keys=self._keys,
+            )
+        )
+
     def __copy__(self) -> "Trial":
         """Shallow copy"""
         return self.copy()
@@ -117,26 +127,3 @@ class Trial:
     def metadata(self) -> Dict[str, Any]:
         """Metadata of the trial"""
         return self._metadata
-
-    @property
-    def jsondict(self) -> Dict[str, Any]:
-        """Json serializable python dict of this object"""
-        return {
-            "trial_id": self.trial_id,
-            "params": self.params.encode(),
-            "metadata": self.metadata,
-            "keys": self.keys,
-        }
-
-    @staticmethod
-    def from_jsondict(data: Dict[str, Any]) -> "Trial":
-        """Construct a Trail object from a json serializable python dict
-
-        :param data: the python dict
-
-        .. note::
-
-            This is the counterpart of :meth:`~.jsondict`. They are designed
-            for communication purposes.
-        """
-        return Trial(**data)

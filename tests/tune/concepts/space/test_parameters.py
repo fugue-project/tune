@@ -467,6 +467,32 @@ def test_template_misc():
     assert dict(a=1, b=3) == t2.simple_value
 
 
+def test_repr():
+    assert "Grid('a', 'b')" == repr(Grid("a", "b"))
+    assert "Choice('a', 'b')" == repr(Choice("a", "b"))
+    assert "TransitionChoice('a', 'b')" == repr(TransitionChoice("a", "b"))
+    assert "Rand(low=0.2, high=1, q=0.1, log=True, include_high=False)" == repr(
+        Rand(0.2, 1, 0.1, True, False)
+    )
+    assert "RandInt(low=2, high=10, q=2, log=True, include_high=False)" == repr(
+        RandInt(2, 10, 2, True, False)
+    )
+    assert "NormalRand(mu=0.1, sigma=0.2, q=0.3)" == repr(NormalRand(0.1, 0.2, 0.3))
+    assert "NormalRandInt(mu=2, sigma=0.2, q=3)" == repr(NormalRandInt(2, 0.2, 3))
+    assert "FuncParam(make_template, a=Grid('a', 'b'))" == repr(
+        FuncParam(make_template, a=Grid("a", "b"))
+    )
+    assert "FuncParam(<lambda>, Grid('a', 'b'))" == repr(
+        FuncParam(lambda x: x + 1, Grid("a", "b"))
+    )
+    assert "{'a': 1, 'b': Grid(1, 2)}" == repr(
+        TuningParametersTemplate(dict(a=1, b=Grid(1, 2)))
+    )
+    assert "{'a': 1, 'b': Grid(1, 2)}" == str(
+        TuningParametersTemplate(dict(a=1, b=Grid(1, 2)))
+    )
+
+
 def make_template(d):
     x = TuningParametersTemplate(d).encode()
     return TuningParametersTemplate.decode(x)

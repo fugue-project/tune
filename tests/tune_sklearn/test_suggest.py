@@ -32,7 +32,6 @@ def test_suggest(tmpdir):
         distributed=False,
         local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
     )
-    # print([x.jsondict for x in result])
     assert 4 == len(result)
     assert 50 > result[0].sort_metric
 
@@ -82,7 +81,6 @@ def test_suggest_cv(tmpdir):
         distributed=False,
         local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
     )
-    # print([x.jsondict for x in result])
     assert 4 == len(result)
     assert 50 > result[0].sort_metric
 

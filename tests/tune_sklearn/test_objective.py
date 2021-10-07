@@ -26,7 +26,7 @@ def test_objective(tmpdir):
     optimizer = HyperoptLocalOptimizer(5, 0)
 
     def v(report):
-        print(report.jsondict)
+        print(report)
         assert report.sort_metric < 0
         assert "cv_scores" in report.metadata
         # assert report.trial.params["max_iter"] >= 2
@@ -36,7 +36,7 @@ def test_objective(tmpdir):
     obj = SKCVObjective(scoring="accuracy", checkpoint_path=str(tmpdir))
 
     def v2(report):
-        print(report.jsondict)
+        print(report)
         assert report.sort_metric < 0
         assert "cv_scores" in report.metadata
         assert "checkpoint_path" in report.metadata

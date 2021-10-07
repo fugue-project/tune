@@ -1,10 +1,10 @@
 import heapq
-import json
 from datetime import datetime
 from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from triad.utils.convert import to_datetime
+from tune._utils import to_base64
 from tune.concepts.flow.trial import Trial
 from tune.concepts.space.parameters import TuningParametersTemplate, to_template
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
@@ -77,6 +77,20 @@ class TrialReport:
             rung=self._rung,
             sort_metric=self._sort_metric,
             log_time=self.log_time,
+        )
+
+    def __repr__(self) -> str:
+        return repr(
+            dict(
+                trial=self.trial,
+                metric=self.metric,
+                params=self._params,
+                metadata=self._metadata,
+                cost=self._cost,
+                rung=self._rung,
+                sort_metric=self._sort_metric,
+                log_time=self.log_time,
+            )
         )
 
     def __copy__(self) -> "TrialReport":
@@ -185,33 +199,22 @@ class TrialReport:
         )
         return t
 
-    @property
-    def jsondict(self) -> Dict[str, Any]:
-        """Json serializable python dict of this object"""
-        return {
-            "trial": self.trial.jsondict,
-            "metric": self.metric,
-            "params": self._params.encode(),
-            "metadata": self.metadata,
-            "cost": self.cost,
-            "rung": self.rung,
-            "sort_metric": self.sort_metric,
-            "log_time": str(self.log_time),
-        }
+    def __getstate__(self) -> Dict[str, Any]:
+        keys = [
+            "_trial",
+            "_metric",
+            "_params",
+            "_metadata",
+            "_cost",
+            "_rung",
+            "_sort_metric",
+            "_log_time",
+        ]
+        return {k: self.__dict__[k] for k in keys}
 
-    @staticmethod
-    def from_jsondict(data: Dict[str, Any]) -> "TrialReport":
-        """Construct a TrailReport object from a json serializable python dict
-
-        :param data: the python dict
-
-        .. note::
-
-            This is the counterpart of :meth:`~.jsondict`. They are designed
-            for communication purposes.
-        """
-        trial = Trial.from_jsondict(data.pop("trial"))
-        return TrialReport(trial=trial, **data)
+    def __setstate__(self, d: Dict[str, Any]) -> None:
+        for k, v in d.items():
+            self.__dict__[k] = v
 
     def fill_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Fill a row of :class:`~tune.concepts.dataset.StudyResult` with
@@ -222,7 +225,7 @@ class TrialReport:
         """
         data[TUNE_REPORT_ID] = self.trial_id
         data[TUNE_REPORT_METRIC] = self.sort_metric
-        data[TUNE_REPORT] = json.dumps(self.jsondict)
+        data[TUNE_REPORT] = to_base64(self)
         return data
 
 

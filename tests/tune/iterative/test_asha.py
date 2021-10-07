@@ -133,7 +133,7 @@ def test_trial_stop():
 def test_run_asha(tmpdir):
     class M(Monitor):
         def on_report(self, report: TrialReport) -> None:
-            print(report.jsondict)
+            print(report)
 
     def assert_metric(df: Iterable[Dict[str, Any]], metric: float, ct: int) -> None:
         n = 0

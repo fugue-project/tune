@@ -46,6 +46,9 @@ class Grid(TuningParameterExpression):
     def __uuid__(self) -> str:
         return to_uuid("grid", self._values)
 
+    def __repr__(self) -> str:
+        return "Grid(" + repr(self._values)[1:-1] + ")"
+
 
 class StochasticExpression(TuningParameterExpression):
     """Stochastic search base class.
@@ -115,6 +118,9 @@ class Choice(StochasticExpression):
             return value.item()
         return value  # pragma: no cover
 
+    def __repr__(self) -> str:
+        return "Choice(" + repr(self._values)[1:-1] + ")"
+
 
 class TransitionChoice(Choice):
     """An ordered random choice of values.
@@ -126,6 +132,9 @@ class TransitionChoice(Choice):
     @property
     def jsondict(self) -> Dict[str, Any]:
         return dict(_expr_="tchoice", values=self.values)
+
+    def __repr__(self) -> str:
+        return "TransitionChoice(" + repr(self._values)[1:-1] + ")"
 
 
 class RandBase(StochasticExpression):
@@ -216,6 +225,12 @@ class Rand(RandBase):
                 )
             )
 
+    def __repr__(self) -> str:
+        return (
+            f"Rand(low={self.low}, high={self.high}, q={self.q},"
+            f" log={self.log}, include_high={self.include_high})"
+        )
+
 
 class RandInt(RandBase):
     """Uniform distributed random integer values.
@@ -278,6 +293,12 @@ class RandInt(RandBase):
             )
         )
 
+    def __repr__(self) -> str:
+        return (
+            f"RandInt(low={self.low}, high={self.high}, q={self.q},"
+            f" log={self.log}, include_high={self.include_high})"
+        )
+
 
 class NormalRand(RandBase):
     """Continuous normally distributed random variables.
@@ -320,6 +341,9 @@ class NormalRand(RandBase):
             return normal_to_discrete(value, mean=self.mu, sigma=self.sigma, q=self.q)
         else:
             return normal_to_continuous(value, mean=self.mu, sigma=self.sigma)
+
+    def __repr__(self) -> str:
+        return f"NormalRand(mu={self.mu}, sigma={self.sigma}, q={self.q})"
 
 
 class NormalRandInt(RandBase):
@@ -364,6 +388,9 @@ class NormalRandInt(RandBase):
                 q=self.q,  # type: ignore
             )
         )
+
+    def __repr__(self) -> str:
+        return f"NormalRandInt(mu={self.mu}, sigma={self.sigma}, q={self.q})"
 
 
 class FuncParam:
@@ -431,6 +458,12 @@ class FuncParam:
             and self._args == other._args
             and self._kwargs == other._kwargs
         )
+
+    def __repr__(self) -> str:
+        a: List[str] = [self._func.__name__]
+        a += [repr(x) for x in self._args]
+        a += [f"{k}={repr(v)}" for k, v in self._kwargs.items()]
+        return "FuncParam(" + ", ".join(a) + ")"
 
 
 class _MapUnit:
@@ -511,6 +544,9 @@ class TuningParametersTemplate:
         if self._uuid == "":
             self._uuid = to_uuid(self._units, self._template)
         return self._uuid
+
+    def __repr__(self) -> str:
+        return repr(self.fill([x.expr for x in self._units]))
 
     @property
     def template(self) -> Dict[str, Any]:

@@ -1,4 +1,3 @@
-import json
 from typing import Any, List, Optional
 
 from fugue import FugueWorkflow
@@ -9,6 +8,7 @@ from tune import (
     TrialReport,
     optimize_noniterative,
 )
+from tune._utils import from_base64
 from tune.constants import TUNE_REPORT, TUNE_REPORT_METRIC
 
 from tune_sklearn.objective import SKCVObjective, SKObjective
@@ -66,7 +66,7 @@ def suggest_sk_models(
         )["result"].as_dict_iterable()
     )
     return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
+        from_base64(r[TUNE_REPORT])
         for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
     ]
 
@@ -123,6 +123,6 @@ def suggest_sk_models_by_cv(
         )["result"].as_dict_iterable()
     )
     return [
-        TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
+        from_base64(r[TUNE_REPORT])
         for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
     ]
