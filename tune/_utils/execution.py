@@ -26,7 +26,7 @@ def run_monitored_process(
             pool.close()
             pool.join()
             res = result.get(timeout=1)[0]
-            return cloudpickle.pickle.loads(res)
+            return cloudpickle.loads(res)
         if stop_checker():
             pool.terminate()
             pool.join()

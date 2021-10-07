@@ -1,12 +1,12 @@
 import heapq
-import json
 from datetime import datetime
 from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from triad.utils.convert import to_datetime
-from tune.concepts.space.parameters import _decode_params, _encode_params
+from tune._utils import to_base64
 from tune.concepts.flow.trial import Trial
+from tune.concepts.space.parameters import TuningParametersTemplate, to_template
 from tune.constants import TUNE_REPORT, TUNE_REPORT_ID, TUNE_REPORT_METRIC
 
 
@@ -16,7 +16,9 @@ class TrialReport:
     :param trial: the original trial sent to the objective
     :param metric: the raw metric from the objective output
     :param params: updated parameters based on the trial input, defaults to None.
-      If none, it means the params from the trial was not updated
+      If none, it means the params from the trial was not updated, otherwise
+      it is an object convertible to ``TuningParametersTemplate``
+      by :func:`~tune.concepts.space.parameters.to_template`
     :param metadata: metadata from the objective output, defaults to None
     :param cost: cost to run the objective, defaults to 1.0
     :param rung: number of rungs in the current objective, defaults to 0. This is
@@ -24,8 +26,6 @@ class TrialReport:
     :param sort_metric: the metric for comparison, defaults to None. It must be
       smaller better. If not set, it implies the ``metric`` is ``sort_metric`` and
       it is smaller better
-    :param raw: whether the ``params`` (if not None) is raw or encoded,
-      defaults to False
     :param log_time: the time generating this report, defaults to None. If None, current
       time will be used
 
@@ -39,12 +39,11 @@ class TrialReport:
         self,
         trial: Trial,
         metric: Any,
-        params: Optional[Dict[str, Any]] = None,
+        params: Any = None,
         metadata: Optional[Dict[str, Any]] = None,
         cost: float = 1.0,
         rung: int = 0,
         sort_metric: Any = None,
-        raw: bool = False,
         log_time: Any = None,
     ):
         self._trial = trial.with_dfs({})
@@ -55,7 +54,7 @@ class TrialReport:
         if params is None:
             self._params = trial.params
         else:
-            self._params = params if raw else _decode_params(params)
+            self._params = to_template(params)
         self._metadata = metadata or {}
         self._log_time = datetime.now() if log_time is None else to_datetime(log_time)
 
@@ -77,8 +76,21 @@ class TrialReport:
             cost=self._cost,
             rung=self._rung,
             sort_metric=self._sort_metric,
-            raw=True,
             log_time=self.log_time,
+        )
+
+    def __repr__(self) -> str:
+        return repr(
+            dict(
+                trial=self.trial,
+                metric=self.metric,
+                params=self._params,
+                metadata=self._metadata,
+                cost=self._cost,
+                rung=self._rung,
+                sort_metric=self._sort_metric,
+                log_time=self.log_time,
+            )
         )
 
     def __copy__(self) -> "TrialReport":
@@ -133,7 +145,7 @@ class TrialReport:
         return self._rung
 
     @property
-    def params(self) -> Dict[str, Any]:
+    def params(self) -> TuningParametersTemplate:
         """The parameters used by the objective to generate the
         :meth:`~.metric`
         """
@@ -187,33 +199,22 @@ class TrialReport:
         )
         return t
 
-    @property
-    def jsondict(self) -> Dict[str, Any]:
-        """Json serializable python dict of this object"""
-        return {
-            "trial": self.trial.jsondict,
-            "metric": self.metric,
-            "params": _encode_params(self.params),
-            "metadata": self.metadata,
-            "cost": self.cost,
-            "rung": self.rung,
-            "sort_metric": self.sort_metric,
-            "log_time": str(self.log_time),
-        }
+    def __getstate__(self) -> Dict[str, Any]:
+        keys = [
+            "_trial",
+            "_metric",
+            "_params",
+            "_metadata",
+            "_cost",
+            "_rung",
+            "_sort_metric",
+            "_log_time",
+        ]
+        return {k: self.__dict__[k] for k in keys}
 
-    @staticmethod
-    def from_jsondict(data: Dict[str, Any]) -> "TrialReport":
-        """Construct a TrailReport object from a json serializable python dict
-
-        :param data: the python dict
-
-        .. note::
-
-            This is the counterpart of :meth:`~.jsondict`. They are designed
-            for communication purposes.
-        """
-        trial = Trial.from_jsondict(data.pop("trial"))
-        return TrialReport(trial=trial, **data)
+    def __setstate__(self, d: Dict[str, Any]) -> None:
+        for k, v in d.items():
+            self.__dict__[k] = v
 
     def fill_dict(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Fill a row of :class:`~tune.concepts.dataset.StudyResult` with
@@ -224,7 +225,7 @@ class TrialReport:
         """
         data[TUNE_REPORT_ID] = self.trial_id
         data[TUNE_REPORT_METRIC] = self.sort_metric
-        data[TUNE_REPORT] = json.dumps(self.jsondict)
+        data[TUNE_REPORT] = to_base64(self)
         return data
 
 

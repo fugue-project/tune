@@ -46,7 +46,10 @@ def test_to_noniterative_objective():
 
     def f3(t: Trial) -> TrialReport:
         return TrialReport(
-            t, t.params["a"] - t.params["b"], params=dict(a=1), metadata=dict(c=6)
+            t,
+            t.params.simple_value["a"] - t.params.simple_value["b"],
+            params=dict(a=1),
+            metadata=dict(c=6),
         )
 
     func = to_noniterative_objective(f3)

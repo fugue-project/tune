@@ -3,8 +3,6 @@ from time import sleep
 
 import numpy as np
 import pandas as pd
-
-from tune.concepts.space import Rand
 from tune.concepts.flow import (
     Trial,
     TrialDecision,
@@ -12,6 +10,8 @@ from tune.concepts.flow import (
     TrialReportHeap,
     TrialReportLogger,
 )
+from tune.concepts.space import Rand, TuningParametersTemplate
+import cloudpickle
 
 
 def test_trial():
@@ -41,15 +41,14 @@ def test_copy():
     assert [] == t3.keys
 
 
-def test_encode_decode():
+def test_trial_serialization():
     p = {"a": 1, "b": Rand(1, 2)}
     trial = Trial("abc", p, {}, keys=["x", "y"], dfs={"v": ""})
-    d = trial.jsondict
-    assert isinstance(d["params"]["b"], dict)
-    t = Trial.from_jsondict(d)
-    assert isinstance(t.params["b"], Rand)
+    t = cloudpickle.loads(cloudpickle.dumps(trial))
+    assert isinstance(t.params, TuningParametersTemplate)
     assert ["x", "y"] == t.keys
-    assert {} == t.dfs  # dfs will not be serialized
+    assert t.trial_id == trial.trial_id
+    assert {"v": ""} == t.dfs
 
 
 def test_trial_report():
@@ -64,6 +63,7 @@ def test_trial_report():
         )
     )
     assert trial is report.trial
+    report = cloudpickle.loads(cloudpickle.dumps(report))
     assert 0.1 == report.metric
     assert type(report.metric) == float
     assert {"c": Rand(1, 2)} == report.params
@@ -76,6 +76,7 @@ def test_trial_report():
         TrialReport(trial, metric=np.float(0.111), cost=2.0, rung=4, sort_metric=1.23)
     )
     assert trial is report.trial
+    report = cloudpickle.loads(cloudpickle.dumps(report))
     assert 0.111 == report.metric
     assert type(report.metric) == float
     assert {"a": Rand(3, 4)} == report.params
@@ -93,7 +94,7 @@ def test_trial_report():
 
     ts = report.log_time
     sleep(0.1)
-    report = TrialReport.from_jsondict(report.jsondict)
+    report = cloudpickle.loads(cloudpickle.dumps(report))
     nr = report.reset_log_time()
     assert nr.log_time > report.log_time
     assert report.log_time == ts
@@ -183,6 +184,7 @@ def test_trial_decision():
     )
     assert trial is decision.trial
     assert report is decision.report
+    decision = cloudpickle.loads(cloudpickle.dumps(decision))
     assert decision.should_stop
     assert decision.should_checkpoint
     assert {"x": 1} == decision.metadata
@@ -192,9 +194,9 @@ def test_trial_decision():
     assert copy.copy(decision) is decision
     assert copy.deepcopy(decision) is decision
 
-    d2 = TrialDecision.from_jsondict(decision.jsondict)
+    d2 = cloudpickle.loads(cloudpickle.dumps(decision))
     assert d2.trial_id == trial.trial_id
-    assert Rand(0, 3) == d2.report.params["c"]
+    # assert Rand(0, 3) == d2.report.params["c"]
     assert decision.should_stop
     assert decision.should_checkpoint
     assert {"x": 1} == decision.metadata
@@ -205,6 +207,7 @@ def test_trial_decision():
     )
     assert 1.0 == decision.budget
     assert not decision.should_stop
+    print(decision)
 
 
 def test_report_logger():

@@ -20,7 +20,7 @@ class PrintBest(Monitor):
                 self._bins[key] = _ReportBin(new_best_only=True)
             rbin = self._bins[key]
         if rbin.on_report(report):
-            print(report.trial.keys, report.metric, report.jsondict)
+            print(report.trial.keys, report.metric, report)
 
 
 class NotebookSimpleChart(Monitor):
@@ -86,7 +86,7 @@ class NotebookSimpleChart(Monitor):
         plt.show()
         for best in [x.best for x in self._bins.values() if x.best is not None]:
             if best is not None:
-                print(best.trial.keys, best.metric, best.jsondict)
+                print(best.trial.keys, best.metric, best)
 
 
 class NotebookSimpleRungs(NotebookSimpleChart):

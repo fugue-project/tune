@@ -50,7 +50,7 @@ def _safe_product(arrays: List[Iterable[Any]], safe: bool = True) -> Iterable[Tu
         yield from itertools.product(*arr)
 
 
-class _EmptyIter(object):
+class _EmptyIter:
     pass
 
 

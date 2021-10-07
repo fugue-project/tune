@@ -19,6 +19,17 @@ class TrialDecision:
         self._reason = reason
         self._metadata = metadata or {}
 
+    def __repr__(self) -> str:
+        return repr(
+            dict(
+                report=self._report,
+                budget=self._budget,
+                should_checkpoint=self._should_checkpoint,
+                reason=self._reason,
+                metadata=self._metadata,
+            )
+        )
+
     def __copy__(self) -> "TrialDecision":
         return self
 
@@ -57,23 +68,8 @@ class TrialDecision:
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
-    @property
-    def jsondict(self) -> Dict[str, Any]:
-        return {
-            "report": self.report.jsondict,
-            "budget": self.budget,
-            "should_checkpoint": self.should_checkpoint,
-            "reason": self.reason,
-            "metadata": self.metadata,
-        }
 
-    @staticmethod
-    def from_jsondict(data: Dict[str, Any]) -> "TrialDecision":
-        report = TrialReport.from_jsondict(data.pop("report"))
-        return TrialDecision(report=report, **data)
-
-
-class TrialJudge(object):
+class TrialJudge:
     def __init__(self, monitor: Optional["Monitor"] = None):
         self.reset_monitor(monitor)
 
@@ -106,14 +102,14 @@ class RemoteTrialJudge(TrialJudge):
         return self._report
 
     def can_accept(self, trial: Trial) -> bool:
-        return self._entrypoint("can_accept", dict(trial=trial.jsondict))
+        return self._entrypoint("can_accept", dict(trial=trial))
 
     def judge(self, report: TrialReport) -> TrialDecision:
         self._report = report
-        return TrialDecision.from_jsondict(self._entrypoint("judge", report.jsondict))
+        return self._entrypoint("judge", dict(report=report))
 
     def get_budget(self, trial: Trial, rung: int) -> float:
-        return self._entrypoint("get_budget", dict(trial=trial.jsondict, rung=rung))
+        return self._entrypoint("get_budget", dict(trial=trial, rung=rung))
 
 
 class NoOpTrailJudge(TrialJudge):
@@ -134,13 +130,11 @@ class TrialCallback:
 
     def entrypoint(self, name, kwargs: Dict[str, Any]) -> Any:
         if name == "can_accept":
-            return self._judge.can_accept(Trial.from_jsondict(kwargs["trial"]))
+            return self._judge.can_accept(kwargs["trial"])
         if name == "judge":
-            return self._judge.judge(TrialReport.from_jsondict(kwargs)).jsondict
+            return self._judge.judge(kwargs["report"])
         if name == "get_budget":
-            return self._judge.get_budget(
-                Trial.from_jsondict(kwargs["trial"]), kwargs["rung"]
-            )
+            return self._judge.get_budget(kwargs["trial"], kwargs["rung"])
         raise NotImplementedError  # pragma: no cover
 
 

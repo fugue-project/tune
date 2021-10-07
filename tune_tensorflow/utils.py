@@ -1,6 +1,7 @@
 from typing import Any, Type, Dict
 
 from triad.utils.convert import get_full_type_path, to_type
+from tune.concepts.space.parameters import TuningParametersTemplate
 
 from tune_tensorflow.spec import KerasTrainingSpec
 from tune import Space
@@ -30,9 +31,9 @@ def keras_space(model: Any, **params: Any) -> Space:
 
 
 def extract_keras_spec(
-    params: Dict[str, Any], type_dict: Dict[str, Any]
+    params: TuningParametersTemplate, type_dict: Dict[str, Any]
 ) -> Type[KerasTrainingSpec]:
-    obj = params[SPACE_MODEL_NAME]
+    obj = params.simple_value[SPACE_MODEL_NAME]
     if isinstance(obj, str) and obj in type_dict:
         return type_dict[obj]
     return to_keras_spec(obj)

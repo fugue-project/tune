@@ -22,7 +22,7 @@ def test_sha(tmpdir):
     space = space.sample(6, 0)
     reports = suggest_keras_models_by_sha(space, plan=[(2.0, 4), (4.0, 2)], top_n=2)
     for r in reports:
-        print(r.jsondict)
+        print(r)
     assert 2 == len(reports)
 
 
@@ -49,7 +49,7 @@ def test_hyperband(tmpdir):
         top_n=2,
     )
     for r in reports:
-        print(r.jsondict)
+        print(r)
     assert 2 == len(reports)
 
 
@@ -65,5 +65,5 @@ def test_asha(tmpdir):
         space, plan=[(2.0, 4), (4.0, 2)], top_n=2
     )
     for r in reports:
-        print(r.jsondict)
+        print(r)
     assert 2 == len(reports)

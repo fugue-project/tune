@@ -28,7 +28,12 @@ class F(IterativeObjectiveFunc):
         self.step += 1
         trial = self.current_trial
         return TrialReport(
-            trial=trial, metric=f(self.step, trial.params["a"], trial.params["b"])
+            trial=trial,
+            metric=f(
+                self.step,
+                trial.params.simple_value["a"],
+                trial.params.simple_value["b"],
+            ),
         )
 
 

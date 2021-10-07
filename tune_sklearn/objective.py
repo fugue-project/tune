@@ -46,7 +46,7 @@ class SKObjective(NonIterativeObjectiveFunc):
         return -value
 
     def run(self, trial: Trial) -> TrialReport:
-        params = dict(trial.params)
+        params = dict(trial.params.simple_value)
         if trial.trial_id != self._last_id:
             self._model_type = to_sk_model(params.pop(SPACE_MODEL_NAME))
             self._model_expr = to_sk_model_expr(self._model_type)
@@ -101,7 +101,7 @@ class SKCVObjective(SKObjective):
         self._cv = cv
 
     def run(self, trial: Trial) -> TrialReport:
-        params = dict(trial.params)
+        params = dict(trial.params.simple_value)
         if trial.trial_id != self._last_id:
             self._model_type = to_sk_model(params.pop(SPACE_MODEL_NAME))
             self._model_expr = to_sk_model_expr(self._model_type)

@@ -14,3 +14,4 @@ from tune._utils.math import (
 )
 from tune._utils.test import assert_close
 from tune._utils.values import normalize_hp
+from tune._utils.serialization import to_base64, from_base64

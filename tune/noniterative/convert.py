@@ -70,7 +70,7 @@ class _NonIterativeObjectiveFuncWrapper(NonIterativeObjectiveFunc):
         if self._orig_input:
             result = self._func(trial)
         else:
-            result = self._func(**trial.params, **trial.dfs)
+            result = self._func(**trial.params.simple_value, **trial.dfs)
         return self._output_f(result, trial)
 
     @no_type_check

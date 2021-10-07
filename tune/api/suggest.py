@@ -1,9 +1,9 @@
-import json
 from typing import Any, List, Optional, Tuple
 
 from fugue import FugueWorkflow
 from fugue.exceptions import FugueDataFrameError
 from triad import assert_or_throw
+from tune._utils import from_base64
 from tune.api.factory import TUNE_OBJECT_FACTORY
 from tune.api.optimize import (
     optimize_by_continuous_asha,
@@ -111,7 +111,7 @@ def suggest_by_sha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
@@ -156,7 +156,7 @@ def suggest_by_hyperband(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
@@ -200,7 +200,7 @@ def suggest_by_continuous_asha(
     execution_engine_conf: Any = None,
 ) -> List[TrialReport]:
     assert_or_throw(
-        not space.has_random_parameter,
+        not space.has_stochastic,
         TuneCompileError(
             "space can't contain random parameters, "
             "use sample method before calling this function"
@@ -241,7 +241,7 @@ def _run(
             )["result"].as_dict_iterable()
         )
         return [
-            TrialReport.from_jsondict(json.loads(r[TUNE_REPORT]))
+            from_base64(r[TUNE_REPORT])
             for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
         ]
     except FugueDataFrameError as e:

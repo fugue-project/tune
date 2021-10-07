@@ -133,7 +133,7 @@ def test_trial_stop():
 def test_run_asha(tmpdir):
     class M(Monitor):
         def on_report(self, report: TrialReport) -> None:
-            print(report.jsondict)
+            print(report)
 
     def assert_metric(df: Iterable[Dict[str, Any]], metric: float, ct: int) -> None:
         n = 0
@@ -189,7 +189,7 @@ class F(IterativeObjectiveFunc):
 
     def run_single_iteration(self):
         trial = self.current_trial
-        metric = self._all[trial.params["a"]][self._it]
+        metric = self._all[trial.params.simple_value["a"]][self._it]
         self._it += 1
         return TrialReport(trial, metric=metric)
 

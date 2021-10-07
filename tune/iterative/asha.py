@@ -86,7 +86,7 @@ class _PerTrial:
             can_push = self._parent._rungs[report.rung].push(report)
             if not can_push:
                 # data = sorted(
-                #     (x.jsondict for x in self._parent._rungs[report.rung].values()),
+                #     (x for x in self._parent._rungs[report.rung].values()),
                 #     key=lambda x: x["sort_metric"],
                 # )
                 # reasons.append("not best: " + json.dumps(data))

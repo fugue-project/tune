@@ -10,6 +10,7 @@ from fugue import (
 import pickle
 
 import fugue
+from tune._utils.serialization import from_base64
 
 from tune.constants import (
     TUNE_DATASET_DF_PREFIX,
@@ -116,8 +117,8 @@ def test_to_trial_row():
         ),
     }
     res1 = _to_trail_row(data1, {"m": 1})
-    trials1 = [Trial(**p) for p in json.loads(res1[TUNE_DATASET_TRIALS])]
-    assert 2 == len(trials1)
+    trials1 = from_base64(res1[TUNE_DATASET_TRIALS])
+    assert 3 == len(trials1)  # order matters in params
     data2 = {
         "a": 1,
         "b": 2,
@@ -128,7 +129,7 @@ def test_to_trial_row():
     }
     res2 = _to_trail_row(data2, {"m": 1})
     assert TUNE_DATASET_PARAMS_PREFIX not in res2
-    trials2 = [Trial(**p) for p in json.loads(res2[TUNE_DATASET_TRIALS])]
+    trials2 = from_base64(res2[TUNE_DATASET_TRIALS])
     assert 2 == len(trials2)
     assert any(trials2[0].trial_id == x.trial_id for x in trials1)
     assert any(trials2[1].trial_id == x.trial_id for x in trials1)
@@ -142,7 +143,7 @@ def test_to_trial_row():
         ),
     }
     res3 = _to_trail_row(data3, {"m": 1})
-    trials3 = [Trial(**p) for p in json.loads(res3[TUNE_DATASET_TRIALS])]
+    trials3 = from_base64(res3[TUNE_DATASET_TRIALS])
     assert 2 == len(trials2)
     assert not any(trials3[0].trial_id == x.trial_id for x in trials1)
     assert not any(trials3[1].trial_id == x.trial_id for x in trials1)
