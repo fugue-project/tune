@@ -7,7 +7,7 @@ from fugue import (
     NativeExecutionEngine,
     WorkflowDataFrames,
 )
-import pickle
+import cloudpickle
 
 import fugue
 from tune._utils.serialization import from_base64
@@ -112,7 +112,7 @@ def test_to_trial_row():
         "b": 2,
         "a": 1,
         TUNE_DATASET_DF_PREFIX + "x": "x",
-        TUNE_DATASET_PARAMS_PREFIX: pickle.dumps(
+        TUNE_DATASET_PARAMS_PREFIX: cloudpickle.dumps(
             [{"b": 10, "a": 11}, {"a": 11, "b": 10}, {"b": 100, "a": 110}],
         ),
     }
@@ -123,7 +123,7 @@ def test_to_trial_row():
         "a": 1,
         "b": 2,
         TUNE_DATASET_DF_PREFIX + "y": "x",
-        TUNE_DATASET_PARAMS_PREFIX: pickle.dumps(
+        TUNE_DATASET_PARAMS_PREFIX: cloudpickle.dumps(
             [{"b": 10, "a": 11}, {"b": 100, "a": 110}],
         ),
     }
@@ -138,7 +138,7 @@ def test_to_trial_row():
         "a": 10,
         "b": 2,
         TUNE_DATASET_DF_PREFIX + "y": "x",
-        TUNE_DATASET_PARAMS_PREFIX: pickle.dumps(
+        TUNE_DATASET_PARAMS_PREFIX: cloudpickle.dumps(
             [{"b": 10, "a": 11}, {"b": 100, "a": 110}],
         ),
     }
