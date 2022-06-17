@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.1.0
+
+-  Replace all `pickle` with `cloudpickle`
+
 ## 0.0.9
 
 -   Major refactoring on Space to use [parameters template](https://github.com/fugue-project/tune/issues/47)

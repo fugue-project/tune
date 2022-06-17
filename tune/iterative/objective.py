@@ -3,7 +3,7 @@ import tempfile
 from typing import Callable, List, Optional
 from uuid import uuid4
 
-from cloudpickle import pickle
+import cloudpickle
 from fs.base import FS as FSBase
 from triad import FileSystem
 from tune.concepts.checkpoint import Checkpoint
@@ -101,11 +101,11 @@ def validate_iterative_objective(
     basefs = _basefs.makedirs(os.path.join(path, str(uuid4())), recreate=True)
     j = _Validator(monitor, budgets, continuous=continuous)
     if continuous:
-        f = pickle.loads(pickle.dumps(func)).copy()
+        f = cloudpickle.loads(cloudpickle.dumps(func)).copy()
         f.run(trial, j, checkpoint_basedir_fs=basefs)
     else:
         for _ in budgets:
-            f = pickle.loads(pickle.dumps(func)).copy()
+            f = cloudpickle.loads(cloudpickle.dumps(func)).copy()
             f.run(trial, j, checkpoint_basedir_fs=basefs)
     validator(j.reports)
 

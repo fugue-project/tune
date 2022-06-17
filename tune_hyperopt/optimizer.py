@@ -51,7 +51,7 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
             max_evals=self._max_iter,
             trials=trials,
             show_progressbar=False,
-            rstate=np.random.RandomState(self._seed),
+            rstate=np.random.default_rng(self._seed),
         )
         if self._kwargs_func is not None:
             kwargs.update(self._kwargs_func(func, trial))

@@ -1,5 +1,5 @@
 import os
-import pickle
+import cloudpickle
 import random
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
@@ -293,10 +293,10 @@ class TuneDatasetBuilder:
             for a in it:
                 res.append(a)
                 if batch_size == len(res):
-                    yield [pickle.dumps(res)]
+                    yield [cloudpickle.dumps(res)]
                     res = []
             if len(res) > 0:
-                yield [pickle.dumps(res)]
+                yield [cloudpickle.dumps(res)]
 
         return wf.df(
             IterableDataFrame(get_data(), f"{TUNE_DATASET_PARAMS_PREFIX}:binary")
@@ -374,7 +374,7 @@ def _to_trail_row(data: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, A
     key_names = sorted(k for k in data.keys() if not k.startswith(TUNE_PREFIX))
     keys = [data[k] for k in key_names]
     trials: Dict[str, Trial] = {}
-    for params in pickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
+    for params in cloudpickle.loads(data[TUNE_DATASET_PARAMS_PREFIX]):
         tid = to_uuid(keys, params)
         trials[tid] = Trial(trial_id=tid, params=params, metadata=metadata, keys=keys)
     data[TUNE_DATASET_TRIALS] = to_base64(list(trials.values()))
