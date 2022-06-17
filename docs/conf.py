@@ -79,7 +79,8 @@ html_static_path = ["_static"]
 html_logo = "_static/logo_doc.svg"
 html_theme_options = {
     "logo_only": True,
-    "display_version": True,
+    "display_version": False,
+    "sidebar_hide_name": True,
     "style_nav_header_background": "#264263",
 }
 
