@@ -14,7 +14,7 @@ pytest-spark
 sphinx>=2.4.0
 pandoc
 sphinx-rtd-theme
-furo
+furo==2022.4.7
 sphinx-autodoc-typehints
 nbsphinx
 flask
