@@ -244,5 +244,5 @@ def _run(
             from_base64(r[TUNE_REPORT])
             for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
         ]
-    except FugueDataFrameError as e:
+    except FugueDataFrameError as e:  # pragma: no cover
         raise e.__cause__ or e.__context__ or e

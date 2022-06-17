@@ -1,5 +1,5 @@
 import os
-import pickle
+import cloudpickle
 from tune.api.factory import TUNE_OBJECT_FACTORY
 from typing import Any, Optional, Tuple
 from uuid import uuid4
@@ -66,7 +66,7 @@ class SKObjective(NonIterativeObjectiveFunc):
         if self._checkpoint_path is not None:
             fp = os.path.join(self._checkpoint_path, str(uuid4()) + ".pkl")
             with FileSystem().openbin(fp, mode="wb") as f:
-                pickle.dump(model, f)
+                cloudpickle.dump(model, f)
             metadata["checkpoint_path"] = fp
         return TrialReport(
             trial,
@@ -121,7 +121,7 @@ class SKCVObjective(SKObjective):
             model.fit(self._train_x, self._train_y)
             fp = os.path.join(self._checkpoint_path, str(uuid4()) + ".pkl")
             with FileSystem().openbin(fp, mode="wb") as f:
-                pickle.dump(model, f)
+                cloudpickle.dump(model, f)
             metadata["checkpoint_path"] = fp
         metric = float(np.mean(s))
         return TrialReport(
