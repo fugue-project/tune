@@ -22,9 +22,7 @@
 	"forwardPorts": [
 		8888
 	],
-	"postCreateCommand": [
-		"make devenv"
-	],
+	"postCreateCommand": "make devenv",
 	"mounts": [
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
 	]

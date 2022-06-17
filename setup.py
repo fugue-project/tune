@@ -5,7 +5,8 @@ from setuptools import find_packages, setup
 from tune_version import __version__
 
 with open("README.md") as f:
-    LONG_DESCRIPTION = f.read()
+    _text = ["# Tune"] + f.read().splitlines()[1:]
+    LONG_DESCRIPTION = "\n".join(_text)
 
 
 def get_version() -> str:

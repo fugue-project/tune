@@ -1,4 +1,4 @@
-# Tune
+# <img src="./images/logo.svg" width="200">
 
 [![Doc](https://readthedocs.org/projects/tune/badge)](https://tune.readthedocs.org)
 [![PyPI version](https://badge.fury.io/py/tune.svg)](https://pypi.python.org/pypi/tune/)[![PyPI pyversions](https://img.shields.io/pypi/pyversions/tune.svg)](https://pypi.python.org/pypi/tune/)

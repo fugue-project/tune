@@ -23,7 +23,7 @@ import sphinx_rtd_theme
 
 project = "Tune"
 version = __version__
-copyright = "2021, Han Wang"  # noqa: A001
+copyright = "2022, Fugue Development Team"  # noqa: A001
 author = "Han Wang"
 
 
@@ -76,10 +76,11 @@ html_theme = "furo"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-# html_logo = "_static/logo_doc.svg"
+html_logo = "_static/logo_doc.svg"
 html_theme_options = {
-    "logo_only": False,
-    "display_version": True,
+    "logo_only": True,
+    "display_version": False,
+    "sidebar_hide_name": True,
     "style_nav_header_background": "#264263",
 }
 
