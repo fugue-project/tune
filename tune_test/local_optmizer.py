@@ -43,76 +43,76 @@ class NonIterativeObjectiveLocalOptimizerTests:
 
         def test_rand(self):
             # common case
-            values = self._generate_values(Rand(-2.0, 3.0), lambda x: x ** 2)
+            values = self._generate_values(Rand(-2.0, 3.0), lambda x: x**2)
             assert len(values) > 0
             assert all(x >= -2.0 and x <= 3.0 for x in values)
 
             # with q, and range%q == 0
-            values = self._generate_values(Rand(-2.0, 3.0, q=2.5), lambda x: x ** 2)
+            values = self._generate_values(Rand(-2.0, 3.0, q=2.5), lambda x: x**2)
             assert_close(values, [-2.0, 0.5, 3.0])
 
             values = self._generate_values(
-                Rand(-2.0, 3.0, q=2.5, include_high=False), lambda x: x ** 2
+                Rand(-2.0, 3.0, q=2.5, include_high=False), lambda x: x**2
             )
             assert_close(values, [-2.0, 0.5])
 
             # with q, and range%q != 0
             for ih in [True, False]:
                 values = self._generate_values(
-                    Rand(-2.0, 3.0, q=3.0, include_high=ih), lambda x: x ** 2
+                    Rand(-2.0, 3.0, q=3.0, include_high=ih), lambda x: x**2
                 )
                 assert_close(values, [-2.0, 1.0])
 
             # with log
-            values = self._generate_values(Rand(0.1, 3.0, log=True), lambda x: x ** 2)
+            values = self._generate_values(Rand(0.1, 3.0, log=True), lambda x: x**2)
             assert all(x >= 0.1 and x <= 3.0 for x in values)
 
             # with log and q, and range%q == 0
             values = self._generate_values(
-                Rand(1.0, 6.0, q=2.5, log=True), lambda x: x ** 2
+                Rand(1.0, 6.0, q=2.5, log=True), lambda x: x**2
             )
             assert_close(values, [1.0, 3.5, 6.0])
 
             values = self._generate_values(
-                Rand(1.0, 6.0, q=2.5, log=True, include_high=False), lambda x: x ** 2
+                Rand(1.0, 6.0, q=2.5, log=True, include_high=False), lambda x: x**2
             )
             assert_close(values, [1.0, 3.5])
 
             # with log and q, and range%q != 0
             for ih in [True, False]:
                 values = self._generate_values(
-                    Rand(1.0, 6.0, q=3.0, log=True, include_high=ih), lambda x: x ** 2
+                    Rand(1.0, 6.0, q=3.0, log=True, include_high=ih), lambda x: x**2
                 )
                 assert_close(values, [1.0, 4.0])
 
         def test_randint(self):
             for log in [True, False]:
                 # common case
-                values = self._generate_values(RandInt(1, 3, log=log), lambda x: x ** 2)
+                values = self._generate_values(RandInt(1, 3, log=log), lambda x: x**2)
                 assert_close(values, [1, 2, 3])
                 assert all(isinstance(x, int) for x in values)
 
                 values = self._generate_values(
-                    RandInt(1, 3, include_high=False, log=log), lambda x: x ** 2
+                    RandInt(1, 3, include_high=False, log=log), lambda x: x**2
                 )
                 assert_close(values, [1, 2])
 
                 # with q, range % q != 0
                 for ih in [True, False]:
                     values = self._generate_values(
-                        RandInt(1, 6, 2, include_high=ih, log=log), lambda x: x ** 2
+                        RandInt(1, 6, 2, include_high=ih, log=log), lambda x: x**2
                     )
                     assert_close(values, [1, 3, 5])
                     assert all(isinstance(x, int) for x in values)
 
                 # with q, range % q == 0
                 values = self._generate_values(
-                    RandInt(1, 5, 2, log=log), lambda x: x ** 2
+                    RandInt(1, 5, 2, log=log), lambda x: x**2
                 )
                 assert_close(values, [1, 3, 5])
 
                 values = self._generate_values(
-                    RandInt(1, 5, 2, include_high=False, log=log), lambda x: x ** 2
+                    RandInt(1, 5, 2, include_high=False, log=log), lambda x: x**2
                 )
                 assert_close(values, [1, 3])
 
@@ -123,7 +123,7 @@ class NonIterativeObjectiveLocalOptimizerTests:
 
             @noniterative_objective
             def objective(a, b, c) -> Tuple[float, Dict[str, Any]]:
-                return a ** 2 + b ** 2 + c, dict(a="x")
+                return a**2 + b**2 + c, dict(a="x")
 
             def v(report):
                 assert 1 == report.params.simple_value["a"]
@@ -141,7 +141,7 @@ class NonIterativeObjectiveLocalOptimizerTests:
 
             @noniterative_objective
             def objective(a, b, c) -> Tuple[float, Dict[str, Any]]:
-                return a ** 2 + b ** 2 + c, dict(a="x")
+                return a**2 + b**2 + c, dict(a="x")
 
             def v(report):
                 print(report.metric)
