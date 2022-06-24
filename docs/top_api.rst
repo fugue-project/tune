@@ -7,6 +7,7 @@ Top Level API Reference
 .. |SortMetric| replace:: :meth:`tune.concepts.flow.report.TrialReport.sort_metric`
 .. |TrialObject| replace:: :class:`~tune.concepts.flow.trial.Trial`
 .. |TrialReportObject| replace:: :class:`~tune.concepts.flow.report.TrialReport`
+.. |LoggerLikeObject| replace:: :class:`~tune.concepts.logger.MetricLogger` object or a function producing it
 .. |NonIterativeObjective| replace:: a simple python function or :class:`~tune.noniterative.objective.NonIterativeObjectiveFunc` compatible object, please read :ref:`Non-Iterative Objective Explained </notebooks/noniterative_objective.ipynb>`
 .. |NonIterativeOptimizer| replace:: an object that can be converted to :class:`~tune.noniterative.objective.NonIterativeObjectiveLocalOptimizer`, please read :ref:`Non-Iterative Optimizers </notebooks/noniterative_optimizers.ipynb#Factory-Method>`
 .. |DataFrameLike| replace:: Pandas, Spark, Dask or any dataframe that can be converted to Fugue :class:`~fugue.dataframe.dataframe.DataFrame`

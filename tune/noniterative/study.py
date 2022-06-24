@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from fugue import ArrayDataFrame, DataFrame, ExecutionEngine
@@ -46,6 +47,7 @@ class NonIterativeStudy:
         monitor: Optional[Monitor] = None,
         stopper: Optional[NonIterativeStopper] = None,
         stop_check_interval: Any = None,
+        logger: Any = None,
     ) -> StudyResult:
         _dist = self._get_distributed(distributed)
         entrypoint: Any = None
@@ -66,6 +68,7 @@ class NonIterativeStudy:
                     df.as_local().as_dict_iterable(),
                     entrypoint=entrypoint,
                     stop_check_interval=_interval,
+                    logger=logger,
                 ):
                     yield [row[k] for k in out_schema.names]
 
@@ -92,7 +95,7 @@ class NonIterativeStudy:
                     self._compute_transformer,
                     schema=f"*,{TUNE_REPORT_ADD_SCHEMA}",
                     callback=entrypoint,
-                    params=dict(stop_check_interval=_interval),
+                    params=dict(stop_check_interval=_interval, logger=logger),
                 )
             )
 
@@ -118,6 +121,7 @@ class NonIterativeStudy:
         df: Iterable[Dict[str, Any]],
         entrypoint: Optional[Callable[[str, Dict[str, Any]], Any]] = None,
         stop_check_interval: Any = None,
+        logger: Any = None,
     ) -> Iterable[Dict[str, Any]]:
         j: Optional[RemoteTrialJudge] = (
             None if entrypoint is None else RemoteTrialJudge(entrypoint)
@@ -127,7 +131,7 @@ class NonIterativeStudy:
                 if j is not None:
                     if stop_check_interval is None:
                         # monitor only
-                        report = self._local_process_trial(row, n)
+                        report = self._local_process_trial(row, n, logger)
                         j.judge(report)
                         yield report.fill_dict(dict(row))
                     elif j.can_accept(trial):
@@ -135,20 +139,23 @@ class NonIterativeStudy:
                             report = run_monitored_process(
                                 self._local_process_trial,
                                 [row, n],
-                                {},
+                                {"logger": logger},
                                 lambda: not j.can_accept(trial),  # type: ignore
                                 stop_check_interval,
                             )
                         except TuneInterrupted:
                             continue
-                        except Exception:
-                            raise
                         j.judge(report)
                         yield report.fill_dict(dict(row))
                 else:
-                    report = self._local_process_trial(row, n)
+                    report = self._local_process_trial(row, n, logger)
                     yield report.fill_dict(dict(row))
 
-    def _local_process_trial(self, row: Dict[str, Any], idx: int) -> TrialReport:
+    def _local_process_trial(
+        self, row: Dict[str, Any], idx: int, logger: Any
+    ) -> TrialReport:
         trial = list(_get_trials_from_row(row))[idx]
-        return self._optimizer.run(self._objective, trial)
+        # This copy is to prevent statful objective to mess up state
+        # between runs or between threads
+        objective = copy(self._objective)
+        return self._optimizer.run(objective, trial, logger=logger)

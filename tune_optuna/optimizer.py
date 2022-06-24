@@ -14,6 +14,7 @@ from tune import (
     TrialReport,
 )
 from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
+from tune.concepts.logger import make_logger
 from tune.concepts.space import TuningParametersTemplate
 
 
@@ -24,27 +25,45 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._max_iter = max_iter
         self._create_study = create_study or optuna.create_study
 
-    def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
+    def run(
+        self, func: NonIterativeObjectiveFunc, trial: Trial, logger: Any
+    ) -> TrialReport:
         template = trial.params
-        if len(template.params) == 0:
-            return func.run(trial)
+        if template.empty:
+            tmp = NonIterativeObjectiveLocalOptimizer()
+            return tmp.run(func, trial, logger=logger)
         lock = RLock()
         best_report: List[TrialReport] = []
 
-        def obj(otrial: optuna.trial.Trial) -> float:
-            params = template.fill_dict(_convert(otrial, template))
-            report = func.run(trial.with_params(params))
-            with lock:
-                if len(best_report) == 0:
-                    best_report.append(report)
-                elif report.sort_metric < best_report[0].sort_metric:
-                    best_report[0] = report
-            return report.sort_metric
+        with make_logger(logger) as p_logger:
+            with p_logger.create_child(name=repr(trial)) as c_logger:
 
-        study = self._create_study()
-        study.optimize(obj, n_trials=self._max_iter)
-        assert 1 == len(best_report)
-        return best_report[0]
+                def obj(otrial: optuna.trial.Trial) -> float:
+                    with c_logger.create_child(is_step=True) as s_logger:
+                        params = template.fill_dict(_convert(otrial, template))
+                        report = func.run(trial.with_params(params))
+                        with lock:
+                            if len(best_report) == 0:
+                                best_report.append(report)
+                            elif report.sort_metric < best_report[0].sort_metric:
+                                best_report[0] = report
+                            s_logger.log_report(best_report[0])
+                        return report.sort_metric
+
+                study = self._create_study()
+                study.optimize(obj, n_trials=self._max_iter)
+                assert 1 == len(best_report)
+                report = best_report[0]
+                c_logger.log_params(report.trial.params.simple_value)
+                c_logger.log_metrics({"OBJECTIVE_METRIC": report.metric})
+                nm = {
+                    k: v
+                    for k, v in report.metadata.items()
+                    if isinstance(v, (int, float))
+                }
+                c_logger.log_metrics(nm)
+                c_logger.log_metadata(report.metadata)
+                return report
 
 
 def _convert(

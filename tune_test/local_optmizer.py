@@ -173,7 +173,10 @@ class NonIterativeObjectiveLocalOptimizerTests:
             validate_noniterative_objective(objective, trial, v, optimizer=o)
 
         def _generate_values(
-            self, expr: StochasticExpression, obj: Callable[..., float]
+            self,
+            expr: StochasticExpression,
+            obj: Callable[..., float],
+            logger: Any = None,
         ) -> List[Any]:
             params = dict(a=expr)
             trial = Trial("x", params, metadata={})
@@ -187,5 +190,5 @@ class NonIterativeObjectiveLocalOptimizerTests:
                     values.append(a)
                 return obj(a)
 
-            o.run(objective, trial)  # type: ignore
+            o.run(objective, trial, logger=logger)  # type: ignore
             return values

@@ -17,6 +17,7 @@ def optimize_noniterative(
     dataset: TuneDataset,
     optimizer: Any = None,
     distributed: Optional[bool] = None,
+    logger: Any = None,
     monitor: Any = None,
     stopper: Any = None,
     stop_check_interval: Any = None,
@@ -32,6 +33,7 @@ def optimize_noniterative(
         monitor=_monitor,
         stopper=_stopper,
         stop_check_interval=stop_check_interval,
+        logger=logger,
     )
 
 

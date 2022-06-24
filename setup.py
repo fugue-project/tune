@@ -38,6 +38,7 @@ setup(
         "tensorflow": ["tensorflow"],
         "notebook": ["fugue[notebook]", "seaborn", "plotly"],
         "sklearn": ["scikit-learn"],
+        "mlflow": ["mlflow"],
         "all": [
             "hyperopt",
             "optuna",
@@ -46,6 +47,7 @@ setup(
             "fugue[notebook]",
             "plotly",
             "scikit-learn",
+            "mlflow",
         ],
     },
     classifiers=[

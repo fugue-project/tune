@@ -35,12 +35,10 @@ package:
 	python3 setup.py sdist
 	python3 setup.py bdist_wheel
 
-jupyter:
+lab:
 	mkdir -p tmp
 	pip install .
-	jupyter nbextension install --py fugue_notebook
-	jupyter nbextension enable fugue_notebook --py
-	jupyter notebook --port=8888 --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''
+	jupyter lab --port=8888 --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.allow_origin='*'
 
 test:
 	python3 -bb -m pytest tests/
