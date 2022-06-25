@@ -12,7 +12,7 @@ from tune.api.optimize import (
     optimize_noniterative,
 )
 from tune.concepts.flow import TrialReport
-from tune.concepts.logger import make_logger
+from tune.concepts.logger import make_logger, parse_logger
 from tune.concepts.space import Space
 from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME, TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.exceptions import TuneCompileError
@@ -72,6 +72,7 @@ def suggest_for_noniterative_objective(
     :param execution_engine_conf: |ParamsLikeObject|, defaults to None
     :return: a list of best results
     """
+    logger = parse_logger(logger)
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,

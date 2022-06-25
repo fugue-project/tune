@@ -1,7 +1,9 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
+import mlflow
+from mlflow import ActiveRun
 from mlflow.entities import Experiment, Run
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
@@ -15,7 +17,19 @@ from tune.concepts.logger import MetricLogger
 from tune.exceptions import TuneRuntimeError
 
 
-def start_run(
+def _mlflow_run_to_logger(run: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
+    if MLFLOW_PARENT_RUN_ID in run.data.tags:
+        pr = mlflow.get_run(run.data.tags[MLFLOW_PARENT_RUN_ID])
+        parent: Any = _mlflow_run_to_logger(pr)
+    else:
+        client = MlflowClient()
+        parent = MLFlowExperimentLevelLogger(
+            client, mlflow.get_experiment(run.info.experiment_id)
+        )
+    return MLFlowRunLevelLogger(parent, run_id=run.info.run_id)
+
+
+def get_or_create_run(
     name: Optional[str] = None,
     description: Optional[str] = None,
     experiment_name: Optional[str] = None,
@@ -127,7 +141,11 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
                 t[MLFLOW_RUN_NOTE] = description
             if isinstance(parent, MLFlowRunLevelLogger):
                 t[MLFLOW_PARENT_RUN_ID] = parent.run_id
-                t["parent"] = parent.run_name
+                t["parent"] = (
+                    parent.run_name
+                    if parent.run_name is not None
+                    else parent.run_id[-5:]
+                )
                 self._is_child = True
             else:
                 self._is_child = False
@@ -153,6 +171,8 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
         self._client = MlflowClient(
             tracking_uri=data["tracking_uri"], registry_uri=data["registry_uri"]
         )
+        mlflow.tracking.set_tracking_uri(data["tracking_uri"])
+        mlflow.tracking.set_registry_uri(data["registry_uri"])
         self._experiment = self._client.get_experiment(data["experiment_id"])
         self._run = self._client.get_run(data["run_id"])
         self._is_child = data["is_child"]
@@ -167,8 +187,8 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
         return self.run.info.run_id
 
     @property
-    def run_name(self) -> str:
-        return self.run.data.tags[MLFLOW_RUN_NAME]
+    def run_name(self) -> Optional[str]:
+        return self.run.data.tags.get(MLFLOW_RUN_NAME, None)
 
     def create_child(self, name: str = None, is_step: bool = False) -> "MetricLogger":
         if is_step:

@@ -1,6 +1,52 @@
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tune.concepts.flow.report import TrialReport
+
+
+# TODO: this dispatcher should be generalized in Triad
+_CACHE: List[Tuple[Callable[[Any], bool], Callable[[Any], Any]]] = []
+
+
+def register_logger_parser(
+    matcher: Callable[[Any], bool], func: Callable[[Any], Any]
+) -> None:
+    """Register a parser for :class:`~.MetricLogger`.
+
+    .. admonition:: Experimental
+
+        THis is for internal use only and will change in the future
+
+    :param matcher: a function to decide if the object is a match
+        for the parser
+    :param func: a function that generates a :class:`~.MetricLogger` or
+        a callable that generates a :class:`~.MetricLogger`
+    """
+    _CACHE.append((matcher, func))
+
+
+def parse_logger(obj: Any) -> Any:
+    """On driver side parse an arbitrary object into a
+    :class:`~.MetricLogger` or a callable that generates a
+    :class:`~.MetricLogger`. The correspondent parser must
+    be registered by :func:`.register_logger_parser`.
+
+    .. admonition:: Experimental
+
+        THis is for internal use only and will change in the future
+
+    :param obj: the object.
+    :return: :class:`~.MetricLogger` or a callable that generates a
+    :class:`~.MetricLogger`
+    """
+    from tune import _register  # noqa: F401
+
+    if obj is None or isinstance(obj, MetricLogger) or callable(obj):
+        return obj
+
+    for match, func in _CACHE:
+        if match(obj):
+            return func(obj)
+    raise ValueError(f"{obj} is not a valid logger")
 
 
 def make_logger(obj: Any) -> "MetricLogger":

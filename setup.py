@@ -62,4 +62,9 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
     ],
     python_requires=">=3.6",
+    entry_points={
+        "tune.plugins": [
+            "mlflow = tune_mlflow:register",
+        ]
+    },
 )
