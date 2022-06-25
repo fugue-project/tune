@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
@@ -14,7 +15,7 @@ from tune.concepts.logger import MetricLogger
 from tune.exceptions import TuneRuntimeError
 
 
-def get_or_create_run(
+def start_run(
     name: Optional[str] = None,
     description: Optional[str] = None,
     experiment_name: Optional[str] = None,
@@ -135,6 +136,8 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
             self._run = self.client.get_run(run_id)
             self._is_child = False
         self._step = 0
+        # Setup the env variable so mlflow.start_run() inside the objective will work
+        os.environ["MLFLOW_RUN_ID"] = self.run_id
 
     def __getstate__(self) -> Dict[str, Any]:
         return dict(
@@ -186,6 +189,8 @@ class MLFlowStepLevelLogger(MLFlowExperimentLevelLogger):
         super().__init__(parent.client, parent.experiment)
         self._run = parent.run
         self._step = step
+        # Setup the env variable so mlflow.start_run() inside the objective will work
+        os.environ["MLFLOW_RUN_ID"] = self.run_id
 
     @property
     def run(self) -> Run:
