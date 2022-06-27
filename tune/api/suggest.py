@@ -12,6 +12,7 @@ from tune.api.optimize import (
     optimize_noniterative,
 )
 from tune.concepts.flow import TrialReport
+from tune.concepts.logger import make_logger, parse_logger
 from tune.concepts.space import Space
 from tune.constants import TUNE_DATASET_DF_DEFAULT_NAME, TUNE_REPORT, TUNE_REPORT_METRIC
 from tune.exceptions import TuneCompileError
@@ -26,6 +27,7 @@ def suggest_for_noniterative_objective(
     partition_keys: Optional[List[str]] = None,
     top_n: int = 1,
     local_optimizer: Any = None,
+    logger: Any = None,
     monitor: Any = None,
     stopper: Any = None,
     stop_check_interval: Any = None,
@@ -52,6 +54,7 @@ def suggest_for_noniterative_objective(
     :param top_n: number of best results to return, defaults to 1.
       If `<=0` all results will be returned
     :param local_optimizer: |NonIterativeOptimizer|, defaults to None
+    :param logger: |LoggerLikeObject|, defaults to None
     :param monitor: realtime monitor, defaults to None. Read
       :ref:`Monitoring Guide </notebooks/noniterative.ipynb#Realtime-Monitoring>`
     :param stopper: early stopper, defaults to None. Read
@@ -69,6 +72,7 @@ def suggest_for_noniterative_objective(
     :param execution_engine_conf: |ParamsLikeObject|, defaults to None
     :return: a list of best results
     """
+    logger = parse_logger(logger)
     dag = FugueWorkflow()
     dataset = TUNE_OBJECT_FACTORY.make_dataset(
         dag,
@@ -85,6 +89,7 @@ def suggest_for_noniterative_objective(
         optimizer=local_optimizer,
         distributed=distributed,
         monitor=monitor,
+        logger=logger,
         stopper=stopper,
         stop_check_interval=stop_check_interval,
     )
@@ -94,6 +99,7 @@ def suggest_for_noniterative_objective(
         dag=dag,
         execution_engine=execution_engine,
         execution_engine_conf=execution_engine_conf,
+        logger=logger,
     )
 
 
@@ -231,8 +237,14 @@ def suggest_by_continuous_asha(
 
 
 def _run(
-    dag: FugueWorkflow, execution_engine: Any, execution_engine_conf: Any
+    dag: FugueWorkflow,
+    execution_engine: Any,
+    execution_engine_conf: Any,
+    logger: Any = None,
 ) -> List[TrialReport]:
+    def _safe(xx):
+        return float("inf") if xx is None else float(xx)
+
     try:
         rows = list(
             dag.run(
@@ -240,9 +252,21 @@ def _run(
                 conf=execution_engine_conf,
             )["result"].as_dict_iterable()
         )
-        return [
+        result = [
             from_base64(r[TUNE_REPORT])
-            for r in sorted(rows, key=lambda r: r[TUNE_REPORT_METRIC])
+            for r in sorted(rows, key=lambda r: _safe(r[TUNE_REPORT_METRIC]))
         ]
+        if len(result) > 0 and logger is not None:
+            try:
+                with make_logger(logger) as p_logger:
+                    p_logger.log_report(
+                        result[0],
+                        log_params=True,
+                        extract_metrics=True,
+                        log_metadata=True,
+                    )
+            except Exception:
+                pass
+        return result
     except FugueDataFrameError as e:  # pragma: no cover
         raise e.__cause__ or e.__context__ or e

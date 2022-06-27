@@ -24,6 +24,7 @@ from tune.concepts.flow import (
     TrialReport,
     TrialReportLogger,
 )
+from tune.concepts.logger import MetricLogger
 from tune.concepts.space import (
     Choice,
     FuncParam,

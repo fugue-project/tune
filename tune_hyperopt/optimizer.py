@@ -1,9 +1,11 @@
+from threading import RLock
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from tune._utils.math import adjust_high
 from tune.concepts.flow import Trial, TrialReport
+from tune.concepts.logger import make_logger
 from tune.concepts.space import (
     Choice,
     Rand,
@@ -30,34 +32,53 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         self._seed = seed
         self._kwargs_func = kwargs_func
 
-    def run(self, func: NonIterativeObjectiveFunc, trial: Trial) -> TrialReport:
+    def run(
+        self, func: NonIterativeObjectiveFunc, trial: Trial, logger: Any
+    ) -> TrialReport:
         template = trial.params
         if template.empty:
-            return func.run(trial)
+            tmp = NonIterativeObjectiveLocalOptimizer()
+            return tmp.run(func, trial, logger=logger)
         proc = self._process(template)
+        lock = RLock()
+        best_report: List[TrialReport] = []
 
-        def obj(args) -> Dict[str, Any]:
-            params = template.fill([p[1](v) for p, v in zip(proc, args)])
-            report = func.run(trial.with_params(params))
-            return {
-                "loss": report.sort_metric,
-                "status": STATUS_OK,
-                "report": report,
-            }
+        with make_logger(logger) as p_logger:
+            with p_logger.create_child(name=repr(trial)) as c_logger:
 
-        trials = Trials()
-        kwargs: Dict[str, Any] = dict(
-            algo=tpe.suggest,
-            max_evals=self._max_iter,
-            trials=trials,
-            show_progressbar=False,
-            rstate=np.random.default_rng(self._seed),
-        )
-        if self._kwargs_func is not None:
-            kwargs.update(self._kwargs_func(func, trial))
+                def obj(args) -> Dict[str, Any]:
+                    with c_logger.create_child(is_step=True) as s_logger:
+                        params = template.fill([p[1](v) for p, v in zip(proc, args)])
+                        report = func.run(trial.with_params(params))
+                        with lock:
+                            if len(best_report) == 0:
+                                best_report.append(report)
+                            elif report.sort_metric < best_report[0].sort_metric:
+                                best_report[0] = report
+                            s_logger.log_report(best_report[0])
+                        return {
+                            "loss": report.sort_metric,
+                            "status": STATUS_OK,
+                            "report": report,
+                        }
 
-        fmin(obj, space=[p[0] for p in proc], **kwargs)
-        return trials.best_trial["result"]["report"]
+                trials = Trials()
+                kwargs: Dict[str, Any] = dict(
+                    algo=tpe.suggest,
+                    max_evals=self._max_iter,
+                    trials=trials,
+                    show_progressbar=False,
+                    rstate=np.random.default_rng(self._seed),
+                )
+                if self._kwargs_func is not None:
+                    kwargs.update(self._kwargs_func(func, trial))
+
+                fmin(obj, space=[p[0] for p in proc], **kwargs)
+                report = trials.best_trial["result"]["report"]
+                c_logger.log_report(
+                    report, log_params=True, extract_metrics=True, log_metadata=True
+                )
+                return report
 
     def _process(self, template: TuningParametersTemplate) -> List[Tuple[Any, Any]]:
         res: List[Tuple[Any, Any]] = []

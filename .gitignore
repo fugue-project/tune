@@ -141,3 +141,7 @@ dask-worker-space
 # spark
 spark-warehourse
 =*
+
+# mlflow
+mlruns
+mlruns/*
