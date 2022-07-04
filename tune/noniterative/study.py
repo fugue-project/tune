@@ -140,7 +140,7 @@ class NonIterativeStudy:
                                 self._local_process_trial,
                                 [row, n],
                                 {"logger": logger},
-                                lambda: not j.can_accept(trial),  # type: ignore
+                                lambda: not j.can_accept(trial),  # type: ignore  # noqa
                                 stop_check_interval,
                             )
                         except TuneInterrupted:
