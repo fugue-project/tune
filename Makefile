@@ -41,4 +41,7 @@ lab:
 	jupyter lab --port=8888 --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.allow_origin='*'
 
 test:
-	python3 -bb -m pytest tests/
+	python3 -bb -m pytest tests
+
+testcore:
+	python3 -bb -m pytest tests/tune tests/tune_notebook tests/tune_hyperopt tests/tune_optuna
