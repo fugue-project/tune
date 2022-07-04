@@ -49,7 +49,7 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
                 def obj(args) -> Dict[str, Any]:
                     with c_logger.create_child(is_step=True) as s_logger:
                         params = template.fill([p[1](v) for p, v in zip(proc, args)])
-                        report = func.run(trial.with_params(params))
+                        report = func.safe_run(trial.with_params(params))
                         with lock:
                             if len(best_report) == 0:
                                 best_report.append(report)

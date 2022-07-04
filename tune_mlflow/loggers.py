@@ -15,18 +15,25 @@ from mlflow.utils.mlflow_tags import (
 )
 from tune.concepts.logger import MetricLogger
 from tune.exceptions import TuneRuntimeError
+from tune import parse_logger
 
 
-def _mlflow_run_to_logger(run: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
-    if MLFLOW_PARENT_RUN_ID in run.data.tags:
-        pr = mlflow.get_run(run.data.tags[MLFLOW_PARENT_RUN_ID])
+@parse_logger.candidate(lambda obj: isinstance(obj, (Run, ActiveRun)))
+def _mlflow_run_to_logger(obj: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
+    if MLFLOW_PARENT_RUN_ID in obj.data.tags:
+        pr = mlflow.get_run(obj.data.tags[MLFLOW_PARENT_RUN_ID])
         parent: Any = _mlflow_run_to_logger(pr)
     else:
         client = MlflowClient()
         parent = MLFlowExperimentLevelLogger(
-            client, mlflow.get_experiment(run.info.experiment_id)
+            client, mlflow.get_experiment(obj.info.experiment_id)
         )
-    return MLFlowRunLevelLogger(parent, run_id=run.info.run_id)
+    return MLFlowRunLevelLogger(parent, run_id=obj.info.run_id)
+
+
+@parse_logger.candidate(lambda obj: isinstance(obj, str) and obj == "mlflow")
+def _express_logger(obj: str) -> "MLFlowRunLevelLogger":
+    return get_or_create_run()
 
 
 def get_or_create_run(

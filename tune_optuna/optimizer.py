@@ -41,7 +41,7 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
                 def obj(otrial: optuna.trial.Trial) -> float:
                     with c_logger.create_child(is_step=True) as s_logger:
                         params = template.fill_dict(_convert(otrial, template))
-                        report = func.run(trial.with_params(params))
+                        report = func.safe_run(trial.with_params(params))
                         with lock:
                             if len(best_report) == 0:
                                 best_report.append(report)
