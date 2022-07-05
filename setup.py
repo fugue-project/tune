@@ -28,15 +28,14 @@ setup(
     license="Apache-2.0",
     author="Han Wang",
     author_email="goodwanghan@gmail.com",
-    keywords="hyper parameter hyperparameter tuning tune tuner",
+    keywords="hyper parameter hyperparameter tuning tune tuner optimzation",
     url="http://github.com/fugue-project/tune",
-    install_requires=["fugue>=0.6.3", "cloudpickle"],
+    install_requires=["triad>=0.6.4", "fugue==0.7.0.dev2", "cloudpickle"],
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
-        "visual": ["seaborn", "plotly"],
         "tensorflow": ["tensorflow"],
-        "notebook": ["fugue[notebook]", "seaborn", "plotly"],
+        "notebook": ["fugue-jupyter", "seaborn"],
         "sklearn": ["scikit-learn"],
         "mlflow": ["mlflow"],
         "all": [
@@ -44,8 +43,7 @@ setup(
             "optuna",
             "seaborn",
             "tensorflow",
-            "fugue[notebook]",
-            "plotly",
+            "fugue-jupyter",
             "scikit-learn",
             "mlflow",
         ],
@@ -59,12 +57,17 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
     ],
     python_requires=">=3.6",
     entry_points={
         "tune.plugins": [
-            "mlflow = tune_mlflow:register",
+            "mlflow = tune_mlflow[mlflow]",
+            "hyperopt = tune_hyperopt[hyperopt]",
+            "optuna = tune_optuna[optuna]",
+            "monitor = tune_notebook[notebook]",
         ]
     },
 )

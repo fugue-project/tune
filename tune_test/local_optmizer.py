@@ -153,6 +153,20 @@ class NonIterativeObjectiveLocalOptimizerTests:
 
             validate_noniterative_objective(objective, trial, v, optimizer=o)
 
+            @noniterative_objective(min_better=False)
+            def objective2(a, b, c) -> Tuple[float, Dict[str, Any]]:
+                return -(a**2 + b**2 + c), dict(a="x")
+
+            def v2(report):
+                print(report.metric)
+                assert report.metric > -7
+                assert report.params.simple_value["a"] ** 2 < 2
+                assert report.params.simple_value["b"] ** 2 < 2
+                assert 2.0 == report.params.simple_value["c"]
+                assert "x" == report.metadata["a"]
+
+            validate_noniterative_objective(objective2, trial, v2, optimizer=o)
+
         def test_optimization_nested_param(self):
             params = dict(a=dict(x=Rand(-10.0, 10.0)), b=[RandInt(-100, 100)], c=[2.0])
             trial = Trial("a", params, metadata={})

@@ -7,26 +7,34 @@ from mlflow import ActiveRun
 from mlflow.entities import Experiment, Run
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
+from mlflow.tracking.context import registry as context_registry
 from mlflow.tracking.fluent import _get_experiment_id
 from mlflow.utils.mlflow_tags import (
     MLFLOW_PARENT_RUN_ID,
     MLFLOW_RUN_NAME,
     MLFLOW_RUN_NOTE,
 )
+from tune import parse_logger
 from tune.concepts.logger import MetricLogger
 from tune.exceptions import TuneRuntimeError
 
 
-def _mlflow_run_to_logger(run: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
-    if MLFLOW_PARENT_RUN_ID in run.data.tags:
-        pr = mlflow.get_run(run.data.tags[MLFLOW_PARENT_RUN_ID])
+@parse_logger.candidate(lambda obj: isinstance(obj, (Run, ActiveRun)))
+def _mlflow_run_to_logger(obj: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
+    if MLFLOW_PARENT_RUN_ID in obj.data.tags:
+        pr = mlflow.get_run(obj.data.tags[MLFLOW_PARENT_RUN_ID])
         parent: Any = _mlflow_run_to_logger(pr)
     else:
         client = MlflowClient()
         parent = MLFlowExperimentLevelLogger(
-            client, mlflow.get_experiment(run.info.experiment_id)
+            client, mlflow.get_experiment(obj.info.experiment_id)
         )
-    return MLFlowRunLevelLogger(parent, run_id=run.info.run_id)
+    return MLFlowRunLevelLogger(parent, run_id=obj.info.run_id)
+
+
+@parse_logger.candidate(lambda obj: isinstance(obj, str) and obj == "mlflow")
+def _express_logger(obj: str) -> "MLFlowRunLevelLogger":
+    return get_or_create_run()
 
 
 def get_or_create_run(
@@ -36,12 +44,13 @@ def get_or_create_run(
     run_id: Optional[str] = None,
     tracking_uri: Optional[str] = None,
     registry_uri: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None,
 ) -> "MLFlowRunLevelLogger":
     p_logger = get_or_create_experiment(
         experiment_name, tracking_uri=tracking_uri, registry_uri=registry_uri
     )
     return MLFlowRunLevelLogger(
-        parent=p_logger, name=name, description=description, run_id=run_id
+        parent=p_logger, name=name, description=description, run_id=run_id, tags=tags
     )
 
 
@@ -149,7 +158,8 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
                 self._is_child = True
             else:
                 self._is_child = False
-            self._run = self.client.create_run(self.experiment_id, tags=t)
+            resolved_tags = context_registry.resolve_tags(t)
+            self._run = self.client.create_run(self.experiment_id, tags=resolved_tags)
         else:
             self._run = self.client.get_run(run_id)
             self._is_child = False

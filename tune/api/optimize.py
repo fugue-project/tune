@@ -3,7 +3,14 @@ from typing import Any, Callable, List, Optional, Tuple
 from uuid import uuid4
 
 from triad import FileSystem
-from tune.api.factory import TUNE_OBJECT_FACTORY
+from tune.api.factory import (
+    TUNE_OBJECT_FACTORY,
+    parse_iterative_objective,
+    parse_monitor,
+    parse_noniterative_local_optimizer,
+    parse_noniterative_objective,
+    parse_noniterative_stopper,
+)
 from tune.concepts.dataset import StudyResult, TuneDataset
 from tune.concepts.flow import TrialReport
 from tune.iterative.asha import ASHAJudge, RungHeap
@@ -22,10 +29,10 @@ def optimize_noniterative(
     stopper: Any = None,
     stop_check_interval: Any = None,
 ) -> StudyResult:
-    _objective = TUNE_OBJECT_FACTORY.make_noniterative_objective(objective)
-    _optimizer = TUNE_OBJECT_FACTORY.make_noniterative_local_optimizer(optimizer)
-    _stopper = TUNE_OBJECT_FACTORY.make_noniterative_stopper(stopper)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    _objective = parse_noniterative_objective(objective)
+    _optimizer = parse_noniterative_local_optimizer(optimizer)
+    _stopper = parse_noniterative_stopper(stopper)
+    _monitor = parse_monitor(monitor)
     study = NonIterativeStudy(_objective, _optimizer)
     return study.optimize(
         dataset,
@@ -45,8 +52,8 @@ def optimize_by_sha(
     distributed: Optional[bool] = None,
     monitor: Any = None,
 ) -> StudyResult:
-    _objective = TUNE_OBJECT_FACTORY.make_iterative_objective(objective)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    _objective = parse_iterative_objective(objective)
+    _monitor = parse_monitor(monitor)
     checkpoint_path = TUNE_OBJECT_FACTORY.get_path_or_temp(checkpoint_path)
     path = os.path.join(checkpoint_path, str(uuid4()))
     for budget, keep in plan:
@@ -68,7 +75,7 @@ def optimize_by_hyperband(
     distributed: Optional[bool] = None,
     monitor: Any = None,
 ) -> StudyResult:
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    _monitor = parse_monitor(monitor)
     weights = [float(p[0][1]) for p in plans]
     datasets = dataset.split(weights, seed=0)
     result: Any = None
@@ -100,8 +107,8 @@ def optimize_by_continuous_asha(
     ] = None,
     monitor: Any = None,
 ) -> StudyResult:
-    _objective = TUNE_OBJECT_FACTORY.make_iterative_objective(objective)
-    _monitor = TUNE_OBJECT_FACTORY.make_monitor(monitor)
+    _objective = parse_iterative_objective(objective)
+    _monitor = parse_monitor(monitor)
     checkpoint_path = TUNE_OBJECT_FACTORY.get_path_or_temp(checkpoint_path)
     judge = ASHAJudge(
         schedule=plan,

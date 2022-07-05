@@ -1,7 +1,17 @@
-from tune.concepts.dataset import TuneDataset
+import pandas as pd
 from fugue.workflow.workflow import FugueWorkflow
 from pytest import raises
-from tune.api.factory import TuneObjectFactory
+from tune import Space, MetricLogger
+from tune.api.factory import (
+    TuneObjectFactory,
+    parse_iterative_objective,
+    parse_logger,
+    parse_monitor,
+    parse_noniterative_local_optimizer,
+    parse_noniterative_objective,
+    parse_noniterative_stopper,
+)
+from tune.concepts.dataset import TuneDataset
 from tune.concepts.flow.judge import Monitor
 from tune.exceptions import TuneCompileError
 from tune.iterative.objective import IterativeObjectiveFunc
@@ -11,10 +21,14 @@ from tune.noniterative.objective import (
     NonIterativeObjectiveLocalOptimizer,
 )
 from tune.noniterative.stopper import NonIterativeStopper
-
 from tune_optuna.optimizer import OptunaLocalOptimizer
-import pandas as pd
-from tune import Space
+
+
+class _Dummy:
+    pass
+
+
+_DUMMY = _Dummy()
 
 
 def _nobjective(a: int) -> float:
@@ -46,96 +60,123 @@ def test_temp_path():
 
 
 def test_noniterative_objective():
-    factory = TuneObjectFactory()
     assert isinstance(
-        factory.make_noniterative_objective(_nobjective),
+        parse_noniterative_objective(_nobjective),
         NonIterativeObjectiveFunc,
     )
     with raises(TuneCompileError):
-        factory.make_noniterative_objective("x")
+        parse_noniterative_objective("x")
 
-    factory.set_noniterative_objective_converter(
-        lambda x: to_noniterative_objective(_nobjective)
-    )
+    @parse_noniterative_objective.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return to_noniterative_objective(_nobjective)
+
     assert isinstance(
-        factory.make_noniterative_objective("x"),
+        parse_noniterative_objective(_DUMMY),
         NonIterativeObjectiveFunc,
     )
 
 
 def test_monitor():
-    factory = TuneObjectFactory()
-
     class Mock(Monitor):
         pass
 
     assert isinstance(
-        factory.make_monitor(Mock()),
+        parse_monitor(Mock()),
         Monitor,
     )
     with raises(TuneCompileError):
-        factory.make_monitor("x")
+        parse_monitor("x")
 
-    factory.set_monitor_converter(lambda x: Mock())
+    @parse_monitor.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return Mock()
+
     assert isinstance(
-        factory.make_monitor("x"),
+        parse_monitor(_DUMMY),
         Monitor,
     )
 
 
 def test_noniterative_stopper():
-    factory = TuneObjectFactory()
-
     class Mock(NonIterativeStopper):
         pass
 
     assert isinstance(
-        factory.make_noniterative_stopper(Mock()),
+        parse_noniterative_stopper(Mock()),
         NonIterativeStopper,
     )
     with raises(TuneCompileError):
-        factory.make_noniterative_stopper("x")
+        parse_noniterative_stopper("x")
 
-    factory.set_noniterative_stopper_converter(lambda x: Mock())
+    @parse_noniterative_stopper.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return Mock()
+
     assert isinstance(
-        factory.make_noniterative_stopper("x"),
+        parse_noniterative_stopper(_DUMMY),
         NonIterativeStopper,
     )
 
 
 def test_noniterative_local_optimizer_converter():
-    factory = TuneObjectFactory()
     assert isinstance(
-        factory.make_noniterative_local_optimizer(OptunaLocalOptimizer(0)),
+        parse_noniterative_local_optimizer(OptunaLocalOptimizer(0)),
         NonIterativeObjectiveLocalOptimizer,
     )
     with raises(TuneCompileError):
-        factory.make_noniterative_local_optimizer("x")
+        parse_noniterative_local_optimizer("x")
 
-    factory.set_noniterative_local_optimizer_converter(
-        lambda x: OptunaLocalOptimizer(0)
-    )
+    @parse_noniterative_local_optimizer.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return OptunaLocalOptimizer(0)
+
     assert isinstance(
-        factory.make_noniterative_local_optimizer("x"),
+        parse_noniterative_local_optimizer(_DUMMY),
         NonIterativeObjectiveLocalOptimizer,
     )
 
 
 def test_iterative_objective():
-    factory = TuneObjectFactory()
-
     class Mock(IterativeObjectiveFunc):
         pass
 
     assert isinstance(
-        factory.make_iterative_objective(Mock()),
+        parse_iterative_objective(Mock()),
         IterativeObjectiveFunc,
     )
     with raises(TuneCompileError):
-        factory.make_iterative_objective("x")
+        parse_iterative_objective("x")
 
-    factory.set_iterative_objective_converter(lambda x: Mock())
+    @parse_iterative_objective.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return Mock()
+
     assert isinstance(
-        factory.make_iterative_objective("x"),
+        parse_iterative_objective(_DUMMY),
         IterativeObjectiveFunc,
+    )
+
+
+def test_logger():
+    def make_logger():
+        return MetricLogger()
+
+    assert isinstance(
+        parse_logger(MetricLogger()),
+        MetricLogger,
+    )
+    assert parse_logger(None) is None
+    assert parse_logger(make_logger) is make_logger
+
+    with raises(TuneCompileError):
+        parse_logger("x")
+
+    @parse_logger.candidate(lambda obj: isinstance(obj, _Dummy))
+    def _converter(obj):
+        return MetricLogger()
+
+    assert isinstance(
+        parse_logger(_DUMMY),
+        MetricLogger,
     )

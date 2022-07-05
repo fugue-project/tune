@@ -4,7 +4,33 @@ from typing import Any, Dict, List
 
 import pandas as pd
 from triad.utils.convert import to_timedelta
-from tune import Monitor, TrialReport, TrialReportLogger
+from tune import Monitor, TrialReport, TrialReportLogger, parse_monitor
+
+
+@parse_monitor.candidate(
+    lambda obj: isinstance(obj, str) and obj == "hist", priority=0.0
+)
+def _hist(obj: str) -> Monitor:  # pragma: no cover
+    return NotebookSimpleHist()
+
+
+@parse_monitor.candidate(
+    lambda obj: isinstance(obj, str) and obj == "rungs", priority=0.0
+)
+def _rungs(obj: str) -> Monitor:  # pragma: no cover
+    return NotebookSimpleRungs()
+
+
+@parse_monitor.candidate(lambda obj: isinstance(obj, str) and obj == "ts", priority=0.0)
+def _ts(obj: str) -> Monitor:  # pragma: no cover
+    return NotebookSimpleTimeSeries()
+
+
+@parse_monitor.candidate(
+    lambda obj: isinstance(obj, str) and obj == "text", priority=0.0
+)
+def _text(obj: str) -> Monitor:  # pragma: no cover
+    return PrintBest()
 
 
 class PrintBest(Monitor):

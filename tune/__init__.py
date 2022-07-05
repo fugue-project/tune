@@ -2,7 +2,15 @@
 
 from tune_version import __version__
 
-from tune.api.factory import TUNE_OBJECT_FACTORY
+from tune.api.factory import (
+    TUNE_OBJECT_FACTORY,
+    parse_iterative_objective,
+    parse_logger,
+    parse_monitor,
+    parse_noniterative_local_optimizer,
+    parse_noniterative_objective,
+    parse_noniterative_stopper,
+)
 from tune.api.optimize import (
     optimize_by_continuous_asha,
     optimize_by_hyperband,
