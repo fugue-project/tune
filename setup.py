@@ -65,6 +65,7 @@ setup(
     entry_points={
         "tune.plugins": [
             "mlflow = tune_mlflow[mlflow]",
+            "wandb = tune_wandb[wandb]",
             "hyperopt = tune_hyperopt[hyperopt]",
             "optuna = tune_optuna[optuna]",
             "monitor = tune_notebook[notebook]",
