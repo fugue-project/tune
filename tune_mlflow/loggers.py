@@ -32,9 +32,13 @@ def _mlflow_run_to_logger(obj: Union[Run, ActiveRun]) -> "MLFlowRunLevelLogger":
     return MLFlowRunLevelLogger(parent, run_id=obj.info.run_id)
 
 
-@parse_logger.candidate(lambda obj: isinstance(obj, str) and obj == "mlflow")
+@parse_logger.candidate(
+    lambda obj: isinstance(obj, str) and (obj == "mlflow" or obj.startswith("mlflow:"))
+)
 def _express_logger(obj: str) -> "MLFlowRunLevelLogger":
-    return get_or_create_run()
+    p = obj.split(":", 1)
+    experiment_name = p[1] if len(p) > 1 else None
+    return get_or_create_run(experiment_name=experiment_name)
 
 
 def get_or_create_run(
