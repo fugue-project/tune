@@ -113,7 +113,9 @@ class MLFlowLoggerBase(MetricLogger):
         # self.client.log_dict(self.run_id, metadata)
         pass
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         raise TuneRuntimeError(str(type(self)) + " can't have a child logger")
 
 
@@ -130,9 +132,11 @@ class MLFlowExperimentLevelLogger(MLFlowLoggerBase):
     def experiment_id(self) -> str:
         return self.experiment.experiment_id
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         assert not is_step
-        return MLFlowRunLevelLogger(self, name)
+        return MLFlowRunLevelLogger(self, name, description=description)
 
 
 class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
@@ -204,13 +208,15 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
     def run_name(self) -> Optional[str]:
         return self.run.data.tags.get(MLFLOW_RUN_NAME, None)
 
-    def create_child(self, name: str = None, is_step: bool = False) -> "MetricLogger":
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> "MetricLogger":
         if is_step:
             self._step += 1
             return MLFlowStepLevelLogger(self, self._step - 1)
         else:
             assert not self._is_child
-            return MLFlowRunLevelLogger(self, name=name)
+            return MLFlowRunLevelLogger(self, name=name, description=description)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.client.set_terminated(
@@ -234,7 +240,9 @@ class MLFlowStepLevelLogger(MLFlowExperimentLevelLogger):
     def run_id(self) -> str:
         return self.run.info.run_id
 
-    def create_child(self, name: str = None, is_step: bool = False) -> "MetricLogger":
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> "MetricLogger":
         raise TuneRuntimeError(str(type(self)) + " can't have a child logger")
 
     def log_metrics(self, metrics: Dict[str, float]) -> None:
