@@ -60,7 +60,9 @@ class WandbLoggerBase(MetricLogger):
     def log_metadata(self, metadata: Dict[str, Any]) -> None:
         self.run.log(metadata, commit=True)
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         raise TuneRuntimeError(str(type(self)) + " can't have a child logger")
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -78,7 +80,9 @@ class WandbProjectLogger(WandbLoggerBase):
     def project_name(self) -> str:
         return self._name
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         assert_or_throw(not is_step, ValueError("can't create step logger"))
         return WandbGroupLogger(self.project_name, name)
 
@@ -118,7 +122,9 @@ class WandbGroupLogger(WandbLoggerBase):
     def log_metadata(self, metadata: Dict[str, Any]) -> None:
         pass
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         if is_step:
             return MetricLogger()
         else:
@@ -127,6 +133,7 @@ class WandbGroupLogger(WandbLoggerBase):
                 settings={"silent": True},
                 group=self.group,
                 name=name,
+                notes=description,
                 reinit=True,
                 allow_val_change=True,
             )
@@ -138,7 +145,9 @@ class WandbLogger(WandbLoggerBase):
         super().__init__(run)
         self._step = 0
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         assert_or_throw(
             name is None and is_step, ValueError("can't create child logger")
         )
@@ -151,7 +160,9 @@ class WandbStepLogger(WandbLoggerBase):
         super().__init__(run)
         self._step = step
 
-    def create_child(self, name: str = None, is_step: bool = False) -> MetricLogger:
+    def create_child(
+        self, name: str = None, description: Optional[str] = None, is_step: bool = False
+    ) -> MetricLogger:
         raise ValueError("can't create child logger")
 
     def log_metrics(self, metrics: Dict[str, float]) -> None:

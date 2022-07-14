@@ -44,7 +44,9 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         best_report: List[TrialReport] = []
 
         with make_logger(logger) as p_logger:
-            with p_logger.create_child(name=repr(trial)) as c_logger:
+            with p_logger.create_child(
+                name=trial.trial_id, description=repr(trial)
+            ) as c_logger:
 
                 def obj(args) -> Dict[str, Any]:
                     with c_logger.create_child(is_step=True) as s_logger:
