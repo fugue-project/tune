@@ -1,8 +1,8 @@
 from datetime import datetime
-from threading import RLock
 from typing import Any, Dict, List
 
 import pandas as pd
+from triad import SerializableRLock
 from triad.utils.convert import to_timedelta
 from tune import Monitor, TrialReport, TrialReportLogger, parse_monitor
 
@@ -36,7 +36,7 @@ def _text(obj: str) -> Monitor:  # pragma: no cover
 class PrintBest(Monitor):
     def __init__(self):
         super().__init__()
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._bins: Dict[str, "_ReportBin"] = {}
 
     def on_report(self, report: TrialReport) -> None:
@@ -57,7 +57,7 @@ class NotebookSimpleChart(Monitor):
         always_update: bool = False,
     ):
         super().__init__()
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._last: Any = None
         self._bins: Dict[str, "_ReportBin"] = {}
         self._interval = to_timedelta(interval)

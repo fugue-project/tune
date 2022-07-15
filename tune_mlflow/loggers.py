@@ -1,6 +1,5 @@
 import os
 from typing import Any, Dict, Optional, Union
-from uuid import uuid4
 
 import mlflow
 from mlflow import ActiveRun
@@ -80,6 +79,7 @@ def get_or_create_experiment(
 
 class MLFlowLoggerBase(MetricLogger):
     def __init__(self, client: MlflowClient):
+        super().__init__()
         self._client = client
 
     def __getstate__(self) -> Dict[str, Any]:
@@ -152,7 +152,7 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
         if run_id is None:
             t = {} if tags is None else dict(tags)
             if name is None:
-                name = str(uuid4())[-5:]
+                name = self.unique_id
             t[MLFLOW_RUN_NAME] = name
             if description is not None:
                 t[MLFLOW_RUN_NOTE] = description
@@ -183,9 +183,11 @@ class MLFlowRunLevelLogger(MLFlowExperimentLevelLogger):
             run_id=self.run_id,
             is_child=self._is_child,
             step=self._step,
+            unique_id=self.unique_id,
         )
 
     def __setstate__(self, data: Dict[str, Any]) -> None:
+        self._unique_id = data["unique_id"]
         self._client = MlflowClient(
             tracking_uri=data["tracking_uri"], registry_uri=data["registry_uri"]
         )

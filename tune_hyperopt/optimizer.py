@@ -1,8 +1,8 @@
-from threading import RLock
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
+from triad import SerializableRLock
 from tune._utils.math import adjust_high
 from tune.concepts.flow import Trial, TrialReport
 from tune.concepts.logger import make_logger
@@ -40,12 +40,13 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
             tmp = NonIterativeObjectiveLocalOptimizer()
             return tmp.run(func, trial, logger=logger)
         proc = self._process(template)
-        lock = RLock()
+        lock = SerializableRLock()
         best_report: List[TrialReport] = []
 
         with make_logger(logger) as p_logger:
             with p_logger.create_child(
-                name=trial.trial_id, description=repr(trial)
+                name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                description=repr(trial),
             ) as c_logger:
 
                 def obj(args) -> Dict[str, Any]:

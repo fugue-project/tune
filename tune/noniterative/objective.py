@@ -32,7 +32,8 @@ class NonIterativeObjectiveLocalOptimizer:
         else:
             with make_logger(logger) as p_logger:
                 with p_logger.create_child(
-                    name=trial.trial_id, description=repr(trial)
+                    name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                    description=repr(trial),
                 ) as c_logger:
                     report = func.safe_run(trial)
                     c_logger.log_report(

@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 from tune.concepts.flow.report import TrialReport
 
@@ -24,6 +25,13 @@ def make_logger(obj: Any) -> "MetricLogger":
 
 class MetricLogger:
     """Hierarchical metric logger for objectectives"""
+
+    def __init__(self):
+        self._unique_id = str(uuid4())[-5:]
+
+    @property
+    def unique_id(self) -> str:
+        return self._unique_id
 
     def create_child(
         self,

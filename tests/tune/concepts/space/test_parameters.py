@@ -24,6 +24,9 @@ def test_grid():
     v = Grid("a", "b")
     assert ["a", "b"] == list(v)
 
+    v = Grid([1, 2, 3], [4, 5, 6])
+    assert [[1, 2, 3], [4, 5, 6]] == list(v)
+
     v2 = Grid("b", "a")
     assert v == v and v != v2
     assert to_uuid(v) != to_uuid(v2)
@@ -43,6 +46,17 @@ def test_choice():
 
     assert to_uuid(v) != to_uuid(Grid("a", "b", "c"))
     assert v != Grid("a", "b", "c")
+
+    v = Choice([1, 2], [3, 4], [5, 6])
+    assert v.generate(0) == v.generate(0)
+    assert v.generate(0) != v.generate(1)
+    assert v.generate_many(20, 0) == v.generate_many(20, 0)
+    assert v.generate_many(20, 0) != v.generate_many(20, 1)
+
+    v = Choice(np.int16(10), np.int16(20))
+    actual = set(v.generate_many(20, 0))
+    assert all(type(x) == int for x in actual)
+    assert set([10, 20]) == actual
 
     v = Choice(1, 2, 3)
     assert json.loads(json.dumps({"x": v.generate(0)}))["x"] <= 3

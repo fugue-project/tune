@@ -1,7 +1,6 @@
-from threading import RLock
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
-from triad import to_uuid
+from triad import SerializableRLock, to_uuid
 from tune.concepts.flow import (
     Monitor,
     Trial,
@@ -14,7 +13,7 @@ from tune.concepts.flow import (
 
 class RungHeap:
     def __init__(self, n: int):
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._n = n
         self._heap = TrialReportHeap(min_heap=False)
         self._bests: List[float] = []
@@ -120,7 +119,7 @@ class _PerPartition:
     def __init__(self, parent: "ASHAJudge", keys: List[Any]):
         self._keys = keys
         self._data: Dict[str, _PerTrial] = {}
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._parent = parent
         self._rungs: List[RungHeap] = [RungHeap(x[1]) for x in self._parent.schedule]
         self._active = True
@@ -166,7 +165,7 @@ class ASHAJudge(TrialJudge):
         monitor: Optional[Monitor] = None,
     ):
         super().__init__(monitor=monitor)
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._data: Dict[str, _PerPartition] = {}
         self._schedule = schedule
         self._always_checkpoint = always_checkpoint

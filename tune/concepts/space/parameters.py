@@ -113,7 +113,7 @@ class Choice(StochasticExpression):
     def generate(self, seed: Any = None) -> Any:
         if seed is not None:
             np.random.seed(seed)
-        value = np.random.choice(self._values)
+        value = self._values[np.random.choice(len(self._values))]
         if isinstance(value, np.generic):
             return value.item()
         return value  # pragma: no cover
