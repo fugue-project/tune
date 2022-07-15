@@ -1,8 +1,8 @@
-from threading import RLock
 from typing import Any, Callable, Dict, List, Optional
 
 import optuna
 from optuna.study import Study
+from triad import SerializableRLock
 from tune import (
     Choice,
     NonIterativeObjectiveFunc,
@@ -32,12 +32,13 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         if template.empty:
             tmp = NonIterativeObjectiveLocalOptimizer()
             return tmp.run(func, trial, logger=logger)
-        lock = RLock()
+        lock = SerializableRLock()
         best_report: List[TrialReport] = []
 
         with make_logger(logger) as p_logger:
             with p_logger.create_child(
-                name=trial.trial_id, description=repr(trial)
+                name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                description=repr(trial),
             ) as c_logger:
 
                 def obj(otrial: optuna.trial.Trial) -> float:

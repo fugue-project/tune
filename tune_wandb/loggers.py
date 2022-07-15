@@ -1,6 +1,5 @@
 import os
 from typing import Any, Dict, Optional
-from uuid import uuid4
 
 import wandb
 from triad import assert_or_throw
@@ -23,6 +22,7 @@ def _express_logger(obj: str) -> "WandbGroupLogger":
 
 class WandbLoggerBase(MetricLogger):
     def __init__(self, run: Optional[Run] = None):
+        super().__init__()
         self._run = run
 
     def __getstate__(self) -> Dict[str, Any]:
@@ -73,8 +73,8 @@ class WandbLoggerBase(MetricLogger):
 
 class WandbProjectLogger(WandbLoggerBase):
     def __init__(self, name: str):
-        self._name = name or get_project()
         super().__init__(None)
+        self._name = name or get_project()
 
     @property
     def project_name(self) -> str:
@@ -89,16 +89,20 @@ class WandbProjectLogger(WandbLoggerBase):
 
 class WandbGroupLogger(WandbLoggerBase):
     def __init__(self, project_name: str, group: Optional[str] = None):
-        self._project_name = project_name
-        self._group = group or str(uuid4())[-5:]
         super().__init__(None)
+        self._project_name = project_name
+        self._group = group or self.unique_id
 
     def __getstate__(self) -> Dict[str, Any]:
         return dict(
-            project_name=self.project_name, group=self.group, api_key=self.api_key
+            project_name=self.project_name,
+            group=self.group,
+            api_key=self.api_key,
+            unique_id=self.unique_id,
         )
 
     def __setstate__(self, data: Dict[str, Any]) -> None:
+        self._unique_id = data["unique_id"]
         os.environ["WANDB_SILENT"] = "true"
         wandb.login(key=data["api_key"], relogin=True)
         self._project_name = data["project_name"]
@@ -128,6 +132,8 @@ class WandbGroupLogger(WandbLoggerBase):
         if is_step:
             return MetricLogger()
         else:
+            os.environ["WANDB_SILENT"] = "true"
+            os.environ["WANDB_START_METHOD"] = "thread"
             run = wandb.init(
                 project=self.project_name,
                 settings={"silent": True},

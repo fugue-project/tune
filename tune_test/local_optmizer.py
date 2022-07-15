@@ -1,7 +1,7 @@
-from threading import RLock
 from typing import Any, Callable, Dict, List, Tuple
 from unittest import TestCase
 
+from triad import SerializableRLock
 from tune import (
     Choice,
     NonIterativeObjectiveLocalOptimizer,
@@ -195,7 +195,7 @@ class NonIterativeObjectiveLocalOptimizerTests:
             params = dict(a=expr)
             trial = Trial("x", params, metadata={})
             o = self.make_optimizer(max_iter=30)
-            lock = RLock()
+            lock = SerializableRLock()
             values: List[Any] = []
 
             @noniterative_objective

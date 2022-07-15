@@ -1,7 +1,7 @@
 from datetime import datetime
-from threading import RLock
 from typing import Any, Callable, Dict, List, Set
 
+from triad import SerializableRLock
 from triad.utils.convert import to_timedelta
 from tune.concepts.flow import (
     Trial,
@@ -30,7 +30,7 @@ class NonIterativeStopper(TrialJudge):
     def __init__(self, log_best_only: bool = False):
         super().__init__()
         self._stopper_updated = False
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._log_best_only = log_best_only
         self._logs: Dict[str, TrialReportCollection] = {}
 

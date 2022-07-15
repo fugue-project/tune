@@ -1,8 +1,8 @@
 import heapq
 from datetime import datetime
-from threading import RLock
 from typing import Any, Dict, Iterable, List, Optional, Set
 
+from triad import SerializableRLock
 from triad.utils.convert import to_datetime
 from tune._utils import to_base64
 from tune.concepts.flow.trial import Trial
@@ -276,7 +276,7 @@ class TrialReportHeap:
 
 class TrialReportLogger:
     def __init__(self, new_best_only: bool = False):
-        self._lock = RLock()
+        self._lock = SerializableRLock()
         self._best_report: Optional[TrialReport] = None
         self._new_best_only = new_best_only
 
