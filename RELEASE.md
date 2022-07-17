@@ -1,5 +1,12 @@
 # Release Notes
 
+## 0.1.2
+
+-  [54](https://github.com/fugue-project/tune/pull/54): Integrated with MLFlow
+-  [60](https://github.com/fugue-project/tune/issues/60): Integrated with W&B
+-  [57](https://github.com/fugue-project/tune/issues/57): Expanded test coverage from Python 3.6 - 3.10, Linux and Windows
+-  [58](https://github.com/fugue-project/tune/issues/58): Fixed Bayesian optimizations min_better bug
+
 ## 0.1.0
 
 -  Replace all `pickle` with `cloudpickle`

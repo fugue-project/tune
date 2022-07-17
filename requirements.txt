@@ -20,7 +20,7 @@ nbsphinx
 flask
 
 pyspark
-dask[dataframe]
+dask[dataframe,distributed]
 
 # publish to pypi
 wheel
