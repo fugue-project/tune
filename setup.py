@@ -30,7 +30,7 @@ setup(
     author_email="goodwanghan@gmail.com",
     keywords="hyper parameter hyperparameter tuning tune tuner optimzation",
     url="http://github.com/fugue-project/tune",
-    install_requires=["triad>=0.6.4", "fugue==0.7.0.dev4", "cloudpickle"],
+    install_requires=["fugue>=0.7.0", "cloudpickle"],
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
