@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.1.3
+
+-  Added Fugue version constraint to avoid breaking changes
+
 ## 0.1.2
 
 -  [54](https://github.com/fugue-project/tune/pull/54): Integrated with MLFlow

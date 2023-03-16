@@ -37,6 +37,7 @@ def test_builder(tmpdir):
     with FugueWorkflow() as dag:
         df = builder.build(dag).data
         df.show()
+    dag.run()
 
     df1 = ArrayDataFrame([[0, 1], [1, 1], [0, 2]], "a:int,b:int")
 
@@ -52,6 +53,7 @@ def test_builder(tmpdir):
             assert_count,
             params=dict(n=2, schema=f"__tune_df__x:str,{TUNE_DATASET_TRIALS}:str"),
         )
+    dag.run()
 
     space = Space(b=Rand(0, 1), a=1, c=Grid(2, 3), d=Grid("a", "b"))
     df2 = ArrayDataFrame([[0, 1], [1, 1], [3, 2]], "a:int,bb:int")
@@ -60,7 +62,7 @@ def test_builder(tmpdir):
     engine = NativeExecutionEngine(conf={TUNE_TEMP_PATH: str(tmpdir)})
 
     # test multiple dfs, batch_size and config
-    with FugueWorkflow(engine) as dag:
+    with FugueWorkflow() as dag:
         dfs = WorkflowDataFrames(
             a=dag.df(df1).partition_by("a"), b=dag.df(df2).partition_by("a")
         )
@@ -90,6 +92,7 @@ def test_builder(tmpdir):
                 f"__tune_df__c:str,{TUNE_DATASET_TRIALS}:str",
             ),
         )
+    dag.run(engine)
 
 
 def test_dataset(tmpdir):
