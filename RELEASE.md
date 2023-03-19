@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.1.5
+
+-  Refactor `FunctionWrapper`, remove the Fugue contraint
+
 ## 0.1.3
 
 -  Added Fugue version constraint to avoid breaking changes
