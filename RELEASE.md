@@ -1,5 +1,9 @@
 # Release Notes
 
+## 0.1.6
+
+-  Support Python 3.12
+
 ## 0.1.5
 
 -  Refactor `FunctionWrapper`, remove the Fugue contraint
