@@ -39,13 +39,13 @@ class KerasTrainingSpec:
         raise NotImplementedError  # pragma: no cover
 
     def save_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".h5") as tf:
+        with tempfile.NamedTemporaryFile(suffix=".weights.h5") as tf:
             model.save_weights(tf.name)
             with open(tf.name, "rb") as fin:
                 fs.writefile("model.h5", fin)
 
     def load_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".h5") as tf:
+        with tempfile.NamedTemporaryFile(suffix=".weights.h5") as tf:
             local_fs = FileSystem()
             with fs.open("model.h5", "rb") as fin:
                 local_fs.writefile(tf.name, fin)

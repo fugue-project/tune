@@ -1,6 +1,7 @@
-from fugue_dask import DaskExecutionEngine
+import fugue.test as ft
 from sklearn.datasets import load_diabetes
 from sklearn.linear_model import Lasso, LinearRegression
+
 from tune import TUNE_OBJECT_FACTORY, Grid, Rand
 from tune_hyperopt.optimizer import HyperoptLocalOptimizer
 from tune_sklearn import sk_space, suggest_sk_models, suggest_sk_models_by_cv
@@ -8,6 +9,7 @@ from tune_sklearn import sk_space, suggest_sk_models, suggest_sk_models_by_cv
 # from fugue_spark import SparkExecutionEngine
 
 
+@ft.with_backend("dask")
 def test_suggest(tmpdir):
     TUNE_OBJECT_FACTORY.set_temp_path(str(tmpdir))
 
@@ -31,6 +33,7 @@ def test_suggest(tmpdir):
         top_n=0,
         distributed=False,
         local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
+        execution_engine="native",
     )
     assert 4 == len(result)
     assert 50 > result[0].sort_metric
@@ -44,6 +47,7 @@ def test_suggest(tmpdir):
         partition_keys=["sex"],
         temp_path=str(tmpdir),
         save_model=True,
+        execution_engine="native",
     )
     assert 16 == len(result)
     assert 50 > result[0].sort_metric
@@ -55,12 +59,13 @@ def test_suggest(tmpdir):
         "neg_mean_absolute_error",
         top_n=1,
         partition_keys=["sex"],
-        execution_engine=DaskExecutionEngine,
+        execution_engine="dask",
     )
     assert 2 == len(result)
     assert 50 > result[0].sort_metric
 
 
+@ft.with_backend("dask")
 def test_suggest_cv(tmpdir):
     TUNE_OBJECT_FACTORY.set_temp_path(str(tmpdir))
 
@@ -80,6 +85,7 @@ def test_suggest_cv(tmpdir):
         top_n=0,
         distributed=False,
         local_optimizer=HyperoptLocalOptimizer(max_iter=10, seed=0),
+        execution_engine="native",
     )
     assert 4 == len(result)
     assert 50 > result[0].sort_metric
@@ -92,6 +98,7 @@ def test_suggest_cv(tmpdir):
         partition_keys=["sex"],
         temp_path=str(tmpdir),
         save_model=True,
+        execution_engine="native",
     )
     assert 16 == len(result)
     assert 50 > result[0].sort_metric
@@ -102,7 +109,7 @@ def test_suggest_cv(tmpdir):
         "neg_mean_absolute_error",
         top_n=1,
         partition_keys=["sex"],
-        execution_engine=DaskExecutionEngine,
+        execution_engine="dask",
     )
     assert 2 == len(result)
     assert 50 > result[0].sort_metric
