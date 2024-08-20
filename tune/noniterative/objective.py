@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 
 from tune._utils import run_monitored_process
 from tune.concepts.flow import Trial, TrialReport
-from tune.concepts.logger import make_logger
+from tune.concepts.logger import make_logger, set_current_metric_logger
 from tune.constants import TUNE_STOPPER_DEFAULT_CHECK_INTERVAL
 
 
@@ -31,9 +31,11 @@ class NonIterativeObjectiveLocalOptimizer:
             report = func.safe_run(trial)
         else:
             with make_logger(logger) as p_logger:
-                with p_logger.create_child(
-                    name=trial.trial_id[:5] + "-" + p_logger.unique_id,
-                    description=repr(trial),
+                with set_current_metric_logger(
+                    p_logger.create_child(
+                        name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                        description=repr(trial),
+                    )
                 ) as c_logger:
                     report = func.safe_run(trial)
                     c_logger.log_report(

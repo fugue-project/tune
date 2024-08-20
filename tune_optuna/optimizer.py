@@ -14,7 +14,7 @@ from tune import (
     TrialReport,
 )
 from tune._utils.math import _IGNORABLE_ERROR, uniform_to_discrete, uniform_to_integers
-from tune.concepts.logger import make_logger
+from tune.concepts.logger import make_logger, set_current_metric_logger
 from tune.concepts.space import TuningParametersTemplate
 
 
@@ -36,13 +36,17 @@ class OptunaLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         best_report: List[TrialReport] = []
 
         with make_logger(logger) as p_logger:
-            with p_logger.create_child(
-                name=trial.trial_id[:5] + "-" + p_logger.unique_id,
-                description=repr(trial),
+            with set_current_metric_logger(
+                p_logger.create_child(
+                    name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                    description=repr(trial),
+                )
             ) as c_logger:
 
                 def obj(otrial: optuna.trial.Trial) -> float:
-                    with c_logger.create_child(is_step=True) as s_logger:
+                    with set_current_metric_logger(
+                        c_logger.create_child(is_step=True)
+                    ) as s_logger:
                         params = template.fill_dict(_convert(otrial, template))
                         report = func.safe_run(trial.with_params(params))
                         with lock:
