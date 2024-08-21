@@ -1,7 +1,47 @@
-from typing import Any, Dict, Optional
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Dict, Iterator, Optional
 from uuid import uuid4
 
 from tune.concepts.flow.report import TrialReport
+
+_TUNE_CONTEXT_VAR: ContextVar[Any] = ContextVar("TUNE_CONTEXT_VAR", default=None)
+
+
+@contextmanager
+def set_current_metric_logger(logger: "MetricLogger") -> Iterator["MetricLogger"]:
+    """Set the current metric logger
+
+    :param logger: the logger
+
+    .. admonition:: Examples
+
+        .. code-block:: python
+
+            with set_current_metric_logger(logger):
+                pass
+    """
+    with logger:
+        token = _TUNE_CONTEXT_VAR.set(logger)
+        try:
+            yield logger
+        finally:
+            _TUNE_CONTEXT_VAR.reset(token)
+
+
+def get_current_metric_logger() -> Optional["MetricLogger"]:
+    """Get the current metric logger
+
+    :return: the current logger
+
+    .. admonition:: Examples
+
+        .. code-block:: python
+
+            with set_current_metric_logger(logger):
+                logger = get_current_metric_logger()
+    """
+    return _TUNE_CONTEXT_VAR.get(None)
 
 
 def make_logger(obj: Any) -> "MetricLogger":

@@ -1,11 +1,11 @@
-from typing import Any, Type, Dict
+from typing import Any, Dict, Type
 
 from triad.utils.convert import get_full_type_path, to_type
-from tune.concepts.space.parameters import TuningParametersTemplate
 
-from tune_tensorflow.spec import KerasTrainingSpec
 from tune import Space
+from tune.concepts.space.parameters import TuningParametersTemplate
 from tune.constants import SPACE_MODEL_NAME
+from tune_tensorflow.spec import KerasTrainingSpec
 
 _TYPE_DICT: Dict[str, Type[KerasTrainingSpec]] = {}
 

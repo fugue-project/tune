@@ -5,7 +5,7 @@ from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 from triad import SerializableRLock
 from tune._utils.math import adjust_high
 from tune.concepts.flow import Trial, TrialReport
-from tune.concepts.logger import make_logger
+from tune.concepts.logger import make_logger, set_current_metric_logger
 from tune.concepts.space import (
     Choice,
     Rand,
@@ -44,13 +44,17 @@ class HyperoptLocalOptimizer(NonIterativeObjectiveLocalOptimizer):
         best_report: List[TrialReport] = []
 
         with make_logger(logger) as p_logger:
-            with p_logger.create_child(
-                name=trial.trial_id[:5] + "-" + p_logger.unique_id,
-                description=repr(trial),
+            with set_current_metric_logger(
+                p_logger.create_child(
+                    name=trial.trial_id[:5] + "-" + p_logger.unique_id,
+                    description=repr(trial),
+                )
             ) as c_logger:
 
                 def obj(args) -> Dict[str, Any]:
-                    with c_logger.create_child(is_step=True) as s_logger:
+                    with set_current_metric_logger(
+                        c_logger.create_child(is_step=True)
+                    ) as s_logger:
                         params = template.fill([p[1](v) for p, v in zip(proc, args)])
                         report = func.safe_run(trial.with_params(params))
                         with lock:

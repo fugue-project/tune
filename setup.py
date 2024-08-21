@@ -30,7 +30,7 @@ setup(
     author_email="goodwanghan@gmail.com",
     keywords="hyper parameter hyperparameter tuning tune tuner optimzation",
     url="http://github.com/fugue-project/tune",
-    install_requires=["fugue", "cloudpickle", "triad>=0.8.4"],
+    install_requires=["fugue", "cloudpickle", "triad>=0.8.4", "fs"],
     extras_require={
         "hyperopt": ["hyperopt"],
         "optuna": ["optuna"],
@@ -54,14 +54,14 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: Apache Software License",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3 :: Only",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     entry_points={
         "tune.plugins": [
             "mlflow = tune_mlflow[mlflow]",

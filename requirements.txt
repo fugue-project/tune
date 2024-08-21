@@ -19,8 +19,7 @@ sphinx-autodoc-typehints
 nbsphinx
 flask
 
-pyspark
-dask[dataframe,distributed]
+fugue[spark,dask]
 
 # publish to pypi
 wheel

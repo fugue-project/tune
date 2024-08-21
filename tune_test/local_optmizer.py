@@ -45,7 +45,7 @@ class NonIterativeObjectiveLocalOptimizerTests:
             # common case
             values = self._generate_values(Rand(-2.0, 3.0), lambda x: x**2)
             assert len(values) > 0
-            assert all(x >= -2.0 and x <= 3.0 for x in values)
+            assert all(-2.0 <= x <= 3.0 for x in values)
 
             # with q, and range%q == 0
             values = self._generate_values(Rand(-2.0, 3.0, q=2.5), lambda x: x**2)
@@ -65,7 +65,7 @@ class NonIterativeObjectiveLocalOptimizerTests:
 
             # with log
             values = self._generate_values(Rand(0.1, 3.0, log=True), lambda x: x**2)
-            assert all(x >= 0.1 and x <= 3.0 for x in values)
+            assert all(0.1 <= x <= 3.0 for x in values)
 
             # with log and q, and range%q == 0
             values = self._generate_values(

@@ -56,7 +56,7 @@ def test_trial_report():
     report = copy.copy(
         TrialReport(
             trial,
-            metric=np.float(0.1),
+            metric=np.float64(0.1),
             params={"c": Rand(1, 2)},
             metadata={"d": 4},
             cost=2.0,
@@ -73,7 +73,7 @@ def test_trial_report():
     assert 0.1 == report.sort_metric
 
     report = copy.deepcopy(
-        TrialReport(trial, metric=np.float(0.111), cost=2.0, rung=4, sort_metric=1.23)
+        TrialReport(trial, metric=np.float64(0.111), cost=2.0, rung=4, sort_metric=1.23)
     )
     assert trial is report.trial
     report = cloudpickle.loads(cloudpickle.dumps(report))
@@ -109,7 +109,7 @@ def test_trial_report():
     assert 5 == report.with_rung(5).rung
 
     td = trial.with_dfs({"a": pd.DataFrame})
-    report = TrialReport(td, metric=np.float(0.1))
+    report = TrialReport(td, metric=np.float64(0.1))
     assert 0 == len(report.trial.dfs)
 
 
@@ -177,7 +177,7 @@ def test_trial_report_heap():
 def test_trial_decision():
     trial = Trial("abc", {"a": 1}, {"b": Rand(0, 2)})
     report = TrialReport(
-        trial, metric=np.float(0.1), params={"c": Rand(0, 3)}, metadata={"d": 4}
+        trial, metric=np.float64(0.1), params={"c": Rand(0, 3)}, metadata={"d": 4}
     )
     decision = TrialDecision(
         report, budget=0.0, should_checkpoint=True, metadata={"x": 1}, reason="p"
