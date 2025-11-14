@@ -1,10 +1,10 @@
 import tempfile
 from typing import Any, Dict, List, Tuple
 
-from fs.base import FS as FSBase
+from fsspec.implementations.dirfs import DirFileSystem
 from tensorflow import keras
-from triad import FileSystem
-from tune.concepts.space import to_template, TuningParametersTemplate
+
+from tune.concepts.space import TuningParametersTemplate, to_template
 
 
 class KerasTrainingSpec:
@@ -38,17 +38,18 @@ class KerasTrainingSpec:
     def get_model(self) -> keras.models.Model:
         raise NotImplementedError  # pragma: no cover
 
-    def save_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
+    def save_checkpoint(self, fs: DirFileSystem, model: keras.models.Model) -> None:
         with tempfile.NamedTemporaryFile(suffix=".weights.h5") as tf:
             model.save_weights(tf.name)
             with open(tf.name, "rb") as fin:
-                fs.writefile("model.h5", fin)
+                with fs.open("model.h5", "wb") as fout:
+                    fout.write(fin.read())
 
-    def load_checkpoint(self, fs: FSBase, model: keras.models.Model) -> None:
+    def load_checkpoint(self, fs: DirFileSystem, model: keras.models.Model) -> None:
         with tempfile.NamedTemporaryFile(suffix=".weights.h5") as tf:
-            local_fs = FileSystem()
             with fs.open("model.h5", "rb") as fin:
-                local_fs.writefile(tf.name, fin)
+                with open(tf.name, "wb") as fout:
+                    fout.write(fin.read())
             model.load_weights(tf.name)
 
     def compile_model(self, **add_kwargs: Any) -> keras.models.Model:

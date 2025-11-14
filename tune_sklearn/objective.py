@@ -3,11 +3,11 @@ from typing import Any, Optional, Tuple
 from uuid import uuid4
 
 import cloudpickle
+import fsspec
 import numpy as np
 import pandas as pd
 from sklearn.metrics import get_scorer
 from sklearn.model_selection import cross_val_score
-from triad import FileSystem
 
 from tune import NonIterativeObjectiveFunc, Trial, TrialReport
 from tune.api.factory import TUNE_OBJECT_FACTORY
@@ -65,7 +65,8 @@ class SKObjective(NonIterativeObjectiveFunc):
         metadata = dict(model=self._model_expr)
         if self._checkpoint_path is not None:
             fp = os.path.join(self._checkpoint_path, str(uuid4()) + ".pkl")
-            with FileSystem().openbin(fp, mode="wb") as f:
+            fs, uri = fsspec.core.url_to_fs(fp)
+            with fs.open(uri, mode="wb") as f:
                 cloudpickle.dump(model, f)
             metadata["checkpoint_path"] = fp
         return TrialReport(
@@ -120,7 +121,8 @@ class SKCVObjective(SKObjective):
         if self._checkpoint_path is not None:
             model.fit(self._train_x, self._train_y)
             fp = os.path.join(self._checkpoint_path, str(uuid4()) + ".pkl")
-            with FileSystem().openbin(fp, mode="wb") as f:
+            fs, uri = fsspec.core.url_to_fs(fp)
+            with fs.open(uri, mode="wb") as f:
                 cloudpickle.dump(model, f)
             metadata["checkpoint_path"] = fp
         metric = float(np.mean(s))

@@ -1,10 +1,10 @@
-from fs.base import FS as FSBase
-from triad import FileSystem
+from fsspec.implementations.dirfs import DirFileSystem
+
+from tune.concepts.flow import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 from tune.iterative.objective import (
     IterativeObjectiveFunc,
     validate_iterative_objective,
 )
-from tune.concepts.flow import Trial, TrialDecision, TrialJudge, TrialReport, Monitor
 
 
 class F(IterativeObjectiveFunc):
@@ -21,11 +21,13 @@ class F(IterativeObjectiveFunc):
     def finalize(self) -> None:
         self.v = -10
 
-    def load_checkpoint(self, fs: FSBase) -> None:
-        self.v = int(fs.readtext("x"))
+    def load_checkpoint(self, fs: DirFileSystem) -> None:
+        with fs.open("x", "r") as f:
+            self.v = int(f.read())
 
-    def save_checkpoint(self, fs: FSBase) -> None:
-        fs.writetext("x", str(self.v))
+    def save_checkpoint(self, fs: DirFileSystem) -> None:
+        with fs.open("x", "w") as f:
+            f.write(str(self.v))
 
     def run_single_iteration(self) -> TrialReport:
         self.v += 1
@@ -65,7 +67,7 @@ class M(Monitor):
 
 
 def test_objective_func(tmpdir):
-    fs = FileSystem().opendir(str(tmpdir))
+    fs = DirFileSystem(str(tmpdir))
     j = J([3, 3, 2])
     f = F().copy()
     t = Trial("abc", {"a": 1})

@@ -1,9 +1,11 @@
 from typing import Optional
 
-from triad import FileSystem
+import fsspec
+from fsspec.implementations.dirfs import DirFileSystem
+
+from tune.concepts.flow import Trial, TrialDecision, TrialJudge, TrialReport
 from tune.iterative.objective import IterativeObjectiveFunc
 from tune.noniterative.objective import NonIterativeObjectiveFunc
-from tune.concepts.flow import Trial, TrialDecision, TrialJudge, TrialReport
 
 
 class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
@@ -23,10 +25,11 @@ class _NonIterativeObjectiveWrapper(NonIterativeObjectiveFunc):
 
     def run(self, trial: Trial) -> TrialReport:  # pragma: no cover
         judge = _NonIterativeJudgeWrapper(self._budget)
-        base_fs = FileSystem()
-        fs = base_fs.makedirs(self._checkpoint_path, recreate=True)
+        base_fs, uri = fsspec.core.url_to_fs(self._checkpoint_path)
+        fs = base_fs.makedirs(uri, exist_ok=True)
+        cfs = DirFileSystem(path=uri, fs=fs)
         self._func = self._func.copy()
-        self._func.run(trial, judge=judge, checkpoint_basedir_fs=fs)
+        self._func.run(trial, judge=judge, checkpoint_basedir_fs=cfs)
         return judge.report
 
 
