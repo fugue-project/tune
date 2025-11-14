@@ -33,7 +33,7 @@ docs:
 	sphinx-build -b html docs/ docs/build/
 
 lint:
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 package:
 	rm -rf dist/*
