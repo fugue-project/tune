@@ -61,7 +61,7 @@ optuna = "tune_optuna"
 monitor = "tune_notebook"
 
 [tool.setuptools]
-packages = { find = {} }
+packages = { find = { where = ["."], include = ["tune*"] } }
 
 [tool.setuptools.dynamic]
 version = { attr = "tune_version.__version__" }

@@ -50,3 +50,13 @@ test:
 
 testcore:
 	uv run pytest tests/tune tests/tune_notebook tests/tune_hyperopt tests/tune_optuna
+
+release_branch:
+	$(eval VERSION := $(shell python -c "import tune_version; print(tune_version.__version__)"))
+	@if echo "$(VERSION)" | grep -q "dev"; then \
+		git tag v$(VERSION); \
+		git push origin v$(VERSION); \
+	else \
+		echo "Error: Can only release dev versions (current: $(VERSION))"; \
+		exit 1; \
+	fi
