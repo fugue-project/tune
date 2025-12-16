@@ -91,7 +91,6 @@ intersphinx_mapping = {
     "fugue": ("https://fugue.readthedocs.io/en/latest", None),
     "tutorial": ("https://fugue-tutorials.readthedocs.io/en/latest", None),
     "pa": ("https://arrow.apache.org/docs", None),
-    "fs": ("https://docs.pyfilesystem.org/en/latest", None),
     "spark": ("https://spark.apache.org/docs/latest/api/python", None),
     "dask": ("https://docs.dask.org/en/latest", None),
     "np": ("https://numpy.org/doc/stable", None),

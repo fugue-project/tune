@@ -1,12 +1,13 @@
 from typing import Any, Dict, Iterable
 
 from fugue import FugueWorkflow
+
+from tune import optimize_by_hyperband, optimize_by_sha
 from tune.concepts.dataset import TuneDatasetBuilder
-from tune.iterative.objective import IterativeObjectiveFunc
-from tune import optimize_by_sha, optimize_by_hyperband
-from tune.concepts.space import Grid, Space
 from tune.concepts.flow import TrialReport
+from tune.concepts.space import Grid, Space
 from tune.constants import TUNE_REPORT_METRIC
+from tune.iterative.objective import IterativeObjectiveFunc
 
 
 class F(IterativeObjectiveFunc):
@@ -21,10 +22,12 @@ class F(IterativeObjectiveFunc):
         ]
 
     def save_checkpoint(self, fs):
-        fs.writetext("x", str(self._it))
+        with fs.open("x", "w") as f:
+            f.write(str(self._it))
 
     def load_checkpoint(self, fs):
-        self._it = int(fs.readtext("x"))
+        with fs.open("x", "r") as f:
+            self._it = int(f.read())
 
     def run_single_iteration(self):
         trial = self.current_trial

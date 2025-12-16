@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from uuid import uuid4
 
 import cloudpickle
+import fsspec
 import numpy as np
 import pandas as pd
 from fugue import (
@@ -17,7 +18,8 @@ from fugue import (
     WorkflowDataFrame,
     WorkflowDataFrames,
 )
-from triad import FileSystem, ParamDict, assert_or_throw, to_uuid
+from triad import ParamDict, assert_or_throw, to_uuid
+
 from tune._utils import from_base64, to_base64
 from tune.concepts.flow import Trial
 from tune.concepts.space import Space
@@ -264,7 +266,7 @@ class TuneDatasetBuilder:
                     fp = os.path.join(p, str(uuid4()) + ".parquet")
                     first = df.peek_dict()
                     keys = [first[x] for x in self.key_schema.names]
-                    fs = FileSystem()
+                    fs, _ = fsspec.core.url_to_fs(fp)
                     with fs.open(fp, "wb") as handler:
                         df.as_pandas().to_parquet(handler)
                     return ArrayDataFrame([keys + [fp]], self.output_schema)
@@ -389,12 +391,12 @@ def _get_trials_from_row(row: Dict[str, Any], with_dfs: bool = True) -> Iterable
         yield from from_base64(row[TUNE_DATASET_TRIALS])
     else:
         dfs: Dict[str, Any] = {}
-        fs = FileSystem()
         for k, v in row.items():
             if k.startswith(TUNE_DATASET_DF_PREFIX):
                 key = k[len(TUNE_DATASET_DF_PREFIX) :]
                 if v is not None:
-                    with fs.open(v, "rb") as handler:
+                    fs, uri = fsspec.core.url_to_fs(v)
+                    with fs.open(uri, "rb") as handler:
                         dfs[key] = pd.read_parquet(handler)
         for params in from_base64(row[TUNE_DATASET_TRIALS]):
             yield params.with_dfs(dfs)

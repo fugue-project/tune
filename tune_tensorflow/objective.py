@@ -1,9 +1,9 @@
 from typing import Dict, Optional, Type
 
-from fs.base import FS as FSBase
+from fsspec.implementations.dirfs import DirFileSystem
 from tensorflow import keras
-from tune import IterativeObjectiveFunc, TrialReport
 
+from tune import IterativeObjectiveFunc, TrialReport
 from tune_tensorflow.spec import KerasTrainingSpec
 from tune_tensorflow.utils import extract_keras_spec
 
@@ -32,13 +32,15 @@ class KerasObjective(IterativeObjectiveFunc):
     def generate_sort_metric(self, value: float) -> float:
         return self.spec.generate_sort_metric(value)
 
-    def save_checkpoint(self, fs: FSBase) -> None:
+    def save_checkpoint(self, fs: DirFileSystem) -> None:
         self.spec.save_checkpoint(fs, self.model)
-        fs.writetext("epoch", str(self._epochs))
+        with fs.open("epoch", "w") as f:
+            f.write(str(self._epochs))
 
-    def load_checkpoint(self, fs: FSBase) -> None:
+    def load_checkpoint(self, fs: DirFileSystem) -> None:
         self.spec.load_checkpoint(fs, self.model)
-        self._epochs = int(fs.readtext("epoch"))
+        with fs.open("epoch", "r") as f:
+            self._epochs = int(f.read())
 
     def run_single_rung(self, budget: float) -> TrialReport:
         trial = self.current_trial

@@ -1,10 +1,12 @@
 from typing import Any, Callable, Dict, Iterable
 
-from triad import FileSystem
-from tune.constants import TUNE_REPORT_ADD_SCHEMA
+import fsspec
+from fsspec.implementations.dirfs import DirFileSystem
+
 from tune.concepts.dataset import StudyResult, TuneDataset, _get_trials_from_row
-from tune.iterative.objective import IterativeObjectiveFunc
 from tune.concepts.flow import RemoteTrialJudge, TrialCallback, TrialJudge
+from tune.constants import TUNE_REPORT_ADD_SCHEMA
+from tune.iterative.objective import IterativeObjectiveFunc
 
 
 class IterativeStudy:
@@ -28,8 +30,9 @@ class IterativeStudy:
         df: Iterable[Dict[str, Any]],
         entrypoint: Callable[[str, Dict[str, Any]], Any],
     ) -> Iterable[Dict[str, Any]]:
-        fs = FileSystem()
-        ck_fs = fs.makedirs(self._checkpoint_path, recreate=True)
+        fs, uri = fsspec.core.url_to_fs(self._checkpoint_path)
+        fs.makedirs(uri, exist_ok=True)
+        ck_fs = DirFileSystem(path=uri, fs=fs)
         for row in df:
             for trial in _get_trials_from_row(row):
                 rjudge = RemoteTrialJudge(entrypoint)

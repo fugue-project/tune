@@ -1,11 +1,11 @@
-import os
 import tempfile
 from typing import Callable, List, Optional
 from uuid import uuid4
 
 import cloudpickle
-from fs.base import FS as FSBase
-from triad import FileSystem
+import fsspec
+from fsspec.implementations.dirfs import DirFileSystem
+
 from tune.concepts.checkpoint import Checkpoint
 from tune.concepts.flow import Monitor, Trial, TrialDecision, TrialJudge, TrialReport
 
@@ -30,10 +30,10 @@ class IterativeObjectiveFunc:
     def generate_sort_metric(self, value: float) -> float:
         return value
 
-    def load_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
+    def load_checkpoint(self, fs: DirFileSystem) -> None:  # pragma: no cover
         return
 
-    def save_checkpoint(self, fs: FSBase) -> None:  # pragma: no cover
+    def save_checkpoint(self, fs: DirFileSystem) -> None:  # pragma: no cover
         return
 
     def initialize(self) -> None:  # pragma: no cover
@@ -57,10 +57,11 @@ class IterativeObjectiveFunc:
         self,
         trial: Trial,
         judge: TrialJudge,
-        checkpoint_basedir_fs: FSBase,
+        checkpoint_basedir_fs: DirFileSystem,
     ) -> None:
+        checkpoint_basedir_fs.makedirs(trial.trial_id, exist_ok=True)
         checkpoint = Checkpoint(
-            checkpoint_basedir_fs.makedir(trial.trial_id, recreate=True)
+            DirFileSystem(path=trial.trial_id, fs=checkpoint_basedir_fs)
         )
         if not judge.can_accept(trial):
             return
@@ -68,7 +69,8 @@ class IterativeObjectiveFunc:
         self.initialize()
         try:
             if len(checkpoint) > 0:
-                self._rung = int(checkpoint.latest.readtext("__RUNG__")) + 1
+                with checkpoint.latest.open("__RUNG__", "r") as f:
+                    self._rung = int(f.read()) + 1
                 self.load_checkpoint(checkpoint.latest)
             budget = judge.get_budget(trial, self.rung)
             while budget > 0:
@@ -79,7 +81,8 @@ class IterativeObjectiveFunc:
                 decision = judge.judge(report)
                 if decision.should_checkpoint:
                     with checkpoint.create() as fs:
-                        fs.writetext("__RUNG__", str(self.rung))
+                        with fs.open("__RUNG__", "w") as f:
+                            f.write(str(self.rung))
                         self.save_checkpoint(fs)
                 budget = decision.budget
                 self._rung += 1
@@ -97,8 +100,12 @@ def validate_iterative_objective(
     monitor: Optional[Monitor] = None,
 ) -> None:
     path = checkpoint_path if checkpoint_path != "" else tempfile.gettempdir()
-    _basefs = FileSystem()
-    basefs = _basefs.makedirs(os.path.join(path, str(uuid4())), recreate=True)
+    fs, uri = fsspec.core.url_to_fs(path)
+    fs.makedirs(uri, exist_ok=True)
+    dfs = DirFileSystem(path=uri, fs=fs)
+    uid = str(uuid4())
+    dfs.makedirs(uid, exist_ok=True)
+    basefs = DirFileSystem(path=uid, fs=dfs)
     j = _Validator(monitor, budgets, continuous=continuous)
     if continuous:
         f = cloudpickle.loads(cloudpickle.dumps(func)).copy()
@@ -124,7 +131,6 @@ class _Validator(TrialJudge):
         return self._reports
 
     def can_accept(self, trial: Trial) -> bool:
-
         return True
 
     def get_budget(self, trial: Trial, rung: int) -> float:

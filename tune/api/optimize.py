@@ -2,7 +2,8 @@ import os
 from typing import Any, Callable, List, Optional, Tuple
 from uuid import uuid4
 
-from triad import FileSystem
+import fsspec
+
 from tune.api.factory import (
     TUNE_OBJECT_FACTORY,
     parse_iterative_objective,
@@ -118,6 +119,7 @@ def optimize_by_continuous_asha(
         monitor=_monitor,
     )
     path = os.path.join(checkpoint_path, str(uuid4()))
-    FileSystem().makedirs(path, recreate=True)
+    fs, uri = fsspec.core.url_to_fs(path)
+    fs.makedirs(uri, exist_ok=True)
     study = IterativeStudy(_objective, checkpoint_path=path)
     return study.optimize(dataset, judge=judge)

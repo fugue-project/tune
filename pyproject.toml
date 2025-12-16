@@ -1,0 +1,126 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tune"
+dynamic = ["version"]
+description = "An abstraction layer for hyper parameter tuning"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Han Wang", email = "goodwanghan@gmail.com" }]
+keywords = [
+    "hyper parameter",
+    "hyperparameter",
+    "tuning",
+    "tune",
+    "tuner",
+    "optimzation",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = ["fugue>=0.9.2", "cloudpickle", "triad>=1.0.0"]
+
+[project.urls]
+Homepage = "http://github.com/fugue-project/tune"
+Repository = "http://github.com/fugue-project/tune"
+
+[project.optional-dependencies]
+hyperopt = ["hyperopt"]
+optuna = ["optuna"]
+tensorflow = ["tensorflow"]
+notebook = ["fugue-jupyter", "seaborn"]
+sklearn = ["scikit-learn"]
+mlflow = ["mlflow"]
+all = [
+    "hyperopt",
+    "optuna",
+    "seaborn",
+    "tensorflow",
+    "fugue-jupyter",
+    "scikit-learn",
+    "mlflow",
+]
+
+[project.entry-points."tune.plugins"]
+mlflow = "tune_mlflow"
+wandb = "tune_wandb"
+hyperopt = "tune_hyperopt"
+optuna = "tune_optuna"
+monitor = "tune_notebook"
+
+[tool.setuptools]
+packages = { find = { where = ["."], include = ["tune*"] } }
+
+[tool.setuptools.dynamic]
+version = { attr = "tune_version.__version__" }
+
+# pytest configuration (migrated from setup.cfg)
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=tune",
+    "--cov=tune_sklearn",
+    "--cov=tune_tensorflow",
+    "--cov=tune_hyperopt",
+    "--cov=tune_optuna",
+    "--cov-report=term-missing:skip-covered",
+    "-vvv",
+]
+spark_options = [
+    "spark.master: local[2]",
+    "spark.sql.catalogImplementation: in-memory",
+    "spark.sql.shuffle.partitions: 4",
+    "spark.default.parallelism: 4",
+    "spark.executor.cores: 4",
+    "spark.sql.adaptive.enabled: false",
+]
+
+# flake8 configuration (migrated from setup.cfg)
+[tool.flake8]
+ignore = ["E24", "E203", "W503", "C408", "A003", "A005", "W504", "C407", "C405"]
+max-line-length = 88
+format = "pylint"
+exclude = [
+    ".svc",
+    "CVS",
+    ".bzr",
+    ".hg",
+    ".git",
+    "__pycache__",
+    "venv",
+    "tests/*",
+    "docs/*",
+]
+max-complexity = 10
+
+[dependency-groups]
+dev = [
+    "flake8>=7.3.0",
+    "flask>=3.1.2",
+    "fugue[dask,spark]>=0.9.2",
+    "furo>=2025.9.25",
+    "nbsphinx>=0.9.7",
+    "pandoc>=2.4",
+    "pre-commit>=3.5.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+    "pytest-mock>=3.15.1",
+    "pytest-spark>=0.8.0",
+    "sphinx>=7.4.7",
+    "sphinx-autodoc-typehints>=2.3.0",
+    "sphinx-rtd-theme>=3.0.2",
+]
+
+[tool.ruff]
+line-length = 88

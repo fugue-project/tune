@@ -9,8 +9,14 @@ help:
 	@echo "	 test		run all tests with coverage (assumes venv is present)"
 
 devenv:
-	pip3 install -r requirements.txt
-	pre-commit install
+	uv sync --quiet --all-groups --all-extras --frozen
+	uv run --no-sync pre-commit install
+
+init_codespace:
+	npm install -g @anthropic-ai/claude-code
+	npm i -g mint
+	git pull || true
+	uv sync --quiet --all-groups --all-extras --frozen
 
 dev:
 	pip3 install -r requirements.txt
@@ -22,13 +28,12 @@ docs:
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_hyperopt/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_optuna/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_sklearn/
-	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_tensorflow/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_notebook/
 	sphinx-apidoc --no-toc -f -t=docs/_templates -o docs/api tune_test/
 	sphinx-build -b html docs/ docs/build/
 
 lint:
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 package:
 	rm -rf dist/*
@@ -41,7 +46,17 @@ lab:
 	jupyter lab --port=8888 --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password='' --NotebookApp.allow_origin='*'
 
 test:
-	python3 -bb -m pytest tests
+	uv run pytest tests
 
 testcore:
-	python3 -bb -m pytest tests/tune tests/tune_notebook tests/tune_hyperopt tests/tune_optuna
+	uv run pytest tests/tune tests/tune_notebook tests/tune_hyperopt tests/tune_optuna
+
+release_branch:
+	$(eval VERSION := $(shell python -c "import tune_version; print(tune_version.__version__)"))
+	@if echo "$(VERSION)" | grep -q "dev"; then \
+		git tag v$(VERSION); \
+		git push origin v$(VERSION); \
+	else \
+		echo "Error: Can only release dev versions (current: $(VERSION))"; \
+		exit 1; \
+	fi

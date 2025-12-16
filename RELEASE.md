@@ -1,5 +1,10 @@
 # Release Notes
 
+## 0.1.7
+
+-  Remove dependency on package `fs`
+-  Move to uv
+
 ## 0.1.6
 
 -  Support Python 3.12
